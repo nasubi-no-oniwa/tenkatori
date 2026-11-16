@@ -7,7 +7,7 @@
 //   s/n/{武将}          : その武将のマスの数（w も数える） ／ s/m/{武将}：家臣の数
 //   s/end               : { f：天下人, t, k：'half' }   半分とった武将が出たら入る（入ると書きこめなくなる）
 //   s/stop              : true   管理人の一時停止 ／ s/pin：管理人のお知らせ ／ s/ver：管理人がマスを直した回数
-//   u/{匿名ID}          : { f：仕える武将, h：最初に仕えた武将（名前の国）, n：名前, j：仕えた時刻, t：最後に取った時刻, c：取ったマス, v：足場にしたとなりのマス,
+//   u/{匿名ID}          : { f：仕える武将, h：最初に仕えた武将（名前の国）, n：名前, j：仕えた時刻, t：最後に取った時刻, c：取ったマス, v：足場にしたとなりのマス, w：足場のとなりの、自分の陣営か白のマス,
 //                          l：そのときの記録の番号, d：最後に寝返った時刻, r：寝返ったことがある, bt：最後に板へ書いた時刻, a：最後に質問を送った時刻 }
 //   log/{番号}          : { t, y：'t' 取った／'d' 寝返った, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID }
 //   b/{板}/{番号}       : 掲示板 { t, u, n, h, r, f, m, g：管理人 }   板は all（全体）と a〜t（陣営ごと。その陣営の人だけ読み書きできる）
@@ -35,6 +35,8 @@ const tk = {};
         + ` && !root.child('tk/k/' + $c).exists()`
         + ` && ${U}.child('t').val() === now && ${U}.child('c').val() === $c`
         + ` && root.child('tk/adj/' + $c + '/' + ${U}.child('v').val()).exists() && root.child('tk/c/' + ${U}.child('v').val()).val() === newData.val()`
+        // 足場のマスは、天守閣か、となりに自分の陣営のマスか白いマスが1つはあること（四方を敵に囲まれた1マスは、足場にできない）。w：そのとなりのマス
+        + ` && (root.child('tk/k/' + ${U}.child('v').val()).exists() || (root.child('tk/adj/' + ${U}.child('v').val() + '/' + ${U}.child('w').val()).exists() && (root.child('tk/c/' + ${U}.child('w').val()).val() === newData.val() || root.child('tk/c/' + ${U}.child('w').val()).val() === 'w')))`
         + ` && ${T}.child('s/n/' + newData.val()).val() === root.child('tk/s/n/' + newData.val()).val() + 1`
         + ` && ${T}.child('s/n/' + data.val()).val() === root.child('tk/s/n/' + data.val()).val() - 1`
         + ` && (${T}.child('s/n/' + newData.val()).val() < ${HALF} || ${T}.child('s/end/f').val() === newData.val()))`,
@@ -107,6 +109,7 @@ tk.k = { '.read': false, '.write': false };
       t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT}) && newData.parent().child('f').exists()` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
+      w: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       l: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{8,30}$/)" },
       d: { '.write': SELF, '.validate': "newData.val() === now && data.parent().child('f').exists() && newData.parent().child('f').val() !== data.parent().child('f').val()" },
       r: { '.write': SELF, '.validate': "newData.val() === true && (data.val() === true || newData.parent().child('d').val() === now)" },
@@ -123,7 +126,7 @@ tk.k = { '.read': false, '.write': false };
   tk.log = {
     '.read': true, '.indexOn': ['t'],
     $id: {
-      '.write': `(!newData.exists() && ${ADMIN}) || (auth != null && !data.exists() && newData.exists() && ${U}.child('l').val() === $id && newData.child('t').val() === now && ${who} && (`
+      '.write': `${ADMIN} || (auth != null && !data.exists() && newData.exists() && ${U}.child('l').val() === $id && newData.child('t').val() === now && ${who} && (`
         + `(newData.child('y').val() === 't' && ${U}.child('t').val() === now && newData.child('c').val() === ${U}.child('c').val()`
         + ` && newData.child('f').val() === ${T}.child('c/' + newData.child('c').val()).val() && newData.child('p').val() === root.child('tk/c/' + newData.child('c').val()).val() && newData.child('p').val() !== newData.child('f').val())`
         + ` || (newData.child('y').val() === 'd' && ${U}.child('d').val() === now && !newData.child('c').exists()`

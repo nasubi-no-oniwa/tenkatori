@@ -50,6 +50,13 @@
     c.strokeStyle = 'rgba(25,18,12,.7)'; c.lineWidth = 0.13; c.lineCap = 'square'; c.beginPath();
     for (let i = 0; i < NC; i++) { const x = cx(i), y = cy(i), a = cells[i]; const r = N.cellAt(x + 1, y), d = N.cellAt(x, y + 1); if (r >= 0 && cells[r] !== a) { c.moveTo(x + 1, y); c.lineTo(x + 1, y + 1); } if (d >= 0 && cells[d] !== a) { c.moveTo(x, y + 1); c.lineTo(x + 1, y + 1); } }
     c.stroke();
+    // 名所のふち（金。占領されたら太い白。天下分け目の城は朱）
+    for (const lm of N.LM) {
+      const set = new Set(lm.c), hold = N.holder(lm, cells), key = lm.id === 'azuchi';
+      c.beginPath(); for (const i of lm.c) { const x = cx(i), y = cy(i); if (!set.has(N.cellAt(x, y - 1))) { c.moveTo(x, y); c.lineTo(x + 1, y); } if (!set.has(N.cellAt(x, y + 1))) { c.moveTo(x, y + 1); c.lineTo(x + 1, y + 1); } if (!set.has(N.cellAt(x - 1, y))) { c.moveTo(x, y); c.lineTo(x, y + 1); } if (!set.has(N.cellAt(x + 1, y))) { c.moveTo(x + 1, y); c.lineTo(x + 1, y + 1); } }
+      c.lineCap = 'round'; c.strokeStyle = 'rgba(20,14,8,.85)'; c.lineWidth = 0.34; c.stroke();
+      c.strokeStyle = key ? '#ff5a3c' : hold ? '#ffffff' : '#f0c850'; c.lineWidth = 0.18; if (!hold) c.setLineDash([0.42, 0.34]); c.stroke(); c.setLineDash([]);
+    }
     // 和紙のむら
     const gr = c.createLinearGradient(0, 0, W, H); gr.addColorStop(0, 'rgba(255,255,255,.07)'); gr.addColorStop(.5, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(60,30,0,.08)'); c.fillStyle = gr; c.fillRect(0, 0, W, H);
     c.restore();
@@ -94,6 +101,17 @@
       c.textAlign = 'center'; c.textBaseline = 'middle'; const fs = Math.max(11, Math.min(22, z * 1.25)); c.font = `700 ${fs}px ${TK.FONT_B}`;
       for (let p = 0; p < M.provs.length; p++) { const l = M.plab[p]; if (!l) continue; const x = sx(l[0]), y = sy(l[1]); if (x < -60 || y < -20 || x > vw + 60 || y > vh + 20) continue; if (l[2] < 4 && z < 12) continue; const nm = TK.provName(p); c.lineWidth = 3.5; c.strokeStyle = 'rgba(244,236,214,.82)'; c.strokeText(nm, x, y); c.fillStyle = 'rgba(38,28,20,.86)'; c.fillText(nm, x, y); }
     }
+    // 名所の印（占領されていれば、その武将の家紋を右上に）
+    if (z >= 3.4) {
+      c.textAlign = 'center'; c.textBaseline = 'top';
+      for (const lm of N.LM) {
+        const x = sx(lm.x), y = sy(lm.y), big = lm.c.length > 4, bs = Math.max(13, Math.min(big ? 44 : 32, z * (big ? 1.9 : 1.45)));
+        if (x < -60 || y < -60 || x > vw + 60 || y > vh + 60) continue;
+        c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 4; c.shadowOffsetY = 1.5; c.drawImage(TK.badge(lm.k, Math.round(bs * dpr), lm.id === 'azuchi'), x - bs / 2, y - bs / 2, bs, bs); c.restore();
+        const h = N.holder(lm, cells); if (h) { const hs = bs * 0.62; c.drawImage(TK.crest(TK.FI[h], Math.round(hs * dpr)), x + bs * 0.22, y - bs * 0.72, hs, hs); }
+        if (z >= 9.5) { const nm = TK.L(lm.n), fs = Math.max(10, Math.min(15, z * 0.8)); c.font = `800 ${fs}px ${TK.FONT_B}`; c.lineWidth = 3; c.strokeStyle = 'rgba(20,14,8,.85)'; c.strokeText(nm, x, y + bs / 2 + 1); c.fillStyle = lm.id === 'azuchi' ? '#ffd9cf' : '#ffe9a8'; c.fillText(nm, x, y + bs / 2 + 1); }
+      }
+    }
     // 天守閣（武将の印）
     const cs = Math.max(15, Math.min(46, z * 2.1));
     for (const f of TK.F) { const i = M.castle[f.L], x = sx(cx(i) + .5), y = sy(cy(i) + .5); if (x < -cs || y < -cs || x > vw + cs || y > vh + cs) continue; const im = TK.crest(f, Math.round(cs * dpr)); c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 5; c.shadowOffsetY = 2; c.drawImage(im, x - cs / 2, y - cs / 2, cs, cs); c.restore(); if (N.me && N.me.f === f.L) { c.strokeStyle = '#ffe08a'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, cs / 2 + 2.5, 0, 6.283); c.stroke(); } }
@@ -134,6 +152,7 @@
   // 見る場所を動かす
   MP.go = function (x, y, z, dur) { const to = { x, y, z: Math.max(minZ, Math.min(maxZ, z)) }; if (G.gsap && dur !== 0) gsap.to(view, Object.assign({ duration: dur || 0.9, ease: 'power3.inOut', onUpdate: () => { clampView(); MP.kick(); } }, to)); else { Object.assign(view, to); clampView(); MP.kick(); } };
   MP.fit = dur => MP.go(W / 2, H / 2, minZ, dur);
+  MP.focusLM = (lm, dur) => MP.go(lm.x, lm.y, Math.max(view.z, lm.c.length > 4 ? 15 : 18), dur);
   MP.focusCell = (i, z, dur) => MP.go(cx(i) + .5, cy(i) + .5, z || Math.max(view.z, 16), dur);
   MP.focusFaction = function (L, dur) {
     const cells = N.cells || M.own; let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
@@ -154,6 +173,7 @@
     x.imageSmoothingQuality = 'high'; x.drawImage(base, -ox * z, -oy * z, W * z, H * z);
     const cs = Math.max(20, z * 2.2);
     for (const f of TK.F) { const i = M.castle[f.L], px = (cx(i) + .5 - ox) * z, py = (cy(i) + .5 - oy) * z; if (px < -cs || py < -cs || px > w + cs || py > h + cs) continue; x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 6; x.shadowOffsetY = 2; x.drawImage(TK.crest(f, Math.round(cs * 2)), px - cs / 2, py - cs / 2, cs, cs); x.restore(); }
+    for (const lm of N.LM) { const big = lm.c.length > 4, bs = Math.max(16, z * (big ? 1.9 : 1.45)), px = (lm.x - ox) * z, py = (lm.y - oy) * z; if (px < -bs || py < -bs || px > w + bs || py > h + bs) continue; x.drawImage(TK.badge(lm.k, Math.round(bs * 2), lm.id === 'azuchi'), px - bs / 2, py - bs / 2, bs, bs); const hd = N.holder(lm); if (hd) x.drawImage(TK.crest(TK.FI[hd], Math.round(bs * 1.3)), px + bs * 0.22, py - bs * 0.72, bs * 0.62, bs * 0.62); }
     if (opt.focus != null && opt.focus >= 0 && !opt.nomark) { const px = (cx(opt.focus) - ox) * z, py = (cy(opt.focus) - oy) * z; x.lineWidth = 6; x.strokeStyle = '#fff'; x.strokeRect(px - 3, py - 3, z + 6, z + 6); x.lineWidth = 3; x.strokeStyle = '#c8321f'; x.strokeRect(px - 8, py - 8, z + 16, z + 16); }
     return c;
   };

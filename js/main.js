@@ -57,6 +57,30 @@
   const sortedF = () => TK.F.slice().sort((a, b) => (N.s.n[b.L] || 0) - (N.s.n[a.L] || 0) || a.i - b.i);
   const drawCrest = (cv, f) => { const c = cv.getContext('2d'); c.clearRect(0, 0, cv.width, cv.height); c.drawImage(TK.crest(f, cv.width), 0, 0); };
 
+  // ---------- 名所：占領の知らせ（テロップ） ----------
+  let lmPrev = null; const telQ = []; let telOn = false;
+  function telop(html, lm, lost) { telQ.push([html, lm, lost]); if (telQ.length > 4) telQ.splice(0, telQ.length - 4); if (!telOn) telNext(); }
+  function telNext() {
+    const it = telQ.shift(), e = $('telop'); if (!it || scr !== 'game') { telOn = false; e.hidden = true; telQ.length = 0; return; }
+    telOn = true; e.innerHTML = it[0]; e.className = it[2] ? 'lost' : ''; e.hidden = false;
+    if (it[1]) { for (const i of it[1].c) MP.flash(i, it[2] ? '#cfd8dc' : '#ffe08a', 1600); }
+    if (TK.fx && !it[2]) TK.fx('take', innerWidth / 2, e.getBoundingClientRect().top + 60);
+    if (G.gsap) { gsap.fromTo(e, { opacity: 0, xPercent: 12 }, { opacity: 1, xPercent: 0, duration: 0.45, ease: 'power3.out' }); gsap.to(e, { opacity: 0, xPercent: -8, duration: 0.4, delay: 3.1, ease: 'power2.in', onComplete: telNext }); } else setTimeout(telNext, 3500);
+  }
+  function checkLM(quiet) {
+    if (!N.cells) return; const now = N.holders(); if (!lmPrev) lmPrev = N.store('tk_lm') || now;
+    if (!quiet) for (const lm of N.LM) { const a = lmPrev[lm.id] || '', b = now[lm.id] || ''; if (a === b) continue; const name = esc(TK.L(lm.n)); if (b) telop(t('lm_occ', { army: esc(TK.army(TK.FI[b])), name }), lm, false); else if (TK.FI[a]) telop(t('lm_lost', { army: esc(TK.army(TK.FI[a])), name }), lm, true); }
+    lmPrev = now; N.store('tk_lm', now); updateKey();
+  }
+  function updateKey() {
+    const k = N.KEY, b = $('keyBar'); if (!k || !N.cells) { b.hidden = true; return; } b.hidden = false;
+    const h = N.holder(k), c = $('keyIc').getContext('2d'); c.clearRect(0, 0, 66, 66); c.drawImage(h ? TK.crest(TK.FI[h], 66) : TK.badge('castle', 66, true), 0, 0);
+    $('keyTx').textContent = h ? t('key_hold', { army: TK.army(TK.FI[h]) }) : t('key_none');
+  }
+  const lmOf = i => N.LM.find(l => l.c.includes(i)) || null;
+  const lmLead = lm => { const cnt = {}; for (const i of lm.c) { const L = N.cells[i]; if (L !== 'w') cnt[L] = (cnt[L] || 0) + 1; } const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]; return top ? { L: top[0], n: top[1] } : null; };
+  const lmStatus = lm => { const h = N.holder(lm); if (h) return t('lm_hold', { army: TK.army(TK.FI[h]) }); const ld = lmLead(lm); return ld ? TK.fname(TK.FI[ld.L]) + ' ' + ld.n + '/' + lm.c.length : t('lm_none'); };
+
   // ---------- ことば ----------
   function applyLang() {
     document.title = '天下取りマース'; $('tSub').textContent = t('title_sub'); $('tTag').textContent = t('title_tag');
@@ -69,10 +93,10 @@
     renderTitle(); if (scr === 'quiz') renderQ(); if (scr === 'game') { updateHud(); MP.kick(); if (selCell >= 0) showCell(selCell); }
   }
   function renderTitle() {
-    const ended = N.ended();
-    $('tClock').textContent = ended ? t('t_ended') : t('t_until', { t: TK.dur(TK.END - N.now()) });
-    $('bStart').textContent = ended ? t('en_map') : N.me ? t('cont') : t('start');
-    $('bWatch').hidden = !!N.me || ended;
+    const ended = N.ended(), prep = !!(N.s && N.s.stop) && !N.gm && !ended;
+    $('tClock').textContent = ended ? t('t_ended') : prep ? t('prep') + '　' + t('prep_note') : t('t_until', { t: TK.dur(TK.END - N.now()) });
+    $('bStart').textContent = ended ? t('en_map') : prep ? t('prep') : N.me ? t('cont') : t('start');
+    $('bStart').disabled = prep && !N.me; $('bWatch').hidden = (!!N.me && !prep) || ended;
     const pin = N.s && N.s.pin; $('tPin').hidden = !pin; if (pin) $('tPin').innerHTML = '<b>' + esc(t('notice')) + '</b>' + esc(pin);
   }
 
@@ -104,6 +128,7 @@
   async function join() {
     if (busy) return; const name = N.cleanName($('rvName').value); if (!name) { $('rvErr').textContent = t('rv_noname'); return; }
     busy = true; $('rvJoin').disabled = true; $('rvErr').textContent = '';
+    if (N.gm) { N.gmSet(rvF.L); await enterGame(true); busy = false; $('rvJoin').disabled = false; return; }
     try { await N.join(rvF.L, name); ev('join', { warlord: rvF.L }); if (TK.fx) TK.fx('confetti', innerWidth / 2, innerHeight * 0.6); await sleep(500); await enterGame(true); }
     catch (e) { $('rvErr').textContent = t('net_err'); try { await N.loadMe(); if (N.me) await enterGame(true); } catch (e2) { } }
     busy = false; $('rvJoin').disabled = false;
@@ -112,8 +137,9 @@
   // ---------- 地図の画面 ----------
   function updateHud() {
     const me = N.me, f = me ? TK.FI[me.f] : null;
-    if (f) { drawCrest($('hudCrest'), f); $('hudName').textContent = TK.who(me.n, me.h, me.r); $('hudArmy').textContent = TK.army(f) + '　' + t('cells', { n: N.s.n[f.L] || 0 }) + '・' + t('rank', { n: rankOf(f.L) }); }
-    else { const c = $('hudCrest').getContext('2d'); c.clearRect(0, 0, 126, 126); c.drawImage(TK.kamon('rokumon', 100, '#c9a44c'), 13, 13); $('hudName').textContent = t('watch'); $('hudArmy').textContent = N.ended() ? t('t_ended') : '▶ ' + t('start'); }
+    $('gmTag').hidden = !N.gm;
+    if (f) { drawCrest($('hudCrest'), f); $('hudName').textContent = N.gm ? 'なすP（GM）▼' : TK.who(me.n, me.h, me.r); $('hudArmy').textContent = TK.army(f) + '　' + t('cells', { n: N.s.n[f.L] || 0 }) + '・' + t('rank', { n: rankOf(f.L) }); }
+    else { const c = $('hudCrest').getContext('2d'); c.clearRect(0, 0, 126, 126); c.drawImage(TK.kamon('rokumon', 100, '#c9a44c'), 13, 13); $('hudName').textContent = t('watch'); $('hudArmy').textContent = N.ended() ? t('t_ended') : N.s.stop ? t('prep') : '▶ ' + t('start'); }
     tick(); const pin = N.s.pin; $('pinBar').hidden = !pin; if (pin) $('pinBar').textContent = t('notice') + '：' + pin;
     const em = $('nav').children[2].querySelector('em'); if (newLog > 0) { if (!em) { const e = document.createElement('em'); e.textContent = newLog > 99 ? '99+' : newLog; $('nav').children[2].appendChild(e); } else em.textContent = newLog > 99 ? '99+' : newLog; } else if (em) em.remove();
   }
@@ -123,27 +149,30 @@
     const tm = $('hudTimer');
     if (N.ended()) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('t_ended'); $('hudT').style.fontSize = '14px'; if (!endShown) checkEnd(); return; }
     if (!N.me) { tm.className = ''; $('hudTL').textContent = t('t_until', { t: '' }).replace(/\s+$/, ''); $('hudT').textContent = TK.dur(TK.END - N.now()); $('hudT').style.fontSize = '15px'; return; }
+    if (N.s.stop && !N.gm) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('prep'); $('hudT').style.fontSize = '14px'; return; }
     $('hudT').style.fontSize = ''; const w = N.wait(), ready = w <= 0;
     tm.className = ready ? 'ready' : ''; $('hudTL').textContent = t('hud_wait'); $('hudT').textContent = ready ? t('hud_ready') : TK.clock(w);
     if (ready !== wasReady) { wasReady = ready; refreshGlow(); if (selCell >= 0) showCell(selCell); }
     else if (!ready && selCell >= 0 && !$('cell').hidden) { const ck = N.canTake(selCell); if (ck.why === 'wait') $('cellWhy').textContent = t('why_wait', { t: TK.clock(w) }); }
   }
-  function refreshGlow() { MP.setGlow(N.me && !N.ended() ? N.takeable() : [], N.me && N.wait() <= 0 && !N.s.stop); }
+  function refreshGlow() { MP.setGlow(N.me && !N.ended() ? N.takeable() : [], N.me && N.wait() <= 0 && (!N.s.stop || N.gm)); }
   function showCell(i) {
     selCell = i; MP.select(i); const box = $('cell'); if (i < 0) { box.hidden = true; return; }
     const L = N.cells[i], f = TK.FI[L] || null, cas = N.CASTLE.get(i);
     $('cellProv').textContent = TK.kuni(M.prov[i]);
     $('cellCrest').hidden = !f; $('cellChip').hidden = !!f; if (f) drawCrest($('cellCrest'), f);
     $('cellOwner').textContent = cas ? t('cs_castle', { name: TK.fname(TK.FI[cas]) }) : f ? TK.army(f) : t('cs_white');
+    const lm = lmOf(i); $('cellLm').hidden = !lm; if (lm) $('cellLm').textContent = t('cs_lm', { name: TK.L(lm.n), st: lmStatus(lm) });
     const ck = N.canTake(i); $('cellGo').hidden = !ck.ok; $('cellGo').textContent = L === 'w' ? t('cs_takew') : t('cs_take');
     $('cellWhy').hidden = ck.ok; if (!ck.ok) $('cellWhy').textContent = ck.why === 'wait' ? t('why_wait', { t: TK.clock(N.wait()) }) : t('why_' + ck.why);
     const was = box.hidden; box.hidden = false; if (was && G.gsap) gsap.fromTo(box, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.25, ease: 'power2.out' });
   }
-  async function refreshAll() { try { await Promise.all([N.loadMe(), N.poll()]); } catch (e) { } MP.repaint(); refreshGlow(); updateHud(); }
+  async function refreshAll() { try { await Promise.all([N.loadMe(), N.poll()]); } catch (e) { } MP.repaint(); refreshGlow(); updateHud(); checkLM(false); }
   async function doTake() {
     if (busy || selCell < 0) return; const i = selCell; busy = true; $('cellGo').disabled = true;
     try {
-      const res = await N.take(i); ev('take'); N.store('tk_seen', N.now());
+      const before = N.holders(), res = await N.take(i); ev('take'); N.store('tk_seen', N.now());
+      const after = N.holders(); res.lm = N.LM.find(l => after[l.id] === N.me.f && before[l.id] !== N.me.f) || null; checkLM(false);
       const p = MP.screenOf(i); MP.repaint(); MP.flash(i, '#ffe08a', 1300); refreshGlow(); updateHud(); showCell(-1);
       if (TK.fx) TK.fx('take', p.x, p.y + 20);
       if (G.gsap) gsap.fromTo('#map', { x: -7 }, { x: 0, duration: 0.5, ease: 'elastic.out(1.2,0.25)' });
@@ -159,23 +188,24 @@
   let tkCanvas = null, tkText = '';
   async function showTaken(res) {
     const me = N.me, f = TK.FI[me.f], pf = TK.FI[res.prev] || null, p = TK.kuni(M.prov[res.i]), n = N.s.n[f.L] || res.n, r = rankOf(f.L);
-    $('tkTitle').textContent = t(pf ? 'tk_title' : 'tk_titlew', { p }); $('tkFrom').hidden = !pf; if (pf) $('tkFrom').textContent = t('tk_from', { name: TK.fname(pf) });
+    const lmT = res.lm ? t('tk_lm', { name: TK.L(res.lm.n) }) : '';
+    $('tkTitle').textContent = lmT || t(pf ? 'tk_title' : 'tk_titlew', { p }); $('tkFrom').hidden = !pf; if (pf) $('tkFrom').textContent = t('tk_from', { name: TK.fname(pf) });
     $('tkCount').textContent = t('tk_count', { name: TK.fname(f), n, r });
     const at = new Date(Date.now() + N.wait()); $('tkNext').textContent = t('tk_next', { t: at.getHours() + ':' + String(at.getMinutes()).padStart(2, '0') }); $('tkMsg').textContent = '';
     const who = TK.who(me.n, me.h, me.r);
-    tkText = pf ? t('sh_take', { army: TK.army(f), who, p, from: TK.fname(pf), n, r }) : t('sh_takew', { army: TK.army(f), who, p, n, r });
-    tkCanvas = await card({ f, title: t(pf ? 'tk_title' : 'tk_titlew', { p }), sub: [who, t('tk_count', { name: TK.fname(f), n, r })], focus: res.i, z: 30, big: 56 });
+    tkText = res.lm ? t('sh_lm', { army: TK.army(f), name: TK.L(res.lm.n), who }) : pf ? t('sh_take', { army: TK.army(f), who, p, from: TK.fname(pf), n, r }) : t('sh_takew', { army: TK.army(f), who, p, n, r });
+    tkCanvas = await card({ f, title: lmT || t(pf ? 'tk_title' : 'tk_titlew', { p }), sub: [who, t('tk_count', { name: TK.fname(f), n, r })], focus: res.i, z: 30, big: 56 });
     const cv = $('tkImg'), c = cv.getContext('2d'); c.drawImage(tkCanvas, 0, 0, cv.width, cv.height);
     $('taken').hidden = false; $('taken').scrollTop = 0;
     if (G.gsap) { gsap.fromTo('#taken', { opacity: 0 }, { opacity: 1, duration: 0.3 }); gsap.fromTo('#taken .card', { y: 50, scale: 0.94 }, { y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }); }
-    if (TK.fx) setTimeout(() => TK.fx('confetti', innerWidth / 2, innerHeight * 0.5), 250);
+    if (TK.fx) setTimeout(() => { TK.fx('confetti', innerWidth / 2, innerHeight * 0.5); if (res.lm && TK.fireworks) TK.fireworks(3); }, 250);
   }
   async function enterGame(fresh) {
     show('game'); scene('off'); $('loading').classList.remove('off'); $('loading').textContent = t('loading');
     if (!mapInit) { MP.init($('map'), (i) => { if (!$('panel').hidden) return; showCell(i); }); mapInit = true; }
     let events = [];
     try { await N.loadState(); if (!N.me && !N.fake && (N.store('tk_auth') || {}).rt) await N.loadMe().catch(() => { }); events = await N.loadCells(); } catch (e) { toast(t('net_err'), 6000); if (!N.cells) N.cells = M.own.split(''); }
-    MP.resize(); MP.repaint(); wasReady = null; refreshGlow(); updateHud();
+    MP.resize(); MP.repaint(); wasReady = null; refreshGlow(); updateHud(); setTimeout(() => checkLM(false), 1800);
     if (N.me) MP.focusFaction(N.me.f, 0); else MP.fit(0);
     $('loading').classList.add('off');
     if (fresh && N.me && G.gsap) { const z = MP.view.z; MP.view.z = z * 0.45; MP.go(MP.view.x, MP.view.y, z, 1.6); }
@@ -189,7 +219,7 @@
   }
   async function poll() {
     if (scr !== 'game' || document.hidden) return;
-    try { const list = await N.poll(); let ch = false; for (const e of list) { if (e.reload) { ch = true; continue; } if (e.y === 't') { ch = true; MP.flash(+e.c, TK.FI[e.f] ? '#fff' : '#fff', 1100); } newLog++; } if (ch) { MP.repaint(); refreshGlow(); } updateHud(); if (selCell >= 0 && !$('cell').hidden) showCell(selCell); N.store('tk_seen', N.now()); checkEnd(); } catch (e) { }
+    try { const list = await N.poll(); let ch = false; for (const e of list) { if (e.reload) { ch = true; continue; } if (e.y === 't') { ch = true; MP.flash(+e.c, TK.FI[e.f] ? '#fff' : '#fff', 1100); } newLog++; } if (ch) { MP.repaint(); refreshGlow(); checkLM(false); } updateHud(); if (selCell >= 0 && !$('cell').hidden) showCell(selCell); N.store('tk_seen', N.now()); checkEnd(); } catch (e) { }
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && scr === 'game') poll(); });
 
@@ -198,13 +228,22 @@
   function openPanel(kind, arg) {
     pKind = kind; clearInterval(bdT); const T = $('pTitle'), B = $('pBody'), F = $('pFoot'), TB = $('pTabs'); B.innerHTML = ''; F.innerHTML = ''; TB.innerHTML = ''; B.scrollTop = 0;
     const me = N.me;
-    if (kind === 'power') {
-      T.textContent = t('nav_power'); const list = sortedF(), top = N.s.n[list[0].L] || 0;
+    if (kind === 'power' || kind === 'sites') {
+      T.textContent = t('nav_power'); [['power', t('nav_power')], ['sites', t('lm_tab') + '（' + N.LM.length + '）']].forEach(([k, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = k === kind ? 'on' : ''; b.onclick = () => openPanel(k); TB.appendChild(b); });
+    }
+    if (kind === 'sites') {
+      let h = `<p class="note">${esc(t('lm_note'))}</p>`;
+      N.LM.forEach((lm, k) => { const hd = N.holder(lm); h += `<div class="lmRow" data-k="${k}"><canvas width="102" height="102" data-b="${k}"></canvas><div class="nm">${esc(TK.L(lm.n))}<small>${esc(TK.kuni(M.prov[lm.c[0]]))}・${esc(t('cells', { n: lm.c.length }))}</small></div><div class="st${hd ? '' : ' no'}">${hd ? `<canvas width="72" height="72" data-c="${hd}"></canvas>` : ''}${esc(hd ? TK.fname(TK.FI[hd]) : lmStatus(lm))}</div></div>`; });
+      B.innerHTML = h; B.querySelectorAll('canvas[data-b]').forEach(c => { const lm = N.LM[+c.dataset.b]; c.getContext('2d').drawImage(TK.badge(lm.k, 102, lm.id === 'azuchi'), 0, 0); }); B.querySelectorAll('canvas[data-c]').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
+      B.querySelectorAll('.lmRow').forEach(r => r.onclick = () => { closePanel(); MP.focusLM(N.LM[+r.dataset.k]); });
+    } else if (kind === 'power') {
+      const list = sortedF(), top = N.s.n[list[0].L] || 0;
       let h = `<div class="pwTop"><span>${esc(t('pw_half'))}</span><span>${top} / ${TK.HALF}</span></div><div class="pwBar"><i style="width:${Math.min(100, top / TK.HALF * 100).toFixed(1)}%;background:${list[0].col}"></i></div><div class="pwTop"><span>${esc(N.ended() ? t('t_ended') : t('t_until', { t: TK.dur(TK.END - N.now()) }))}</span><span>${esc(t('pw_white', { n: N.s.n.w || 0 }))}</span></div>`;
       list.forEach((f, k) => { const n = N.s.n[f.L] || 0; h += `<div class="pw${me && me.f === f.L ? ' me' : ''}" data-l="${f.L}"><span class="r">${rankOf(f.L)}</span><canvas width="90" height="90" data-c="${f.L}"></canvas><div class="nm">${esc(TK.fname(f))}<small>${esc(t('pw_members', { n: N.s.m[f.L] || 0 }))}</small><div class="bar"><i style="width:${Math.min(100, n / Math.max(1, top) * 100).toFixed(1)}%;background:${f.col}"></i></div></div><span class="n">${n}<small>${esc(t('cells', { n: '' }).trim())}</small></span></div>`; });
       B.innerHTML = h; B.querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c])); B.querySelectorAll('.pw').forEach(r => r.onclick = () => { closePanel(); MP.focusFaction(r.dataset.l); });
     } else if (kind === 'board') {
       T.textContent = t('nav_board'); const rooms = me ? [[me.f, t('bd_mine', { name: TK.fname(TK.FI[me.f]) })], ['all', t('bd_all')]] : [['all', t('bd_all')]];
+      if (N.gm && rooms[0][0] !== bdRoom && bdRoom !== 'all') bdRoom = rooms[0][0];
       if (!rooms.some(r => r[0] === bdRoom)) bdRoom = rooms[0][0]; if (arg && arg.room) bdRoom = arg.room;
       rooms.forEach(([r, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = r === bdRoom ? 'on' : ''; b.onclick = () => { bdRoom = r; openPanel('board'); }; TB.appendChild(b); });
       B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
@@ -216,7 +255,8 @@
       N.recent(60).then(list => { if (pKind !== 'log') return; if (!list.length) { B.innerHTML = `<p class="note">${esc(t('lg_empty'))}</p>`; return; } const now = N.now(); B.innerHTML = list.reverse().map(e => { const f = TK.FI[e.f], pf = TK.FI[e.p], who = '<b>' + esc(TK.who(e.n, e.h, e.r)) + '</b>'; const txt = e.y === 'd' ? t('lg_defect', { who, from: esc(pf ? TK.fname(pf) : ''), to: esc(TK.fname(f)) }) : pf ? t('lg_take', { who, p: esc(TK.kuni(M.prov[+e.c])), from: esc(TK.fname(pf)) }) : t('lg_takew', { who, p: esc(TK.kuni(M.prov[+e.c])) }); return `<div class="lg" data-c="${e.y === 't' ? +e.c : -1}"><i style="background:${f ? f.col : '#fff'}"></i><div>${txt}</div><span>${esc(TK.ago(e.t, now))}</span></div>`; }).join(''); B.querySelectorAll('.lg').forEach(r => r.onclick = () => { const c = +r.dataset.c; if (c >= 0) { closePanel(); MP.focusCell(c, 18); MP.flash(c, '#fff', 1500); } }); }).catch(() => { B.innerHTML = `<p class="note">${esc(t('net_err'))}</p>`; });
     } else if (kind === 'defect') {
       T.textContent = t('nav_defect'); let h = `<p>${esc(t('df_body'))}</p>`;
-      if (!me) h += `<p class="note">${esc(t('why_nome'))}</p>`; else if (N.ended()) h += `<p class="note">${esc(t('t_ended'))}</p>`;
+      if (N.gm) h += `<p class="note">GMモードでは、上の家紋を押して陣営を切りかえます。</p>`; else if (!me) h += `<p class="note">${esc(t('why_nome'))}</p>`; else if (N.ended()) h += `<p class="note">${esc(t('t_ended'))}</p>`;
+      else if (N.s.stop) h += `<p class="note">${esc(t('prep'))}</p>`;
       else { const w = N.defectWait(), weak = N.weakest().filter(L => L !== me.f); if (w > 0) h += `<p style="font-weight:800;color:var(--shu2)">${esc(t('df_wait', { t: TK.dur(w) }))}</p>`; h += `<p class="note" style="margin-top:12px">${esc(t('df_to'))}</p>`; if (!weak.length) h += `<p style="font-weight:800">${esc(t('df_none'))}</p>`; for (const L of weak) { const f = TK.FI[L]; h += `<div class="dfTo"><canvas width="114" height="114" data-c="${L}"></canvas><b>${esc(TK.fname(f))}<br><small style="font-weight:500;color:var(--sub)">${esc(t('cells', { n: N.s.n[L] || 0 }))}</small></b>${w > 0 ? '' : `<button class="btn" data-go="${L}">${esc(t('df_yes'))}</button>`}</div>`; } }
       B.innerHTML = h; B.querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
       B.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const f = TK.FI[b.dataset.go]; B.innerHTML = `<p style="font-family:var(--ft);font-size:20px;line-height:1.6;text-align:center;margin:18px 0">${esc(t('df_sure', { name: TK.fname(f) }))}</p>`; F.innerHTML = `<div class="row2"><button class="btn" id="dfN">${esc(t('df_no'))}</button><button class="btn main" id="dfY">${esc(t('df_yes'))}</button></div>`; $('dfN').onclick = () => openPanel('defect'); $('dfY').onclick = async () => { $('dfY').disabled = true; try { await N.defect(f.L); ev('defect'); closePanel(); showReveal(f, 'defect'); } catch (e) { await refreshAll(); toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('tk_fail') : t('net_err')); openPanel('defect'); } }; });
@@ -224,12 +264,18 @@
       T.textContent = t('nav_more'); const items = [['mr_me', () => { closePanel(); if (N.me) MP.focusFaction(N.me.f); }, !!me], ['mr_fit', () => { closePanel(); MP.fit(); }, true], ['how', () => openPanel('how'), true], ['mr_share', shareState, true], ['mr_lang', () => openPanel('lang'), true], ['askbtn', () => openPanel('ask'), true], ['mr_title', () => { closePanel(); show('title'); scene('title'); renderTitle(); }, true], ['mr_home', () => { location.href = 'https://nasubi-no-oniwa.github.io/'; }, true]];
       const d = document.createElement('div'); d.className = 'menu'; for (const [k, fn, on] of items) { if (!on) continue; const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = t(k); b.onclick = fn; d.appendChild(b); } B.appendChild(d); B.insertAdjacentHTML('beforeend', '<p class="note" id="mrMsg" style="margin-top:10px"></p>');
     } else if (kind === 'how') {
-      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 3, 4, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
+      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
     } else if (kind === 'lang') {
       T.textContent = '言語 / Language'; const d = document.createElement('div'); d.className = 'langs'; [['ja', '日本語'], ['en', 'English'], ['zh', '繁體中文'], ['ko', '한국어']].forEach(([l, nm]) => { const b = document.createElement('button'); b.className = 'btn sm' + (TK.lang() === l ? ' main' : ''); b.textContent = nm; b.onclick = () => { TK.setLang(l); applyLang(); closePanel(); }; d.appendChild(b); }); B.appendChild(d);
     } else if (kind === 'ask') {
       T.textContent = t('askbtn'); B.innerHTML = `<textarea id="akM" maxlength="300" placeholder="${esc(t('ak_ph'))}"></textarea><input id="akX" maxlength="16" placeholder="${esc(t('ak_x'))}" autocomplete="off"><p class="note" id="akMsg"></p>`;
       F.innerHTML = `<button class="btn main" id="akS">${esc(t('ak_send'))}</button>`; $('akS').onclick = async () => { const m = $('akM').value.trim(); if (!m) return; $('akS').disabled = true; try { await N.ask(m, $('akX').value, TK.lang(), me ? TK.fname(TK.FI[me.f]) + ' ' + me.n : ''); B.innerHTML = `<p style="text-align:center;font-weight:800;margin:26px 0">${esc(t('ak_done'))}</p>`; F.innerHTML = ''; ev('ask'); } catch (e) { $('akMsg').textContent = e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('ak_wait') : t('net_err'); $('akS').disabled = false; } };
+    } else if (kind === 'gmkey') {
+      T.textContent = 'GMモード'; B.innerHTML = `<p>管理のかぎを入れてください（Fairies' Tower・エンピツライフと同じかぎ）。</p><input id="gmKey" type="password" autocomplete="off"><p class="note" id="gmMsg" style="margin-top:8px"></p>`;
+      F.innerHTML = `<button class="btn main" id="gmGo">入る</button>`; $('gmGo').onclick = async () => { $('gmGo').disabled = true; try { await N.gmLogin($('gmKey').value); gmStart(); } catch (e) { $('gmMsg').textContent = 'かぎが合いません'; $('gmGo').disabled = false; } };
+    } else if (kind === 'gmpick') {
+      T.textContent = 'GM：陣営を選ぶ'; const d = document.createElement('div'); d.className = 'gmGrid'; for (const f of TK.F) { const b = document.createElement('button'); b.innerHTML = `<canvas width="138" height="138"></canvas>${esc(f.nm[0])}<br>${N.s.n[f.L] || 0}`; drawCrest(b.querySelector('canvas'), f); b.onclick = async () => { N.gmSet(f.L); closePanel(); if (scr !== 'game') await enterGame(); else { refreshGlow(); updateHud(); MP.focusFaction(f.L); } }; d.appendChild(b); } B.appendChild(d);
+      B.insertAdjacentHTML('beforeend', '<p class="note" style="margin-top:12px">GMモード：どの陣営にもなれて、待ちなしで何マスでも取れます。軍議はどの陣営の板にも「なすP」として書けます。公開のときに、記録は全部消します。</p>');
     } else if (kind === 'away') {
       T.textContent = t('aw_title'); let h = `<div class="aw"><div class="g">${esc(t('aw_gain'))}<b>＋${arg.gain}</b></div><div class="l">${esc(t('aw_lost'))}<b>−${arg.lost}</b></div></div>`;
       const top = Object.entries(arg.by).sort((a, b) => b[1] - a[1])[0]; if (top) h += `<p style="font-weight:800;text-align:center">${esc(t('aw_by', { name: TK.fname(TK.FI[top[0]]), n: top[1] }))}</p>`;
@@ -257,25 +303,32 @@
     if (endShown || !N.ended() || scr !== 'game') return; endShown = true; refreshGlow();
     try { await N.loadState(); } catch (e) { }
     const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.s.end && N.s.end.k === 'half'), names = win.map(TK.fname).join('・');
-    $('enT').textContent = half ? t('en_title') : t('t_ended'); $('enS').textContent = t(half ? 'en_half' : 'en_time', { name: names });
+    $('enT').textContent = half ? t('en_title') : t('t_ended'); const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
+    $('enS').textContent = t(enKey, { name: names });
     $('enWin').hidden = !(N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
     $('enList').innerHTML = sortedF().slice(0, 5).map(x => `<div class="pw"><span class="r">${rankOf(x.L)}</span><canvas width="90" height="90" data-c="${x.L}"></canvas><div class="nm">${esc(TK.fname(x))}</div><span class="n">${N.s.n[x.L] || 0}</span></div>`).join(''); $('enList').querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
     $('taken').hidden = true; closePanel(); showCell(-1); $('endscr').hidden = false; $('map').hidden = true; $('game').hidden = true; scene('banner', { f, gold: 1 });
     if (G.gsap) { gsap.fromTo('#enT', { opacity: 0, scale: 2.2 }, { opacity: 1, scale: 1, duration: 0.9, ease: 'power4.out' }); gsap.fromTo('#enS', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.7 }); gsap.fromTo('.enbox', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, delay: 1.2 }); }
     if (TK.fireworks) TK.fireworks(6);
-    enCanvas = await card({ f, title: half ? t('en_title') : t('t_ended'), sub: [t(half ? 'en_half' : 'en_time', { name: names }), t('cells', { n: N.s.n[f.L] || 0 })], big: 76 });
+    enCanvas = await card({ f, title: half ? t('en_title') : t('t_ended'), sub: [t(enKey, { name: names }), t('cells', { n: N.s.n[f.L] || 0 })], big: 76 });
     ev('end_view');
   }
   const endText = () => { const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
 
+  // ---------- GMモード（公開までの試し用。URL に ?gm=1 をつけて、管理のかぎで入る） ----------
+  const GMQ = /[?&]gm=1/.test(location.search);
+  function gmStart() { N.gmSet(N.store('tk_gmf') || 'a'); renderTitle(); openPanel('gmpick'); }
+  async function gmBoot() { if (!GMQ || N.fake) return; try { if (N.store('tk_gm')) { await N.gmLogin(''); gmStart(); return; } } catch (e) { } openPanel('gmkey'); }
+
   // ---------- ボタン ----------
-  $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
+  $('bStart').onclick = () => { if (N.gm) startQuiz(); else if (N.me || N.ended()) enterGame(); else startQuiz(); };
+  $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
   $('bWatch').onclick = () => enterGame(); $('bHow').onclick = () => openPanel('how'); $('bLang').onclick = () => openPanel('lang'); $('bAsk').onclick = () => openPanel('ask');
   $('qBack').onclick = () => { if (qi > 0) { qi--; renderQ(); } else { show('title'); scene('title'); } };
   $('rvJoin').onclick = join; $('rvName').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.target.blur(); join(); } });
   $('rvX').onclick = () => postX(quizText(rvF)); $('rvXi').onclick = async () => postImg(await quizCard(rvF), quizText(rvF), $('rvMsg'), 'tenkatori_' + rvF.L);
   $('rvGo').onclick = () => enterGame(true);
-  $('hudMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else if (!N.ended()) startQuiz(); };
+  $('hudMe').onclick = () => { if (N.gm) openPanel('gmpick'); else if (N.me) MP.focusFaction(N.me.f); else if (!N.ended() && !N.s.stop) startQuiz(); };
   $('zIn').onclick = () => MP.zoomBy(1.6); $('zOut').onclick = () => MP.zoomBy(1 / 1.6); $('zMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else MP.fit(); };
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { showCell(-1); openPanel(b.dataset.p); });
   $('cellX').onclick = () => showCell(-1); $('cellGo').onclick = doTake;
@@ -291,13 +344,13 @@
   document.addEventListener('dblclick', e => e.preventDefault());
 
   // ---------- はじまり ----------
-  TK.app = { openPanel, closePanel, enterGame, showReveal, startQuiz, showTaken, card, checkEnd };
+  TK.app = { openPanel, closePanel, enterGame, showReveal, startQuiz, showTaken, card, checkEnd, telop, checkLM, show };
   (async function boot() {
     TK.setLang(TK.lang()); applyLang(); scene('title');
     await fontReady('毘天下取りマース一二三四勢議報返他');
     try { await Promise.race([N.loadState(), sleep(6000)]); } catch (e) { }
     try { if (!N.fake) { if ((N.store('tk_auth') || {}).rt) await Promise.race([N.loadMe(), sleep(6000)]); } else await N.loadMe(); } catch (e) { }
-    renderTitle(); $('loading').classList.add('off'); setInterval(tick, 1000);
+    renderTitle(); $('loading').classList.add('off'); setInterval(tick, 1000); gmBoot();
     const q = new URLSearchParams(location.search);
     if (q.get('go') === 'map') enterGame(); else if (q.get('go') === 'quiz') startQuiz(); else if (q.get('go') === 'reveal') showReveal(TK.F[+(q.get('f') || 0)], 'new');
   })();

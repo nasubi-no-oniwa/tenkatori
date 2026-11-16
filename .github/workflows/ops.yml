@@ -1,0 +1,40 @@
+# 管理の操作を GitHub の上から行う（手で動かす）：開戦準備中にする／外す／公開（全部消して最初の地図に戻す）
+name: 管理の操作
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: 'stop＝開戦準備中にする／open＝外す／launch＝公開（記録を全部消して最初の地図に戻す）'
+        required: true
+        type: choice
+        options: [stop, open, launch]
+permissions:
+  contents: read
+concurrency:
+  group: tk-rules
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 道具を入れる
+        run: mkdir -p "$RUNNER_TEMP/x" && cd "$RUNNER_TEMP/x" && npm init -y >/dev/null && npm i google-auth-library@9 --silent
+      - name: 鍵を一時ファイルに書く
+        env:
+          SA: ${{ secrets.FT_BLUE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then echo "FT_BLUE_SERVICE_ACCOUNT が登録されていません"; exit 1; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+      - name: 操作
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          OP: ${{ github.event.inputs.op }}
+        run: node tools/ops.mjs "$OP"
+      - name: 鍵を消す
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

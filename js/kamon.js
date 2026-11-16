@@ -116,6 +116,23 @@
     const k = TK.kamon(f.kamon, Math.round(px * 0.74), TK.ink(f.col)); ctx.drawImage(k, (px - k.width) / 2, (px - k.height) / 2);
     cache.set(key, c); return c;
   };
+  // 名所の印（和紙の丸に、墨の絵）。kind：mt 山／castle 城／field 合戦場／city 都・町／shrine 神社／temple 寺／mine 金銀山。key：天下分け目の城（朱と金）
+  TK.badge = function (kind, px, key) {
+    px = Math.max(10, Math.round(px)); const k = 'badge|' + kind + '|' + px + '|' + (key ? 1 : 0); if (cache.has(k)) return cache.get(k);
+    const c = mk(px), x = c.getContext('2d'), r = px / 2; x.translate(r, r); x.scale(r, r);
+    x.beginPath(); x.arc(0, 0, 0.94, 0, TAU); x.fillStyle = key ? '#c8321f' : '#f6eed8'; x.fill(); x.lineWidth = 0.11; x.strokeStyle = key ? '#f0d27a' : '#241b14'; x.stroke();
+    const ink = key ? '#fff3da' : '#241b14'; x.fillStyle = ink; x.strokeStyle = ink; x.lineCap = 'round'; x.lineJoin = 'round';
+    const poly = pts => { x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fill(); };
+    const roof = (y, w, h) => { x.beginPath(); x.moveTo(-w, y); x.quadraticCurveTo(-w * 0.45, y - h * 0.35, 0, y - h); x.quadraticCurveTo(w * 0.45, y - h * 0.35, w, y); x.closePath(); x.fill(); };
+    if (kind === 'mt') { poly([[-0.72, 0.46], [-0.2, -0.46], [0.2, -0.46], [0.72, 0.46]]); x.fillStyle = key ? '#c8321f' : '#f6eed8'; poly([[-0.2, -0.46], [0.2, -0.46], [0.32, -0.2], [0.14, -0.3], [0, -0.14], [-0.14, -0.3], [-0.32, -0.2]]); }
+    else if (kind === 'castle') { roof(-0.22, 0.34, 0.3); x.fillRect(-0.24, -0.22, 0.48, 0.2); roof(0.14, 0.56, 0.3); x.fillRect(-0.4, 0.14, 0.8, 0.22); poly([[-0.62, 0.56], [-0.48, 0.34], [0.48, 0.34], [0.62, 0.56]]); }
+    else if (kind === 'field') { x.lineWidth = 0.13; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 0.5, -0.52); x.lineTo(-s * 0.42, 0.44); x.stroke(); x.beginPath(); x.moveTo(-s * 0.56, 0.2); x.lineTo(-s * 0.22, 0.42); x.stroke(); } }
+    else if (kind === 'city') { roof(-0.1, 0.62, 0.34); x.fillRect(-0.46, -0.1, 0.16, 0.56); x.fillRect(0.3, -0.1, 0.16, 0.56); x.fillRect(-0.08, -0.1, 0.16, 0.56); x.fillRect(-0.56, 0.4, 1.12, 0.12); }
+    else if (kind === 'shrine') { x.lineWidth = 0.14; x.beginPath(); x.moveTo(-0.62, -0.36); x.quadraticCurveTo(0, -0.5, 0.62, -0.36); x.stroke(); x.lineWidth = 0.1; x.beginPath(); x.moveTo(-0.46, -0.1); x.lineTo(0.46, -0.1); x.stroke(); x.lineWidth = 0.13; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 0.34, -0.36); x.lineTo(s * 0.38, 0.52); x.stroke(); } }
+    else if (kind === 'temple') { roof(-0.3, 0.3, 0.26); roof(0.02, 0.44, 0.24); roof(0.34, 0.58, 0.24); x.fillRect(-0.16, -0.3, 0.32, 0.1); x.fillRect(-0.24, 0.02, 0.48, 0.1); x.fillRect(-0.34, 0.34, 0.68, 0.16); x.fillRect(-0.03, -0.72, 0.06, 0.2); }
+    else { poly([[0, -0.56], [0.5, -0.14], [0.3, 0.5], [-0.3, 0.5], [-0.5, -0.14]]); x.strokeStyle = key ? '#c8321f' : '#f6eed8'; x.lineWidth = 0.06; x.beginPath(); x.moveTo(-0.5, -0.14); x.lineTo(0.5, -0.14); x.moveTo(0, -0.56); x.lineTo(-0.18, -0.14); x.lineTo(0, 0.5); x.lineTo(0.18, -0.14); x.closePath(); x.stroke(); }
+    cache.set(k, c); return c;
+  };
   // その色の上にのせる文字・家紋の色（明るい色には墨、暗い色には白）
   TK.lum = function (hex) { const n = parseInt(hex.slice(1), 16), f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
   TK.ink = hex => TK.lum(hex) > 0.42 ? '#1d1712' : '#fff8e7';

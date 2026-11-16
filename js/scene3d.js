@@ -36,6 +36,13 @@ if (renderer) {
   // 天守閣の上に、武将の印を浮かべる
   const marks = [];
   for (const f of TK.F) { const i = M.castle[f.L]; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(TK.crest(f, 160)), depthTest: true, fog: true })); sp.material.map.colorSpace = THREE.SRGBColorSpace; sp.position.set(M.cells[2 * i] - W / 2 + .5, 7.5, M.cells[2 * i + 1] - H / 2 + .5); sp.scale.set(6.4, 6.4, 1); sT.add(sp); marks.push(sp); }
+  // 名所：富士山（雪をかぶった山）と、安土城（金の塔）。ほかの名所は小さな金の印
+  for (const lm of (M.lm || [])) {
+    const x = lm.x - W / 2, z = lm.y - H / 2;
+    if (lm.id === 'fuji') { const m = new THREE.Mesh(new THREE.ConeGeometry(2.3, 5.2, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x4f6a8f, roughness: 0.8 })); m.position.set(x, 3.3, z); sT.add(m); const cap = new THREE.Mesh(new THREE.ConeGeometry(0.98, 2.2, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })); cap.position.set(x, 4.85, z); sT.add(cap); }
+    else if (lm.id === 'azuchi') { const g = new THREE.MeshStandardMaterial({ color: 0xe3b84f, roughness: 0.3, metalness: 0.85, emissive: 0x5a3a00, emissiveIntensity: 0.6 }); let y = 1.2; for (const [w, h] of [[2.2, 1.0], [1.6, 0.9], [1.0, 0.8]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), g); b.position.set(x, y + h / 2, z); sT.add(b); y += h; } const r = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.9, 4), new THREE.MeshStandardMaterial({ color: 0xc8321f, roughness: 0.5 })); r.rotation.y = Math.PI / 4; r.position.set(x, y + 0.45, z); sT.add(r); }
+    else { const o = new THREE.Mesh(new THREE.OctahedronGeometry(lm.c.length > 4 ? 0.9 : 0.6), new THREE.MeshStandardMaterial({ color: 0xf0c850, roughness: 0.3, metalness: 0.8, emissive: 0x6a4a00, emissiveIntensity: 0.5 })); o.position.set(x, 2.6, z); sT.add(o); }
+  }
   // 飛ぶ道すじ（九州 → 近畿 → 関東 → 東北 → もどる）
   const PATH = [[32, 133], [58, 112], [86, 100], [108, 92], [128, 86], [138, 56]].map(p => new THREE.Vector3(p[0] - W / 2, 0, p[1] - H / 2));
   const curve = new THREE.CatmullRomCurve3(PATH), tgt = new THREE.Vector3();

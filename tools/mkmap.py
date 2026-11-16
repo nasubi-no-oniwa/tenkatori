@@ -277,6 +277,51 @@ for L, name, (cla, clo), rule in WAR:
     print(L, name, '領地', own.count(L), '天守閣', c, allprov[prov[c]], 'ずれ', round(d, 2))
 assert len(set(castle.values())) == 20
 
+# ---------- 名所・名城・合戦場（そのマスを全部、同じ陣営が取ると「占領」） ----------
+#  (印, 名前[日本語・英語・繁体中文・韓国語], 種類, 緯度, 経度, マスの数)   種類：mt 山／city 都・町／shrine 神社／temple 寺／mine 金銀山／castle 城／field 合戦場
+LM = [
+ ('azuchi', ['安土城', 'Azuchi Castle', '安土城', '아즈치성'], 'castle', 35.1556, 136.1394, 9),
+ ('fuji', ['富士山', 'Mt. Fuji', '富士山', '후지산'], 'mt', 35.3606, 138.7274, 9),
+ ('kyo', ['京の都', 'Kyoto, the Capital', '京都', '교토'], 'city', 35.0116, 135.7681, 9),
+ ('aso', ['阿蘇山', 'Mt. Aso', '阿蘇山', '아소산'], 'mt', 32.8840, 131.1040, 9),
+ ('edo', ['江戸城', 'Edo Castle', '江戶城', '에도성'], 'castle', 35.6852, 139.7528, 4),
+ ('kumamoto', ['隈本城', 'Kumamoto Castle', '隈本城', '구마모토성'], 'castle', 32.8062, 130.7058, 4),
+ ('okehazama', ['桶狭間', 'Okehazama', '桶狹間', '오케하자마'], 'field', 35.0540, 136.9700, 4),
+ ('kawanakajima', ['川中島', 'Kawanakajima', '川中島', '가와나카지마'], 'field', 36.5930, 138.1880, 4),
+ ('nagashino', ['長篠', 'Nagashino', '長篠', '나가시노'], 'field', 34.9230, 137.5600, 4),
+ ('mikatagahara', ['三方ヶ原', 'Mikatagahara', '三方原', '미카타가하라'], 'field', 34.7600, 137.7100, 4),
+ ('sekigahara', ['関ヶ原', 'Sekigahara', '關原', '세키가하라'], 'field', 35.3650, 136.4650, 4),
+ ('sakai', ['堺', 'Sakai', '堺', '사카이'], 'city', 34.5733, 135.4830, 4),
+ ('hakata', ['博多', 'Hakata', '博多', '하카타'], 'city', 33.5950, 130.4020, 4),
+ ('kamakura', ['鎌倉', 'Kamakura', '鎌倉', '가마쿠라'], 'city', 35.3192, 139.5467, 4),
+ ('ishiyama', ['石山本願寺', 'Ishiyama Hongan-ji', '石山本願寺', '이시야마 혼간지'], 'temple', 34.6873, 135.5262, 4),
+ ('hiei', ['比叡山延暦寺', 'Mt. Hiei Enryaku-ji', '比叡山延曆寺', '히에이산 엔랴쿠지'], 'temple', 35.0703, 135.8409, 4),
+ ('koya', ['高野山', 'Mt. Koya', '高野山', '고야산'], 'temple', 34.2130, 135.5860, 4),
+ ('hiraizumi', ['平泉', 'Hiraizumi', '平泉', '히라이즈미'], 'temple', 38.9880, 141.1130, 4),
+ ('nikko', ['日光', 'Nikko', '日光', '닛코'], 'temple', 36.7580, 139.5990, 4),
+ ('ise', ['伊勢神宮', 'Ise Grand Shrine', '伊勢神宮', '이세 신궁'], 'shrine', 34.4550, 136.7255, 4),
+ ('izumo', ['出雲大社', 'Izumo Grand Shrine', '出雲大社', '이즈모 대사'], 'shrine', 35.4019, 132.6855, 4),
+ ('itsukushima', ['厳島神社', 'Itsukushima Shrine', '嚴島神社', '이쓰쿠시마 신사'], 'shrine', 34.2959, 132.3198, 4),
+ ('suwa', ['諏訪大社', 'Suwa Grand Shrine', '諏訪大社', '스와 대사'], 'shrine', 35.9980, 138.1190, 4),
+ ('kotohira', ['金刀比羅宮', 'Kotohira Shrine', '金刀比羅宮', '고토히라궁'], 'shrine', 34.1840, 133.8090, 4),
+ ('iwami', ['石見銀山', 'Iwami Silver Mine', '石見銀山', '이와미 은광'], 'mine', 35.1070, 132.4460, 4),
+ ('sado', ['佐渡金山', 'Sado Gold Mine', '佐渡金山', '사도 금광'], 'mine', 38.0420, 138.2580, 4),
+ ('sakurajima', ['桜島', 'Sakurajima', '櫻島', '사쿠라지마'], 'mt', 31.5850, 130.6570, 4),
+]
+used = set(castle.values()); lms = []
+for lid, names, kind, la, lo, cnt in LM:
+    px, py = proj(lo, la); fx = (px - ox) / S; fy = (oy - py) / S
+    # 9マスは、いちばん近いマスを中心にした3×3。4マスは、いちばん近い角のまわりの2×2。海や天守閣・ほかの名所で欠けた分は、近いマスで補う
+    if cnt == 9: ccx, ccy = math.floor(fx) + .5, math.floor(fy) + .5; rad = 1.01
+    else: ccx, ccy = round(fx), round(fy); rad = 0.51
+    cand = sorted([i for i in range(N_CELLS) if i not in used], key=lambda i: (0 if max(abs(cells[i][0] + .5 - ccx), abs(cells[i][1] + .5 - ccy)) <= rad else 1, (cells[i][0] + .5 - ccx) ** 2 + (cells[i][1] + .5 - ccy) ** 2))
+    pick = cand[:cnt]; far = max(math.hypot(cells[i][0] + .5 - ccx, cells[i][1] + .5 - ccy) for i in pick)
+    assert far < 3.2, (names[0], far)
+    used.update(pick)
+    mx = sum(cells[i][0] + .5 for i in pick) / cnt; my = sum(cells[i][1] + .5 for i in pick) / cnt
+    lms.append({'id': lid, 'n': names, 'k': kind, 'c': sorted(pick), 'x': round(mx, 2), 'y': round(my, 2)})
+    print('名所', names[0], allprov[prov[pick[0]]], cnt, 'マス', '持ち主', ''.join(sorted(set(own[i] for i in pick))), '広がり', round(far, 2))
+
 # ---------- 海のつながり ----------
 sea = []
 def addsea(i, j, nm=''):
@@ -354,6 +399,7 @@ out = {
     'sea': [[i, j, nm] for i, j, nm in sea],
     'sliver': [v for s3 in sliver for v in s3],
     'land': outline,
+    'lm': lms,                                             # 名所（マスの番号は変えずに、あとから足した）
 }
 js = json.dumps(out, ensure_ascii=False, separators=(',', ':'))
 open(OUT + '/data/map.json', 'w', encoding='utf-8').write(js)

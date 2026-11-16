@@ -84,25 +84,35 @@
     const me = N.me; if (!me || !N.cells) return { ok: false, why: 'nome' };
     if (N.cells[i] === me.f) return { ok: false, why: 'mine' };
     if (CASTLE.has(i)) return { ok: false, why: 'castle' };
-    const via = ADJ[i].find(j => N.cells[j] === me.f);
-    if (via === undefined) return { ok: false, why: 'far' };
+    const mine = ADJ[i].filter(j => N.cells[j] === me.f);
+    if (!mine.length) return { ok: false, why: 'far' };
+    // 足場にできるのは、天守閣か、となりに自分の陣営のマスか白いマスがあるマス（四方を敵に囲まれた1マスは、足場にできない）
+    let via, w = null;
+    for (const j of mine) { if (CASTLE.has(j)) { via = j; break; } const k = ADJ[j].find(x => N.cells[x] === me.f || N.cells[x] === 'w'); if (k !== undefined) { via = j; w = k; break; } }
+    if (via === undefined) return { ok: false, why: 'boxed' };
     if (N.ended()) return { ok: false, why: 'end', via };
-    if (N.s.stop) return { ok: false, why: 'stop', via };
+    if (N.s.stop && !N.gm) return { ok: false, why: 'stop', via };
     if (N.wait() > 0) return { ok: false, why: 'wait', via };
-    return { ok: true, via };
+    return { ok: true, via, w };
   };
-  N.takeable = function () { const me = N.me, out = []; if (!me || !N.cells) return out; for (let i = 0; i < NC; i++) if (N.cells[i] !== me.f && !CASTLE.has(i) && ADJ[i].some(j => N.cells[j] === me.f)) out.push(i); return out; };
-  N.wait = () => { const me = N.me; if (!me || !me.t) return 0; return Math.max(0, me.t + TK.WAIT - N.now()); };
+  const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
+  N.takeable = function () { const me = N.me, out = []; if (!me || !N.cells) return out; for (let i = 0; i < NC; i++) if (N.cells[i] !== me.f && !CASTLE.has(i) && ADJ[i].some(j => N.cells[j] === me.f && alive(j, me.f))) out.push(i); return out; };
+  N.wait = () => { const me = N.me; if (N.gm || !me || !me.t) return 0; return Math.max(0, me.t + TK.WAIT - N.now()); };
   N.ended = () => !!(N.s && N.s.end) || N.now() > TK.END;
-  // 終わったときの天下人（半分とった武将。時間切れなら、いちばん多い武将。同じ数なら並んで天下人）
-  N.winners = function () { if (N.s.end && N.s.end.f) return [N.s.end.f]; let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
+  // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
+  // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
+  N.LM = M.lm || [];
+  N.holder = function (lm, cells) { cells = cells || N.cells; if (!cells) return ''; const L = cells[lm.c[0]]; if (L === 'w') return ''; for (const i of lm.c) if (cells[i] !== L) return ''; return L; };
+  N.holders = function (cells) { const o = {}; for (const lm of N.LM) o[lm.id] = N.holder(lm, cells); return o; };
+  N.KEY = N.LM.find(l => l.id === 'azuchi') || null;        // 天下分け目の城
+  N.winners = function () { if (N.s.end && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）
   N.weakest = function () { let mn = 1e9, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n < mn) { mn = n; w = [f.L]; } else if (n === mn) w.push(f.L); } return w; };
   N.defectWait = () => { const me = N.me; if (!me || !me.d) return 0; return Math.max(0, me.d + TK.DEFECT - N.now()); };
 
   // ---------- 読む ----------
   N.loadState = async function () { const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); return N.s; };
-  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; return N.me; };
+  N.loadMe = async function () { if (N.gm) return N.me; if (N.fake) { N.me = FK.me(); return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; return N.me; };
   function applyLog(list) { for (const e of list) { if (e.y === 't' && e.c != null && N.cells) N.cells[+e.c] = e.f; if (e.t > N.lastT) N.lastT = e.t; } }
   function saveCells() { store('tk_c', { c: N.cells.join(''), t: N.lastT, ver: N.s.ver || 0, at: Date.now() }); }
   // 地図を読む。戻り値：前に見たあとに起きたこと（記録の並び。はじめてなら空）
@@ -145,12 +155,13 @@
   N.take = async function (i) {
     const me = N.me, ck = N.canTake(i); if (!ck.ok) { const e = new Error(ck.why); e.why = ck.why; throw e; }
     const u = N.uid(), id = pid(), prev = N.cells[i];
-    const w = { ['c/' + i]: me.f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
+    const w = { ['c/' + i]: me.f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
     if ((N.s.n[me.f] || 0) + 1 >= TK.HALF) w['s/end'] = { f: me.f, t: SV, k: 'half' };
+    if (N.gm) { for (const k of Object.keys(w)) if (k.startsWith('u/')) delete w[k]; }     // GMモード：管理人として書く（待ちなし）
     await update(w);
     N.cells[i] = me.f; N.s.n[me.f] = (N.s.n[me.f] || 0) + 1; N.s.n[prev] = (N.s.n[prev] || 0) - 1;
-    me.t = N.now(); const k = (store('tk_k') || 0) + 1; store('tk_k', k);
+    if (!N.gm) me.t = N.now(); const k = (store('tk_k') || 0) + 1; store('tk_k', k);
     N.loadMe().catch(() => { }); N.loadState().catch(() => { });
     return { i, prev, n: N.s.n[me.f], k };
   };
@@ -169,8 +180,13 @@
   N.post = async function (room, m) {
     const me = N.me, u = N.uid(); m = String(m || '').replace(/[\u0000-\u001f]/g, ' ').trim(); m = Array.from(m).slice(0, 100).join(''); if (!m) throw new Error('empty');
     if (N.fake) return FK.post(room, m);
+    if (N.gm) return update({ ['b/' + room + '/' + pid()]: { t: SV, u, n: 'なすP', m, g: true } });
     await update({ ['u/' + u + '/bt']: SV, ['b/' + room + '/' + pid()]: Object.assign({ t: SV, u, n: me.n, h: me.h, f: me.f, m }, me.r ? { r: true } : {}) });
   };
+  // GMモード（公開までの試し用）：管理のかぎで入る。どの陣営にもなれて、待ちなしで取れる
+  N.gm = false;
+  N.gmLogin = async function (key) { await N.token(false); if (key) await write('PUT', 'ft_admins/' + N.uid(), String(key), true); await rest('ask', { orderBy: 't', limitToLast: 1 }, true); N.gm = true; store('tk_gm', 1); return true; };
+  N.gmSet = function (L) { N.me = { f: L, h: L, n: 'なすP', gm: true }; store('tk_gmf', L); return N.me; };
   N.ask = async function (m, x, l, name) {
     if (N.fake) return; await N.token(false); const u = N.uid();
     await update({ ['u/' + u + '/a']: SV, ['ask/' + pid()]: { t: SV, u, m: Array.from(String(m || '')).slice(0, 300).join(''), x: N.cleanX(x), l: l || 'ja', n: String(name || '').slice(0, 30) } });
