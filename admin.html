@@ -16,6 +16,10 @@ h1{font-size:17px;margin:0 0 8px;color:var(--gold);font-weight:700}
 #bRef{flex:none;padding:8px 16px;background:var(--gold);color:#14100d;font-weight:700;font-size:14px;border:0;border-radius:6px}
 #bRef:disabled{opacity:.5}
 #tabs{display:flex;gap:2px;overflow-x:auto}
+#mapWrap{overflow:auto;max-height:72vh;background:#0b1622;border:1px solid var(--ln);border-radius:6px;-webkit-overflow-scrolling:touch}
+#mapCv{display:block;image-rendering:pixelated}
+#mapInfo{min-height:1.5em;margin:8px 0 0}
+.lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px}
 #tabs button{flex:none;padding:9px 13px;background:var(--pn);color:var(--sub);border:1px solid var(--ln);border-bottom:0;border-radius:6px 6px 0 0;font-size:14px}
 #tabs button.on{background:var(--gold);color:#14100d;font-weight:700}
 main{padding:14px 12px 60px;max-width:860px;margin:0 auto}
@@ -52,7 +56,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
   const TK = window.TK, M = window.TK_MAP, C = window.TK_CONFIG, DB = C.databaseURL.replace(/\/$/, ''), P = '/tk/';
   const $ = id => document.getElementById(id), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } };
-  const T = {}; let tabNow = 'state', room = 'all', timer = 0;
+  const T = {}; let tabNow = 'state', room = 'all', timer = 0, mapZoom = 1;
   // 名乗り（ゲームと同じ匿名ID）
   async function token(force) {
     if (!force && T.tok && Date.now() < T.exp) return T.tok;
@@ -79,7 +83,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
   }
   function start() {
     $('login').hidden = true; $('bRef').hidden = false; $('bRef').onclick = () => refresh().then(() => say('更新しました')); const tb = $('tabs'); tb.hidden = false; tb.innerHTML = '';
-    for (const [k, nm] of [['state', 'ようす'], ['board', '掲示板'], ['ask', '質問・要望'], ['log', '記録・荒らし対応'], ['set', '設定']]) { const b = document.createElement('button'); b.textContent = nm; b.dataset.k = k; b.onclick = () => tab(k); tb.appendChild(b); }
+    for (const [k, nm] of [['state', 'ようす'], ['map', '地図'], ['board', '掲示板'], ['ask', '質問・要望'], ['log', '記録・荒らし対応'], ['set', '設定']]) { const b = document.createElement('button'); b.textContent = nm; b.dataset.k = k; b.onclick = () => tab(k); tb.appendChild(b); }
     tab('state');
   }
   // 読みなおす（書きかけの文と、カーソルの場所は残す）
@@ -98,6 +102,25 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         const left = Date.UTC(2026, 10, 30, 14, 59, 59) - Date.now();
         V.innerHTML = `<div class="box"><h2>いま</h2>いま開いている人（2分半以内）：<b>${Object.keys(on || {}).length}人</b>　／　仕えた人：<b>${mem}人</b>　／　白いマス：<b>${s.n.w || 0}</b><br>終わりまで：${left > 0 ? Math.floor(left / 86400000) + '日' + Math.floor(left % 86400000 / 3600000) + '時間' : '終了'}　${s.end ? '<b style="color:#ffb3a6">天下統一：' + esc(fn(s.end.f)) + '</b>' : ''}${s.stop ? '<b style="color:#ffb3a6">　一時停止中</b>' : ''}</div>
         <div class="box"><h2>勢力</h2><table><tr><th>順</th><th>武将</th><th>マス</th><th>家臣</th></tr>${fs.map((f, i) => `<tr><td>${i + 1}</td><td>${dot(f.L)}${esc(f.nm[0])}</td><td class="n">${s.n[f.L] || 0}</td><td class="n">${(s.m || {})[f.L] || 0}</td></tr>`).join('')}</table></div>`;
+      } else if (tabNow === 'map') {
+        // いまの日本地図（マスの持ち主をそのまま色で出す。読みなおしは「更新」ボタンで）
+        const M = window.TK_MAP, raw = await get('c'), c = []; for (let i = 0; i < M.n; i++) c[i] = (raw && raw[i]) || 'w';
+        const cnt = {}; for (const L of c) cnt[L] = (cnt[L] || 0) + 1;
+        const keepX = $('mapWrap') ? $('mapWrap').scrollLeft : 0, keepY = $('mapWrap') ? $('mapWrap').scrollTop : 0;
+        const fs = TK.F.slice().sort((a, b) => (cnt[b.L] || 0) - (cnt[a.L] || 0));
+        V.innerHTML = `<div class="box"><h2>いまの日本地図</h2><div class="row">${[1, 2, 3, 4].map(z => `<button class="b${z === mapZoom ? ' go' : ''}" data-z="${z}">${z}倍</button>`).join('')}</div><div id="mapWrap"><canvas id="mapCv"></canvas></div><p id="mapInfo" style="color:var(--sub)">マスを押すと、国と持ち主が出ます。黒いふち＝天守閣、金のふち＝名所。</p></div>
+        <div class="box"><h2>色の見かた（マスの多い順）</h2><div class="lg">${fs.map(f => `<span>${dot(f.L)}${esc(f.nm[0])} ${cnt[f.L] || 0}</span>`).join('')}<span><i class="dot" style="background:#efe6d0"></i>白いマス ${cnt.w || 0}</span></div></div>`;
+        const cv = $('mapCv'), P = 6, g = cv.getContext('2d'); cv.width = M.W * P; cv.height = M.H * P; cv.style.width = (100 * mapZoom) + '%';
+        g.fillStyle = '#0b1622'; g.fillRect(0, 0, cv.width, cv.height);
+        for (let i = 0; i < M.n; i++) { g.fillStyle = TK.FI[c[i]] ? TK.FI[c[i]].col : '#efe6d0'; g.fillRect(M.cells[2 * i] * P, M.cells[2 * i + 1] * P, P - 1, P - 1); }
+        g.lineWidth = 1; g.strokeStyle = '#e8c35a'; for (const l of M.lm) for (const i of l.c) g.strokeRect(M.cells[2 * i] * P + .5, M.cells[2 * i + 1] * P + .5, P - 2, P - 2);
+        for (const L in M.castle) { const i = M.castle[L], x = M.cells[2 * i] * P, y = M.cells[2 * i + 1] * P; g.fillStyle = '#000'; g.fillRect(x - 1, y - 1, P + 1, P + 1); g.fillStyle = TK.FI[L].col; g.fillRect(x + 1, y + 1, P - 3, P - 3); }
+        $('mapWrap').scrollLeft = keepX; $('mapWrap').scrollTop = keepY;
+        const at = new Map(); for (let i = 0; i < M.n; i++) at.set(M.cells[2 * i] + ',' + M.cells[2 * i + 1], i);
+        const lmOf = {}; for (const l of M.lm) for (const i of l.c) lmOf[i] = l.n[0]; const csOf = {}; for (const L in M.castle) csOf[M.castle[L]] = L;
+        cv.onclick = e => { const r = cv.getBoundingClientRect(), i = at.get(Math.floor((e.clientX - r.left) / r.width * M.W) + ',' + Math.floor((e.clientY - r.top) / r.height * M.H)); if (i === undefined) return;
+          const pv = M.provs[M.prov[i]]; $('mapInfo').innerHTML = `<b style="color:var(--gold)">${esc(Array.isArray(pv) ? pv[0] : pv)}</b>　持ち主：${dot(c[i])}${esc(fn(c[i]))}${csOf[i] ? '　（' + esc(fn(csOf[i])) + 'の天守閣）' : ''}${lmOf[i] ? '　名所：' + esc(lmOf[i]) : ''}　<span style="color:var(--sub)">マス番号 ${i}</span>`; };
+        V.querySelectorAll('[data-z]').forEach(b => b.onclick = () => { mapZoom = +b.dataset.z; cv.style.width = (100 * mapZoom) + '%'; V.querySelectorAll('[data-z]').forEach(x => x.className = 'b' + (+x.dataset.z === mapZoom ? ' go' : '')); });
       } else if (tabNow === 'board') {
         const v = list(await get('b/' + room, { orderBy: 't', limitToLast: 80 }));
         V.innerHTML = `<div class="rooms">${[['all', '全体']].concat(TK.F.map(f => [f.L, f.nm[0]])).map(([r, nm]) => `<button data-r="${r}" class="${r === room ? 'on' : ''}">${esc(nm)}</button>`).join('')}</div>
