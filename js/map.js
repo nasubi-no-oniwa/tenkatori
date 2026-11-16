@@ -72,6 +72,17 @@
     view.x = Math.max(Math.min(mx, W / 2) - 4, Math.min(W - Math.min(mx, W / 2) + 4, view.x));
     view.y = Math.max(Math.min(my, H / 2) - 4, Math.min(H - Math.min(my, H / 2) + 4, view.y));
   }
+  // のぼり旗（さおの根もとが x, y。高さ hgt）
+  function drawFlag(c, x, y, hgt, f, t, q) {
+    const pw = Math.max(1.6, hgt * 0.055), fw = hgt * 0.5, fh = hgt * 0.66, top = y - hgt, fy = top + pw * 1.2, wv = Math.sin(t / 320 + x * 0.05) * fw * 0.09;
+    c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 4; c.shadowOffsetY = 2;
+    c.strokeStyle = '#1a120c'; c.lineWidth = pw; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x, top); c.stroke();
+    c.beginPath(); c.moveTo(x + pw / 2, fy); c.quadraticCurveTo(x + fw * 0.5, fy + wv, x + fw, fy - wv * 0.6); c.lineTo(x + fw, fy + fh - wv * 0.6); c.quadraticCurveTo(x + fw * 0.5, fy + fh + wv, x + pw / 2, fy + fh); c.closePath(); c.fillStyle = f.col; c.fill(); c.restore();
+    c.lineWidth = 1; c.strokeStyle = 'rgba(255,245,220,.75)'; c.stroke();
+    c.fillStyle = '#e3b84f'; c.beginPath(); c.arc(x, top, pw * 0.95, 0, 6.283); c.fill();
+    const ks = Math.min(fw, fh) * 0.8; c.drawImage(TK.kamon(f.kamon, Math.max(12, Math.round(ks * q)), TK.ink(f.col)), x + pw / 2 + (fw - ks) / 2, fy + (fh - ks) / 2 + wv * 0.2, ks, ks);
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x, y, pw * 1.6, pw * 0.7, 0, 0, 6.283); c.fill();
+  }
   let seaPat = null;
   function draw(t) {
     raf = 0; if (!cv || !vw) return;
@@ -119,6 +130,10 @@
         // 札からマスへ、短い線でつなぐ
         c.beginPath(); c.moveTo(x, py + ht); c.lineTo(x, yt); c.strokeStyle = key ? '#ffb19f' : '#f0c850'; c.lineWidth = 1.5; c.stroke();
       }
+    }
+    // 占領した名所には、その陣営の旗を立てる（名所の札と同じく「名」ボタンでかくせる）
+    if (z >= 3.4 && MP.showLM) {
+      for (const lm of N.LM) { const h = N.holder(lm, cells); if (!h) continue; const x = sx(lm.x), y = sy(lm.y) + z * 0.3; if (x < -60 || y < -10 || x > vw + 60 || y > vh + 90) continue; drawFlag(c, x, y, Math.max(20, Math.min(64, z * (lm.c.length > 4 ? 3.1 : 2.5))), TK.FI[h], t, dpr); need = true; }
     }
     // 天守閣（武将の印）
     const cs = Math.max(15, Math.min(46, z * 2.1));
@@ -183,6 +198,7 @@
     const cs = Math.max(20, z * 2.2);
     for (const f of TK.F) { const i = M.castle[f.L], px = (cx(i) + .5 - ox) * z, py = (cy(i) + .5 - oy) * z; if (px < -cs || py < -cs || px > w + cs || py > h + cs) continue; x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 6; x.shadowOffsetY = 2; x.drawImage(TK.crest(f, Math.round(cs * 2)), px - cs / 2, py - cs / 2, cs, cs); x.restore(); }
     for (const lm of N.LM) { let top = 1e9; for (const i of lm.c) top = Math.min(top, cy(i)); const bs = Math.max(14, Math.min(34, z * 1.2)), px = (lm.x - ox) * z, py = (top - oy) * z - bs * 0.62; if (px < -bs || py < -bs || px > w + bs || py > h + bs) continue; x.drawImage(TK.badge(lm.k, Math.round(bs * 2), lm.id === 'azuchi'), px - bs / 2, py - bs / 2, bs, bs); const hd = N.holder(lm); if (hd) x.drawImage(TK.crest(TK.FI[hd], Math.round(bs * 1.6)), px + bs * 0.4, py - bs / 2, bs * 0.8, bs * 0.8); }
+    for (const lm of N.LM) { const hd = N.holder(lm); if (!hd) continue; const px = (lm.x - ox) * z, py = (lm.y - oy) * z + z * 0.3; if (px < -80 || py < -10 || px > w + 80 || py > h + 120) continue; drawFlag(x, px, py, Math.max(26, Math.min(120, z * (lm.c.length > 4 ? 3.1 : 2.5))), TK.FI[hd], 0, 2); }
     if (opt.focus != null && opt.focus >= 0 && !opt.nomark) { const px = (cx(opt.focus) - ox) * z, py = (cy(opt.focus) - oy) * z; x.lineWidth = 6; x.strokeStyle = '#fff'; x.strokeRect(px - 3, py - 3, z + 6, z + 6); x.lineWidth = 3; x.strokeStyle = '#c8321f'; x.strokeRect(px - 8, py - 8, z + 16, z + 16); }
     return c;
   };
