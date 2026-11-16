@@ -9,6 +9,7 @@
   const ev = (n, o) => { try { if (typeof gtag === 'function') gtag('event', n, Object.assign({ game: 'tenkatori' }, o || {})); } catch (e) { } };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let lastTake = null;                       // 自分が最後に取ったマス（同時に攻めこまれて奪われたときの知らせ用）
   let scr = 'title', mapInit = false, pollT = 0, selCell = -1, busy = false, endShown = false, lastSeenLog = 0, newLog = 0;
   // 3Dの場面（読みこみが終わる前に頼まれた分は、覚えておいて後で出す）
   const scene = (mode, o) => { TK.sceneWant = [mode, o || {}]; if (TK.scene) TK.scene.mode(mode, o || {}); };
@@ -171,7 +172,7 @@
   async function doTake() {
     if (busy || selCell < 0) return; const i = selCell; busy = true; $('cellGo').disabled = true;
     try {
-      const before = N.holders(), res = await N.take(i); ev('take'); N.store('tk_seen', N.now());
+      const before = N.holders(), res = await N.take(i); ev('take'); N.store('tk_seen', N.now()); lastTake = { i, t: N.now() };
       const after = N.holders(); res.lm = N.LM.find(l => after[l.id] === N.me.f && before[l.id] !== N.me.f) || null; checkLM(false);
       const p = MP.screenOf(i); MP.repaint(); MP.flash(i, '#ffe08a', 1300); refreshGlow(); updateHud(); showCell(-1);
       if (TK.fx) TK.fx('take', p.x, p.y + 20);
@@ -179,7 +180,18 @@
       try { navigator.vibrate && navigator.vibrate([30, 40, 60]); } catch (e) { }
       await sleep(1250); await showTaken(res); checkEnd();
     } catch (e) {
-      if (e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST')) { await refreshAll(); showCell(-1); toast(t('tk_fail')); }
+      if (e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST')) {
+        // 先をこされた。10秒以内なら「同時」：マスの少ない陣営が勝つ（同じ数ならくじ）。負けても一手を失う
+        await refreshAll(); showCell(-1); let done = false;
+        try {
+          if (N.me && N.cells[i] !== N.me.f && await N.clashing(i)) {
+            const foe = TK.FI[N.cells[i]];
+            if (N.canTake(i).ok) { try { const res = await N.take(i); done = true; lastTake = { i, t: N.now() }; MP.repaint(); MP.flash(i, '#ffe08a', 1300); refreshGlow(); updateHud(); checkLM(false); toast(t('clash_win'), 2600); await sleep(1500); await showTaken(res); checkEnd(); } catch (e2) { if (!(e2 && (e2.code === 'PERMISSION_DENIED' || e2.code === 'BAD_REQUEST'))) throw e2; } }
+            if (!done) { await N.lose(i).catch(() => { }); done = true; MP.flash(i, '#8a8d93', 1300); updateHud(); refreshGlow(); toast(t('clash_lose', { army: foe ? TK.army(foe) : '' }), 5000); if (TK.fx) { const p = MP.screenOf(i); TK.fx('dark', p.x, p.y + 30); } }
+          }
+        } catch (e3) { }
+        if (!done) toast(t('tk_fail'));
+      }
       else if (e && e.why) { showCell(i); } else toast(t('net_err'));
     }
     busy = false; $('cellGo').disabled = false;
@@ -219,7 +231,7 @@
   }
   async function poll() {
     if (scr !== 'game' || document.hidden) return;
-    try { const list = await N.poll(); let ch = false; for (const e of list) { if (e.reload) { ch = true; continue; } if (e.y === 't') { ch = true; MP.flash(+e.c, TK.FI[e.f] ? '#fff' : '#fff', 1100); } newLog++; } if (ch) { MP.repaint(); refreshGlow(); checkLM(false); } updateHud(); if (selCell >= 0 && !$('cell').hidden) showCell(selCell); N.store('tk_seen', N.now()); checkEnd(); } catch (e) { }
+    try { const list = await N.poll(); let ch = false; for (const e of list) { if (e.reload) { ch = true; continue; } if (e.y === 't') { ch = true; MP.flash(+e.c, '#fff', 1100); if (lastTake && N.me && +e.c === lastTake.i && e.f !== N.me.f && e.t - lastTake.t < 15000 && TK.FI[e.f]) { toast(t('clash_lost', { army: TK.army(TK.FI[e.f]) }), 5000); lastTake = null; } } newLog++; } if (ch) { MP.repaint(); refreshGlow(); checkLM(false); } updateHud(); if (selCell >= 0 && !$('cell').hidden) showCell(selCell); N.store('tk_seen', N.now()); checkEnd(); } catch (e) { }
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && scr === 'game') poll(); });
 
@@ -252,10 +264,10 @@
       bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 20000);
     } else if (kind === 'log') {
       T.textContent = t('nav_log'); B.innerHTML = `<p class="note">${esc(t('loading'))}</p>`; newLog = 0; updateHud();
-      N.recent(60).then(list => { if (pKind !== 'log') return; if (!list.length) { B.innerHTML = `<p class="note">${esc(t('lg_empty'))}</p>`; return; } const now = N.now(); B.innerHTML = list.reverse().map(e => { const f = TK.FI[e.f], pf = TK.FI[e.p], who = '<b>' + esc(TK.who(e.n, e.h, e.r)) + '</b>'; const txt = e.y === 'd' ? t('lg_defect', { who, from: esc(pf ? TK.fname(pf) : ''), to: esc(TK.fname(f)) }) : pf ? t('lg_take', { who, p: esc(TK.kuni(M.prov[+e.c])), from: esc(TK.fname(pf)) }) : t('lg_takew', { who, p: esc(TK.kuni(M.prov[+e.c])) }); const lmK = e.k && N.LM.find(l => l.id === e.k), lmX = e.x && N.LM.find(l => l.id === e.x); let ex = '';
+      N.recent(60).then(list => { if (pKind !== 'log') return; if (!list.length) { B.innerHTML = `<p class="note">${esc(t('lg_empty'))}</p>`; return; } const now = N.now(); B.innerHTML = list.reverse().map(e => { const f = TK.FI[e.f], pf = TK.FI[e.p], who = '<b>' + esc(TK.who(e.n, e.h, e.r)) + '</b>'; const txt = e.y === 'f' ? t('lg_fail', { who, p: esc(TK.kuni(M.prov[+e.c])), to: esc(pf ? TK.fname(pf) : '') }) : e.y === 'd' ? t('lg_defect', { who, from: esc(pf ? TK.fname(pf) : ''), to: esc(TK.fname(f)) }) : pf ? t('lg_take', { who, p: esc(TK.kuni(M.prov[+e.c])), from: esc(TK.fname(pf)) }) : t('lg_takew', { who, p: esc(TK.kuni(M.prov[+e.c])) }); const lmK = e.k && N.LM.find(l => l.id === e.k), lmX = e.x && N.LM.find(l => l.id === e.x); let ex = '';
         if (lmK && f) ex += `<div class="lg lm" data-c="${+e.c}"><i style="background:${f.col}"></i><div>${t('lg_lm', { army: esc(TK.army(f)), name: '<b>' + esc(TK.L(lmK.n)) + '</b>' })}</div><span>${esc(TK.ago(e.t, now))}</span></div>`;
         if (lmX && pf) ex += `<div class="lg lmx" data-c="${+e.c}"><i style="background:${pf.col}"></i><div>${t('lg_lmx', { army: esc(TK.army(pf)), name: '<b>' + esc(TK.L(lmX.n)) + '</b>' })}</div><span>${esc(TK.ago(e.t, now))}</span></div>`;
-        return ex + `<div class="lg" data-c="${e.y === 't' ? +e.c : -1}"><i style="background:${f ? f.col : '#fff'}"></i><div>${txt}</div><span>${esc(TK.ago(e.t, now))}</span></div>`; }).join(''); B.querySelectorAll('.lg').forEach(r => r.onclick = () => { const c = +r.dataset.c; if (c >= 0) { closePanel(); MP.focusCell(c, 18); MP.flash(c, '#fff', 1500); } }); }).catch(() => { B.innerHTML = `<p class="note">${esc(t('net_err'))}</p>`; });
+        return ex + `<div class="lg" data-c="${e.y === 'd' ? -1 : +e.c}"><i style="background:${f ? f.col : '#fff'}"></i><div>${txt}</div><span>${esc(TK.ago(e.t, now))}</span></div>`; }).join(''); B.querySelectorAll('.lg').forEach(r => r.onclick = () => { const c = +r.dataset.c; if (c >= 0) { closePanel(); MP.focusCell(c, 18); MP.flash(c, '#fff', 1500); } }); }).catch(() => { B.innerHTML = `<p class="note">${esc(t('net_err'))}</p>`; });
     } else if (kind === 'defect') {
       T.textContent = t('nav_defect'); let h = `<p>${esc(t('df_body'))}</p>`;
       if (N.gm) h += `<p class="note">GMモードでは、上の家紋を押して陣営を切りかえます。</p>`; else if (!me) h += `<p class="note">${esc(t('why_nome'))}</p>`; else if (N.ended()) h += `<p class="note">${esc(t('t_ended'))}</p>`;
@@ -267,7 +279,7 @@
       T.textContent = t('nav_more'); const items = [['mr_me', () => { closePanel(); if (N.me) MP.focusFaction(N.me.f); }, !!me], ['mr_fit', () => { closePanel(); MP.fit(); }, true], ['how', () => openPanel('how'), true], ['mr_share', shareState, true], ['mr_lang', () => openPanel('lang'), true], ['askbtn', () => openPanel('ask'), true], ['mr_title', () => { closePanel(); show('title'); scene('title'); renderTitle(); }, true], ['mr_home', () => { location.href = 'https://nasubi-no-oniwa.github.io/'; }, true]];
       const d = document.createElement('div'); d.className = 'menu'; for (const [k, fn, on] of items) { if (!on) continue; const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = t(k); b.onclick = fn; d.appendChild(b); } B.appendChild(d); B.insertAdjacentHTML('beforeend', '<p class="note" id="mrMsg" style="margin-top:10px"></p>');
     } else if (kind === 'how') {
-      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
+      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 8, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
     } else if (kind === 'lang') {
       T.textContent = '言語 / Language'; const d = document.createElement('div'); d.className = 'langs'; [['ja', '日本語'], ['en', 'English'], ['zh', '繁體中文'], ['ko', '한국어']].forEach(([l, nm]) => { const b = document.createElement('button'); b.className = 'btn sm' + (TK.lang() === l ? ' main' : ''); b.textContent = nm; b.onclick = () => { TK.setLang(l); applyLang(); closePanel(); }; d.appendChild(b); }); B.appendChild(d);
     } else if (kind === 'ask') {

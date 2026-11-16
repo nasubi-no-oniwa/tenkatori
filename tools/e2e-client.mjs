@@ -30,9 +30,11 @@ try {
   await A.loadMe(); ok(A.wait() > 3 * 3600 * 1000 - 120000 && A.canTake(ta[1]).why === 'wait', '取ったあとは3時間待ち（あと ' + Math.round(A.wait() / 60000) + '分）');
   ok(await fails(A.update({ ['c/' + ta[1]]: 'a' })), '待っている間は、じかに書いてもはじかれる');
   await B.token(); await B.join('k', '太郎'); await B.loadState(); ev = await B.loadCells(); ok(B.cells[ta[0]] === 'a' && B.s.n.a === 14 && B.s.n[prev] === (prev === 'w' ? 3869 : B.s.n[prev]), 'Bから見ても、織田のマスが増えている');
-  const tb = B.takeable().find(i => B.cells[i] === 'a'); // 斎藤のとなりの織田のマス
+  const tb = B.takeable().find(i => B.cells[i] === 'a' && i !== ta[0]); // 斎藤のとなりの織田のマス（Aが取ったばかりのマスは「同時」になるので外す）
   if (tb !== undefined) { await B.take(tb); ok(B.cells[tb] === 'k', 'Bが織田のマスを奪う'); const l = await A.poll(); ok(l.some(e => +e.c === tb && e.f === 'k') && A.cells[tb] === 'k' && A.s.n.a === 13, 'Aの読みなおしで、奪われたことがわかる'); }
   else { const w = B.takeable()[0]; await B.take(w); const l = await A.poll(); ok(l.some(e => +e.c === w) && A.cells[w] === 'k', 'Aの読みなおしで、Bの動きがわかる'); }
+  ok(await A.clashing(ta[0]) === true, '取られたばかりのマスは「同時」の取り合い中とわかる');
+  if (B.canTake(ta[0]).via !== undefined && B.wait() === 0) { ok(await fails(B.take(ta[0])), 'マスの多い斎藤は、同時には取れない'); }
   ok((await B.recent(10)).length === 2, '戦況に2件');
   await A.post('a', '美濃を攻めよう'); await B.post('all', 'よろしく');
   ok((await A.board('a')).length === 1 && (await A.board('all')).length === 1, '軍議と全体の板が読める');

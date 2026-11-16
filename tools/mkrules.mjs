@@ -9,13 +9,14 @@
 //   s/stop              : true   管理人の一時停止 ／ s/pin：管理人のお知らせ ／ s/ver：管理人がマスを直した回数
 //   u/{匿名ID}          : { f：仕える武将, h：最初に仕えた武将（名前の国）, n：名前, j：仕えた時刻, t：最後に取った時刻, c：取ったマス, v：足場にしたとなりのマス, w：足場のとなりの、自分の陣営か白のマス,
 //                          l：そのときの記録の番号, d：最後に寝返った時刻, r：寝返ったことがある, bt：最後に板へ書いた時刻, a：最後に質問を送った時刻 }
-//   log/{番号}          : { t, y：'t' 取った／'d' 寝返った, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID, k：この一手で占領した名所, x：この一手で占領をくずした名所 }
+//   ct/{マス番号}       : そのマスが最後に取られた時刻（10秒以内に別の陣営が取りにきたら「同時」。マスの少ない陣営が勝ち、同じ数ならくじ）
+//   log/{番号}          : { t, y：'t' 取った／'d' 寝返った／'f' 同時に攻めこんで敗れた, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID, k：この一手で占領した名所, x：この一手で占領をくずした名所 }
 //   b/{板}/{番号}       : 掲示板 { t, u, n, h, r, f, m, g：管理人 }   板は all（全体）と a〜t（陣営ごと。その陣営の人だけ読み書きできる）
 //   ask/{番号}          : なすPへの質問・要望（管理人だけ読める）   on/{匿名ID}：いま開いている人   ban/{匿名ID}：書きこめなくした人
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
 import fs from 'fs';
 const END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);          // 2026-11-30 23:59:59（日本時間）
-const WAIT = 3 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500;
+const WAIT = 3 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
 const OPEN = `(!root.child('tk/s/end').exists() && !root.child('tk/s/stop').exists() && now <= ${END})`;
@@ -39,10 +40,19 @@ const tk = {};
         + ` && (root.child('tk/k/' + ${U}.child('v').val()).exists() || (root.child('tk/adj/' + ${U}.child('v').val() + '/' + ${U}.child('w').val()).exists() && (root.child('tk/c/' + ${U}.child('w').val()).val() === newData.val() || root.child('tk/c/' + ${U}.child('w').val()).val() === 'w')))`
         + ` && ${T}.child('s/n/' + newData.val()).val() === root.child('tk/s/n/' + newData.val()).val() + 1`
         + ` && ${T}.child('s/n/' + data.val()).val() === root.child('tk/s/n/' + data.val()).val() - 1`
-        + ` && (${T}.child('s/n/' + newData.val()).val() < ${HALF} || ${T}.child('s/end/f').val() === newData.val()))`,
+        + ` && (${T}.child('s/n/' + newData.val()).val() < ${HALF} || ${T}.child('s/end/f').val() === newData.val())`
+        // 同時（そのマスが取られてから10秒以内）：マスの少ない陣営だけが取れる。同じ数ならくじ（データベースの時計が偶数のミリ秒なら取れる）
+        + ` && ${T}.child('ct/' + $c).val() === now && (!root.child('tk/ct/' + $c).exists() || now - root.child('tk/ct/' + $c).val() >= ${CLASH}`
+        + ` || root.child('tk/s/n/' + newData.val()).val() < root.child('tk/s/n/' + data.val()).val() - 1`
+        + ` || (root.child('tk/s/n/' + newData.val()).val() === root.child('tk/s/n/' + data.val()).val() - 1 && now % 2 === 0)))`,
       '.validate': "$c.matches(/^[0-9]{1,4}$/) && newData.isString() && newData.val().matches(/^[a-tw]$/)",
     },
   };
+}
+// マスが最後に取られた時刻（同時かどうかを決める）
+{
+  const T = up(2), U = `${T}.child('u/' + auth.uid)`;
+  tk.ct = { '.read': true, $c: { '.write': `${ADMIN} || (auth != null && ${U}.child('t').val() === now && ${U}.child('c').val() === $c && ${T}.child('c/' + $c).val() === ${U}.child('f').val())`, '.validate': "$c.matches(/^[0-9]{1,4}$/) && newData.val() === now" } };
 }
 tk.adj = { '.read': false, '.write': false };
 tk.k = { '.read': false, '.write': false };
@@ -129,10 +139,13 @@ tk.k = { '.read': false, '.write': false };
       '.write': `${ADMIN} || (auth != null && !data.exists() && newData.exists() && ${U}.child('l').val() === $id && newData.child('t').val() === now && ${who} && (`
         + `(newData.child('y').val() === 't' && ${U}.child('t').val() === now && newData.child('c').val() === ${U}.child('c').val()`
         + ` && newData.child('f').val() === ${T}.child('c/' + newData.child('c').val()).val() && newData.child('p').val() === root.child('tk/c/' + newData.child('c').val()).val() && newData.child('p').val() !== newData.child('f').val())`
+        + ` || (newData.child('y').val() === 'f' && ${U}.child('t').val() === now && newData.child('c').val() === ${U}.child('c').val()`
+        + ` && newData.child('f').val() === ${ME}.child('f').val() && newData.child('p').val() === root.child('tk/c/' + newData.child('c').val()).val() && newData.child('p').val() !== newData.child('f').val()`
+        + ` && ${T}.child('c/' + newData.child('c').val()).val() === newData.child('p').val())`
         + ` || (newData.child('y').val() === 'd' && ${U}.child('d').val() === now && !newData.child('c').exists()`
         + ` && newData.child('f').val() === ${U}.child('f').val() && newData.child('p').val() === ${ME}.child('f').val())))`,
       '.validate': "$id.matches(/^[A-Za-z0-9_-]{8,30}$/) && newData.hasChildren(['t', 'y', 'f', 'p', 'n', 'h'])",
-      t: { '.validate': true }, y: { '.validate': "newData.isString() && newData.val().matches(/^(t|d)$/)" },
+      t: { '.validate': true }, y: { '.validate': "newData.isString() && newData.val().matches(/^(t|d|f)$/)" },
       c: { '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/)" },
       f: { '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/)" },
       p: { '.validate': "newData.isString() && newData.val().matches(/^[a-tw]$/)" },

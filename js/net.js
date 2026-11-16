@@ -155,7 +155,7 @@
   N.take = async function (i) {
     const me = N.me, ck = N.canTake(i); if (!ck.ok) { const e = new Error(ck.why); e.why = ck.why; throw e; }
     const u = N.uid(), id = pid(), prev = N.cells[i];
-    const w = { ['c/' + i]: me.f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
+    const w = { ['c/' + i]: me.f, ['ct/' + i]: SV, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
     // この一手で名所を占領した・相手の占領をくずしたときは、記録に入れる（戦況に出す）
     const lm = N.LM.find(l => l.c.includes(i));
@@ -167,6 +167,14 @@
     if (!N.gm) me.t = N.now(); const k = (store('tk_k') || 0) + 1; store('tk_k', k);
     N.loadMe().catch(() => { }); N.loadState().catch(() => { });
     return { i, prev, n: N.s.n[me.f], k };
+  };
+  // そのマスが「同時」の取り合い中か（取られてから10秒以内か）
+  N.clashing = async function (i) { if (N.fake) return false; try { const ct = await rest('ct/' + i); return typeof ct === 'number' && N.now() - ct < 12000; } catch (e) { return false; } };
+  // 同時に攻めこんで敗れた：マスは取れないが、一手は使う（3時間待ち）
+  N.lose = async function (i) {
+    const me = N.me, u = N.uid(), id = pid(); if (N.gm || N.fake) return;
+    await update({ ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/l']: id, ['log/' + id]: Object.assign({ t: SV, y: 'f', c: String(i), f: me.f, p: N.cells[i], n: me.n, h: me.h, u }, me.r ? { r: true } : {}) });
+    me.t = N.now(); N.loadMe().catch(() => { });
   };
   N.defect = async function (to) {
     const me = N.me, u = N.uid(), id = pid(), from = me.f;
