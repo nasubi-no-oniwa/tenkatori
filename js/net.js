@@ -19,7 +19,7 @@
   N.offset = 0; N.now = () => Date.now() + N.offset;
   N.me = null; N.s = { n: {}, m: {}, ver: 0 }; N.cells = null; N.lastT = 0;
   // ---------- 名乗り（匿名） ----------
-  const AUTH = { up: 'https://identitytoolkit.googleapis.com/v1/accounts:signUp', ref: 'https://securetoken.googleapis.com/v1/token' };
+  const AUTH = G.TK_AUTHURL || { up: 'https://identitytoolkit.googleapis.com/v1/accounts:signUp', ref: 'https://securetoken.googleapis.com/v1/token' };
   const T = {};
   async function signIn() {
     const key = cfg().apiKey, sk = 'tk_auth', saved = store(sk);

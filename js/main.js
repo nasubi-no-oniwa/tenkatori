@@ -95,7 +95,7 @@
     $('rvDesc').textContent = TK.L(f.desc); $('rvCastle').textContent = TK.L(f.castle) + '　' + TK.kuni(M.prov[M.castle[f.L]]);
     $('rvHome').textContent = TK.lang() === 'en' ? '' : TK.L(f.home) + (TK.lang() === 'ja' ? 'の' : TK.lang() === 'zh' ? '的' : '의');
     $('rvForm').hidden = mode !== 'new'; $('rvGo').hidden = mode === 'new'; $('rvErr').textContent = ''; $('rvMsg').textContent = '';
-    $('rvYou').hidden = mode !== 'new'; $('rvType').hidden = false;
+    $('rvYou').hidden = mode !== 'new'; $('rvType').hidden = false; $('rvX').parentElement.hidden = mode !== 'new';
     if (G.gsap) { gsap.fromTo('#rvType', { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: 0.7, ease: 'back.out(1.6)', delay: 0.5 }); gsap.fromTo('.rvbox', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, delay: 1.1, ease: 'power3.out' }); }
     setTimeout(() => { if (TK.fx) { TK.fx('take', innerWidth / 2, innerHeight * 0.36); if (mode === 'defect') TK.fx('dark', innerWidth / 2, innerHeight * 0.5); } }, 600);
   }
