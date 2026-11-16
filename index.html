@@ -128,6 +128,7 @@ input#gmKey{width:100%;height:46px;border:1.5px solid var(--ink);background:#fbf
 #zoom{position:fixed;right:10px;bottom:calc(var(--sb) + 84px);z-index:9;display:flex;flex-direction:column;gap:7px}
 #zoom button{width:42px;height:42px;border-radius:50%;background:rgba(20,16,13,.88);color:var(--gold2);border:1px solid var(--gold);font-size:21px;line-height:1;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:var(--fb);font-weight:700}
 #zoom button:active{background:#000}
+#zLm{font-family:var(--ft)!important;font-weight:400!important;font-size:18px!important}#zLm.off{color:#7d6f55!important;border-color:#5a4d38!important;text-decoration:line-through}
 #nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(var(--sb) + 6px);background:linear-gradient(#1b1510,#14100d);border-top:1px solid var(--gold);box-shadow:0 -6px 18px rgba(0,0,0,.4)}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;font-size:11.5px;letter-spacing:.08em;color:#e6d8b4;font-weight:700;position:relative}
 #nav button i{width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);display:grid;place-items:center;font-style:normal;font-family:var(--ft);font-size:18px;color:var(--gold2);background:radial-gradient(circle at 35% 30%,#3a2c1e,#17110c)}
@@ -317,7 +318,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
  <button id="keyBar" hidden style="pointer-events:auto"><canvas id="keyIc" width="66" height="66"></canvas><span id="keyTx"></span></button>
  <div id="gmTag" hidden>GM</div>
  <div id="pinBar" hidden></div>
- <div id="zoom" style="pointer-events:auto"><button id="zIn">＋</button><button id="zOut">－</button><button id="zMe">◎</button></div>
+ <div id="zoom" style="pointer-events:auto"><button id="zLm">名</button><button id="zIn">＋</button><button id="zOut">－</button><button id="zMe">◎</button></div>
  <nav id="nav" style="pointer-events:auto">
   <button data-p="power"><i>勢</i><span></span></button>
   <button data-p="board"><i>議</i><span></span></button>

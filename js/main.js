@@ -332,6 +332,9 @@
   $('rvX').onclick = () => postX(quizText(rvF)); $('rvXi').onclick = async () => postImg(await quizCard(rvF), quizText(rvF), $('rvMsg'), 'tenkatori_' + rvF.L);
   $('rvGo').onclick = () => enterGame(true);
   $('hudMe').onclick = () => { if (N.gm) openPanel('gmpick'); else if (N.me) MP.focusFaction(N.me.f); else if (!N.ended() && !N.s.stop) startQuiz(); };
+  const setLM = on => { MP.showLM = on; $('zLm').className = on ? '' : 'off'; N.store('tk_lmui', on ? 1 : 0); MP.kick(); };
+  $('zLm').onclick = () => { setLM(!MP.showLM); toast(TK.L(MP.showLM ? ['名所の札を出しました', 'Site labels on', '已顯示名所標示', '명소 표시를 켰습니다'] : ['名所の札をかくしました（金のふちは残ります）', 'Site labels off (gold outlines stay)', '已隱藏名所標示（金框保留）', '명소 표시를 껐습니다 (금색 테두리는 남습니다)']), 1800); };
+  if (N.store('tk_lmui') === 0) setLM(false);
   $('zIn').onclick = () => MP.zoomBy(1.6); $('zOut').onclick = () => MP.zoomBy(1 / 1.6); $('zMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else MP.fit(); };
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { showCell(-1); openPanel(b.dataset.p); });
   $('cellX').onclick = () => showCell(-1); $('cellGo').onclick = doTake;

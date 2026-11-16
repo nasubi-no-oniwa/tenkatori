@@ -102,7 +102,7 @@
       for (let p = 0; p < M.provs.length; p++) { const l = M.plab[p]; if (!l) continue; const x = sx(l[0]), y = sy(l[1]); if (x < -60 || y < -20 || x > vw + 60 || y > vh + 20) continue; if (l[2] < 4 && z < 12) continue; const nm = TK.provName(p); c.lineWidth = 3.5; c.strokeStyle = 'rgba(244,236,214,.82)'; c.strokeText(nm, x, y); c.fillStyle = 'rgba(38,28,20,.86)'; c.fillText(nm, x, y); }
     }
     // 名所の札（印＋名前）。マスが見えるように、マスの上にはのせず、上のふちの外に出す。占領されていれば、その武将の家紋もつける
-    if (z >= 3.4) {
+    if (z >= 3.4 && MP.showLM) {
       c.textBaseline = 'middle';
       for (const lm of N.LM) {
         let top = 1e9; for (const i of lm.c) top = Math.min(top, cy(i));
@@ -154,6 +154,7 @@
     cv.addEventListener('wheel', e => { e.preventDefault(); const p = loc(e), wx = view.x + (p.x - vw / 2) / view.z, wy = view.y + (p.y - vh / 2) / view.z; view.z = Math.max(minZ, Math.min(maxZ, view.z * Math.exp(-e.deltaY * 0.0016))); view.x = wx - (p.x - vw / 2) / view.z; view.y = wy - (p.y - vh / 2) / view.z; clampView(); MP.kick(); }, { passive: false });
     cv.addEventListener('dblclick', e => e.preventDefault());
   };
+  MP.showLM = true;                                  // 名所の札を出すか（右下の「名」ボタンで切りかえ）
   MP.setGlow = (list, on) => { glow = list || []; glowOn = !!on; MP.kick(); };
   MP.select = i => { sel = i; MP.kick(); };
   MP.flash = (i, col, ms) => { flash.push({ i, col: col || '#ffe08a', t0: performance.now(), ms: ms || 900 }); MP.kick(); };
