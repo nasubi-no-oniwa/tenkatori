@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       op:
-        description: 'stop＝開戦準備中にする／open＝外す／launch＝公開（記録を全部消して最初の地図に戻す）'
+        description: 'stop＝開戦準備中にする／open＝外す（開戦）／reset＝記録を全部消して最初の地図に戻す（準備中のまま）／launch＝消して開戦'
         required: true
         type: choice
-        options: [stop, open, launch]
+        options: [stop, open, reset, launch]
 permissions:
   contents: read
 concurrency:

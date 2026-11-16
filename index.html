@@ -117,14 +117,11 @@ canvas{display:block}
 #telop.lost{border-color:#8a8d93;color:#d8d2c2}#telop.lost b{color:#fff}
 #keyBar{position:fixed;left:8px;top:calc(var(--st) + 66px);z-index:9;font-size:12px;font-weight:800;letter-spacing:.04em;padding:4px 11px 4px 5px;background:rgba(20,16,13,.9);color:#fff3da;border:1px solid var(--shu);border-radius:15px;display:flex;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(0,0,0,.35)}
 #keyIc{width:22px;height:22px}
-#gmTag{position:fixed;right:8px;top:calc(var(--st) + 66px);z-index:9;font-size:11.5px;font-weight:800;padding:5px 10px;background:var(--shu);color:#fff3da;border-radius:15px;box-shadow:0 3px 10px rgba(0,0,0,.35)}
 #cellLm{font-size:12.5px;font-weight:800;color:#7a5a12;border-top:1px dashed #a08b66;padding-top:7px;text-align:left}
 .lmRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px dotted #a8946c}
 .lmRow canvas{width:34px;height:34px}.lmRow .nm{font-weight:800;font-size:14.5px;line-height:1.25}.lmRow .nm small{display:block;font-weight:500;font-size:11px;color:var(--sub)}
 .lmRow .st{font-size:12.5px;font-weight:800;text-align:right;display:flex;align-items:center;gap:6px;justify-content:flex-end}.lmRow .st canvas{width:24px;height:24px}
 .lmRow .st.no{color:var(--sub);font-weight:500}
-.gmGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.gmGrid button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:800;color:var(--ink)}.gmGrid canvas{width:46px;height:46px}
-input#gmKey{width:100%;height:46px;border:1.5px solid var(--ink);background:#fbf5e4;padding:0 10px;font-size:16px;border-radius:3px;color:var(--ink)}
 #zoom{position:fixed;right:10px;bottom:calc(var(--sb) + 84px);z-index:9;display:flex;flex-direction:column;gap:7px}
 #zoom button{width:42px;height:42px;border-radius:50%;background:rgba(20,16,13,.88);color:var(--gold2);border:1px solid var(--gold);font-size:21px;line-height:1;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:var(--fb);font-weight:700}
 #zoom button:active{background:#000}
@@ -316,7 +313,6 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
   <div id="hudTimer"><small id="hudTL"></small><b id="hudT"></b></div>
  </div>
  <button id="keyBar" hidden style="pointer-events:auto"><canvas id="keyIc" width="66" height="66"></canvas><span id="keyTx"></span></button>
- <div id="gmTag" hidden>GM</div>
  <div id="pinBar" hidden></div>
  <div id="zoom" style="pointer-events:auto"><button id="zLm">名</button><button id="zIn">＋</button><button id="zOut">－</button><button id="zMe">◎</button></div>
  <nav id="nav" style="pointer-events:auto">

@@ -65,7 +65,7 @@ export async function run(drv, log = console.log) {
   log('3) 掲示板');
   const post = (u, room, o, x = {}) => drv.update(Object.assign({ ['u/' + u + '/bt']: SV, ['b/' + room + '/' + pid()]: Object.assign({ t: SV, u }, o) }, x), u);
   await yes(post(A, 'a', { n: '与作', h: 'a', f: 'a', m: '美濃を攻めよう' }), 'Aが織田の軍議に書く');
-  await no(post(A, 'a', { n: '与作', h: 'a', f: 'a', m: 'すぐもう一回' }), '15秒たつまで次は書けない');
+  await no(post(A, 'a', { n: '与作', h: 'a', f: 'a', m: 'すぐもう一回' }), '30秒たつまで次は書けない');
   await no(post(B, 'a', { n: '太郎', h: 'b', f: 'b', m: 'しのびこむ' }), '他の陣営の軍議には書けない');
   ok(!(await drv.read('b/a', B)).ok, '他の陣営の軍議は読めない');
   ok((await drv.read('b/a', A)).ok, '自分の陣営の軍議は読める');

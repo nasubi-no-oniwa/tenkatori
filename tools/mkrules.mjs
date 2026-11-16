@@ -90,6 +90,7 @@ tk.k = { '.read': false, '.write': false };
     stop: { '.write': ADMIN, '.validate': 'newData.val() === true' },
     pin: { '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length <= 300' },
     ver: { '.write': ADMIN, '.validate': 'newData.isNumber()' },
+    pi: { '.write': ADMIN, '.validate': 'newData.isNumber() && newData.val() >= 20 && newData.val() <= 600' },   // 読みなおしの間隔（秒）
     $other: { '.validate': false },
   };
 }
@@ -123,7 +124,7 @@ tk.k = { '.read': false, '.write': false };
       l: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{8,30}$/)" },
       d: { '.write': SELF, '.validate': "newData.val() === now && data.parent().child('f').exists() && newData.parent().child('f').val() !== data.parent().child('f').val()" },
       r: { '.write': SELF, '.validate': "newData.val() === true && (data.val() === true || newData.parent().child('d').val() === now)" },
-      bt: { '.write': `${SELF} && newData.exists()`, '.validate': "newData.val() === now && (!data.exists() || now - data.val() >= 15000)" },
+      bt: { '.write': `${SELF} && newData.exists()`, '.validate': "newData.val() === now && (!data.exists() || now - data.val() >= 30000)" },
       a: { '.write': `${SELF} && newData.exists()`, '.validate': "newData.val() === now && (!data.exists() || now - data.val() >= 60000)" },
       $other: { '.validate': false },
     },

@@ -117,8 +117,10 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
       } else if (tabNow === 'set') {
         const s = await get('s');
         V.innerHTML = `<div class="box"><h2>お知らせ（タイトルと地図の上に出ます。300文字まで）</h2><textarea id="pin" maxlength="300">${esc(s.pin || '')}</textarea><div class="row"><button class="b go" id="pinS">出す</button><button class="b" id="pinX">消す</button></div></div>
+        <div class="box"><h2>読みなおしの間隔（人が増えて通信が多くなったら、長くする）</h2>いま：<b>${s.pi || 30}秒</b>ごとに、みんなの画面が地図を読みなおします。<div class="row">${[30, 60, 120, 300].map(v => `<button class="b" data-pi="${v}">${v}秒</button>`).join('')}</div><span style="color:var(--sub);font-size:13px">変えてから、みんなの画面に届くまで5分ほどかかります。</span></div>
         <div class="box"><h2>一時停止（マスを取れなくする）</h2>いま：<b>${s.stop ? '止めています' : '動いています'}</b><div class="row"><button class="b red" id="stopOn">止める</button><button class="b" id="stopOff">再開する</button></div></div>
         <div class="box"><h2>終わり</h2>いま：<b>${s.end ? esc(fn(s.end.f)) + ' が天下統一（' + when(s.end.t) + '）' : 'まだ終わっていません'}</b><br><span style="color:var(--sub);font-size:13px">2500マスに届くと自動で終わります。11/30 23:59 を過ぎても自動で終わります。</span>${s.end ? '<div class="row"><button class="b red" id="endX">終わりを取り消す（まちがって終わったとき）</button></div>' : ''}</div>`;
+        V.querySelectorAll('[data-pi]').forEach(b => b.onclick = async () => { await send('PUT', 's/pi', +b.dataset.pi); say('変えました'); render(); });
         $('pinS').onclick = async () => { await send('PUT', 's/pin', $('pin').value.slice(0, 300)); say('出しました'); }; $('pinX').onclick = async () => { await patch({ 's/pin': null }); say('消しました'); render(); };
         $('stopOn').onclick = async () => { if (confirm('マスを取れなくします。よいですか？')) { await send('PUT', 's/stop', true); render(); } }; $('stopOff').onclick = async () => { await patch({ 's/stop': null }); render(); };
         if ($('endX')) $('endX').onclick = async () => { if (confirm('終わりを取り消します。よいですか？')) { await patch({ 's/end': null }); render(); } };

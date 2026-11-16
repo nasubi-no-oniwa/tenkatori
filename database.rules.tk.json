@@ -63,6 +63,10 @@
    ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
    ".validate": "newData.isNumber()"
   },
+  "pi": {
+   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
+   ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 600"
+  },
   "$other": {
    ".validate": false
   }
@@ -117,7 +121,7 @@
    },
    "bt": {
     ".write": "auth != null && auth.uid === $uid && newData.exists()",
-    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 15000)"
+    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 30000)"
    },
    "a": {
     ".write": "auth != null && auth.uid === $uid && newData.exists()",

@@ -87,7 +87,7 @@
     bd_mine: ['{name}軍の軍議', '{name}\'s council', '{name}軍的軍議', '{name}군의 군의'], bd_all: ['全体', 'Everyone', '全體', '전체'],
     bd_ph: ['100文字まで', 'Up to 100 characters', '最多100字', '100자까지'], bd_send: ['書く', 'Post', '發言', '쓰기'],
     bd_empty: ['まだ書きこみがありません', 'No posts yet', '還沒有留言', '아직 글이 없습니다'],
-    bd_wait: ['少し待ってから書いてください', 'Please wait a little before posting again', '請稍等一下再發言', '잠시 기다린 뒤 써 주세요'],
+    bd_wait: ['書けるのは30秒に1回です。少し待ってください', 'You can post once every 30 seconds. Please wait a little', '每30秒只能發言一次，請稍等', '30초에 한 번만 쓸 수 있습니다. 잠시 기다려 주세요'],
     bd_only: ['この板は、同じ陣営の人だけが読み書きできます', 'Only members of your side can read and write here', '這個板只有同陣營的人能讀寫', '이 게시판은 같은 진영 사람만 읽고 쓸 수 있습니다'],
     bd_need: ['仕官すると書けます', 'Enlist to post', '出仕後才能發言', '출사하면 쓸 수 있습니다'],
     lg_take: ['{who} が {p} の一マスを {from}軍 から奪った', '{who} seized a tile in {p} from {from}', '{who} 從{from}軍手中奪下{p}的一格', '{who} 이(가) {p}의 한 칸을 {from}군에게서 빼앗았다'],

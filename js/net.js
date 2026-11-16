@@ -91,13 +91,13 @@
     for (const j of mine) { if (CASTLE.has(j)) { via = j; break; } const k = ADJ[j].find(x => N.cells[x] === me.f || N.cells[x] === 'w'); if (k !== undefined) { via = j; w = k; break; } }
     if (via === undefined) return { ok: false, why: 'boxed' };
     if (N.ended()) return { ok: false, why: 'end', via };
-    if (N.s.stop && !N.gm) return { ok: false, why: 'stop', via };
+    if (N.s.stop) return { ok: false, why: 'stop', via };
     if (N.wait() > 0) return { ok: false, why: 'wait', via };
     return { ok: true, via, w };
   };
   const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
   N.takeable = function () { const me = N.me, out = []; if (!me || !N.cells) return out; for (let i = 0; i < NC; i++) if (N.cells[i] !== me.f && !CASTLE.has(i) && ADJ[i].some(j => N.cells[j] === me.f && alive(j, me.f))) out.push(i); return out; };
-  N.wait = () => { const me = N.me; if (N.gm || !me || !me.t) return 0; return Math.max(0, me.t + TK.WAIT - N.now()); };
+  N.wait = () => { const me = N.me; if (!me || !me.t) return 0; return Math.max(0, me.t + TK.WAIT - N.now()); };
   N.ended = () => !!(N.s && N.s.end) || N.now() > TK.END;
   // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
   // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
@@ -111,8 +111,9 @@
   N.defectWait = () => { const me = N.me; if (!me || !me.d) return 0; return Math.max(0, me.d + TK.DEFECT - N.now()); };
 
   // ---------- 読む ----------
-  N.loadState = async function () { const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); return N.s; };
-  N.loadMe = async function () { if (N.gm) return N.me; if (N.fake) { N.me = FK.me(); return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; return N.me; };
+  let stateAt = 0;
+  N.loadState = async function () { const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); stateAt = Date.now(); return N.s; };
+  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; return N.me; };
   function applyLog(list) { for (const e of list) { if (e.y === 't' && e.c != null && N.cells) N.cells[+e.c] = e.f; if (e.t > N.lastT) N.lastT = e.t; } }
   function saveCells() { store('tk_c', { c: N.cells.join(''), t: N.lastT, ver: N.s.ver || 0, at: Date.now() }); }
   // 地図を読む。戻り値：前に見たあとに起きたこと（記録の並び。はじめてなら空）
@@ -134,10 +135,12 @@
   N.poll = async function () {
     if (N.fake) return FK.poll();
     const ver = N.s.ver || 0;
-    const [s, v] = await Promise.all([N.loadState(), rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 })]);
-    if ((s.ver || 0) !== ver) { store('tk_c', null); await N.loadCells(); return [{ reload: true }]; }
-    const list = sorted(v); applyLog(list); if (list.length) saveCells(); return list;
+    const list = sorted(await rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 }));
+    if (list.length || Date.now() - stateAt > 300000) { const s = await N.loadState(); if ((s.ver || 0) !== ver) { store('tk_c', null); await N.loadCells(); return [{ reload: true }]; } }
+    applyLog(list); if (list.length) saveCells(); return list;
   };
+  // 読みなおしの間隔（秒）。管理画面で変えられる（人が増えて通信が多くなったら、長くする）
+  N.pollSec = () => Math.max(20, Math.min(600, +(N.s && N.s.pi) || 30));
   N.recent = async function (n) { if (N.fake) return FK.log.slice(-n); return sorted(await rest('log', { orderBy: 't', limitToLast: n || 40 })); };
   // 時計合わせ（データベースの時計とのずれ）と、開いている印
   N.ping = async function () {
@@ -161,10 +164,9 @@
     const lm = N.LM.find(l => l.c.includes(i));
     if (lm) { const was = N.holder(lm); if (was && was !== me.f) w['log/' + id].x = lm.id; if (lm.c.every(c => c === i || N.cells[c] === me.f)) w['log/' + id].k = lm.id; }
     if ((N.s.n[me.f] || 0) + 1 >= TK.HALF) w['s/end'] = { f: me.f, t: SV, k: 'half' };
-    if (N.gm) { for (const k of Object.keys(w)) if (k.startsWith('u/')) delete w[k]; }     // GMモード：管理人として書く（待ちなし）
     await update(w);
     N.cells[i] = me.f; N.s.n[me.f] = (N.s.n[me.f] || 0) + 1; N.s.n[prev] = (N.s.n[prev] || 0) - 1;
-    if (!N.gm) me.t = N.now(); const k = (store('tk_k') || 0) + 1; store('tk_k', k);
+    me.t = N.now(); const k = (store('tk_k') || 0) + 1; store('tk_k', k);
     N.loadMe().catch(() => { }); N.loadState().catch(() => { });
     return { i, prev, n: N.s.n[me.f], k };
   };
@@ -172,7 +174,7 @@
   N.clashing = async function (i) { if (N.fake) return false; try { const ct = await rest('ct/' + i); return typeof ct === 'number' && N.now() - ct < 12000; } catch (e) { return false; } };
   // 同時に攻めこんで敗れた：マスは取れないが、一手は使う（3時間待ち）
   N.lose = async function (i) {
-    const me = N.me, u = N.uid(), id = pid(); if (N.gm || N.fake) return;
+    const me = N.me, u = N.uid(), id = pid(); if (N.fake) return;
     await update({ ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/l']: id, ['log/' + id]: Object.assign({ t: SV, y: 'f', c: String(i), f: me.f, p: N.cells[i], n: me.n, h: me.h, u }, me.r ? { r: true } : {}) });
     me.t = N.now(); N.loadMe().catch(() => { });
   };
@@ -191,13 +193,8 @@
   N.post = async function (room, m) {
     const me = N.me, u = N.uid(); m = String(m || '').replace(/[\u0000-\u001f]/g, ' ').trim(); m = Array.from(m).slice(0, 100).join(''); if (!m) throw new Error('empty');
     if (N.fake) return FK.post(room, m);
-    if (N.gm) return update({ ['b/' + room + '/' + pid()]: { t: SV, u, n: 'なすP', m, g: true } });
     await update({ ['u/' + u + '/bt']: SV, ['b/' + room + '/' + pid()]: Object.assign({ t: SV, u, n: me.n, h: me.h, f: me.f, m }, me.r ? { r: true } : {}) });
   };
-  // GMモード（公開までの試し用）：管理のかぎで入る。どの陣営にもなれて、待ちなしで取れる
-  N.gm = false;
-  N.gmLogin = async function (key) { await N.token(false); if (key) await write('PUT', 'ft_admins/' + N.uid(), String(key), true); await rest('ask', { orderBy: 't', limitToLast: 1 }, true); N.gm = true; store('tk_gm', 1); return true; };
-  N.gmSet = function (L) { N.me = { f: L, h: L, n: 'なすP', gm: true }; store('tk_gmf', L); return N.me; };
   N.ask = async function (m, x, l, name) {
     if (N.fake) return; await N.token(false); const u = N.uid();
     await update({ ['u/' + u + '/a']: SV, ['ask/' + pid()]: { t: SV, u, m: Array.from(String(m || '')).slice(0, 300).join(''), x: N.cleanX(x), l: l || 'ja', n: String(name || '').slice(0, 30) } });

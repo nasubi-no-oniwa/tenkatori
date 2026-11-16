@@ -9,6 +9,7 @@
   const ev = (n, o) => { try { if (typeof gtag === 'function') gtag('event', n, Object.assign({ game: 'tenkatori' }, o || {})); } catch (e) { } };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let pollAt = 0;
   let lastTake = null;                       // 自分が最後に取ったマス（同時に攻めこまれて奪われたときの知らせ用）
   let scr = 'title', mapInit = false, pollT = 0, selCell = -1, busy = false, endShown = false, lastSeenLog = 0, newLog = 0;
   // 3Dの場面（読みこみが終わる前に頼まれた分は、覚えておいて後で出す）
@@ -94,7 +95,7 @@
     renderTitle(); if (scr === 'quiz') renderQ(); if (scr === 'game') { updateHud(); MP.kick(); if (selCell >= 0) showCell(selCell); }
   }
   function renderTitle() {
-    const ended = N.ended(), prep = !!(N.s && N.s.stop) && !N.gm && !ended;
+    const ended = N.ended(), prep = !!(N.s && N.s.stop) && !ended;
     $('tClock').textContent = ended ? t('t_ended') : prep ? t('prep') + '　' + t('prep_note') : t('t_until', { t: TK.dur(TK.END - N.now()) });
     $('bStart').textContent = ended ? t('en_map') : prep ? t('prep') : N.me ? t('cont') : t('start');
     $('bStart').disabled = prep && !N.me; $('bWatch').hidden = (!!N.me && !prep) || ended;
@@ -129,7 +130,6 @@
   async function join() {
     if (busy) return; const name = N.cleanName($('rvName').value); if (!name) { $('rvErr').textContent = t('rv_noname'); return; }
     busy = true; $('rvJoin').disabled = true; $('rvErr').textContent = '';
-    if (N.gm) { N.gmSet(rvF.L); await enterGame(true); busy = false; $('rvJoin').disabled = false; return; }
     try { await N.join(rvF.L, name); ev('join', { warlord: rvF.L }); if (TK.fx) TK.fx('confetti', innerWidth / 2, innerHeight * 0.6); await sleep(500); await enterGame(true); }
     catch (e) { $('rvErr').textContent = t('net_err'); try { await N.loadMe(); if (N.me) await enterGame(true); } catch (e2) { } }
     busy = false; $('rvJoin').disabled = false;
@@ -138,8 +138,7 @@
   // ---------- 地図の画面 ----------
   function updateHud() {
     const me = N.me, f = me ? TK.FI[me.f] : null;
-    $('gmTag').hidden = !N.gm;
-    if (f) { drawCrest($('hudCrest'), f); $('hudName').textContent = N.gm ? 'なすP（GM）▼' : TK.who(me.n, me.h, me.r); $('hudArmy').textContent = TK.army(f) + '　' + t('cells', { n: N.s.n[f.L] || 0 }) + '・' + t('rank', { n: rankOf(f.L) }); }
+    if (f) { drawCrest($('hudCrest'), f); $('hudName').textContent = TK.who(me.n, me.h, me.r); $('hudArmy').textContent = TK.army(f) + '　' + t('cells', { n: N.s.n[f.L] || 0 }) + '・' + t('rank', { n: rankOf(f.L) }); }
     else { const c = $('hudCrest').getContext('2d'); c.clearRect(0, 0, 126, 126); c.drawImage(TK.kamon('rokumon', 100, '#c9a44c'), 13, 13); $('hudName').textContent = t('watch'); $('hudArmy').textContent = N.ended() ? t('t_ended') : N.s.stop ? t('prep') : '▶ ' + t('start'); }
     tick(); const pin = N.s.pin; $('pinBar').hidden = !pin; if (pin) $('pinBar').textContent = t('notice') + '：' + pin;
     const em = $('nav').children[2].querySelector('em'); if (newLog > 0) { if (!em) { const e = document.createElement('em'); e.textContent = newLog > 99 ? '99+' : newLog; $('nav').children[2].appendChild(e); } else em.textContent = newLog > 99 ? '99+' : newLog; } else if (em) em.remove();
@@ -150,13 +149,13 @@
     const tm = $('hudTimer');
     if (N.ended()) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('t_ended'); $('hudT').style.fontSize = '14px'; if (!endShown) checkEnd(); return; }
     if (!N.me) { tm.className = ''; $('hudTL').textContent = t('t_until', { t: '' }).replace(/\s+$/, ''); $('hudT').textContent = TK.dur(TK.END - N.now()); $('hudT').style.fontSize = '15px'; return; }
-    if (N.s.stop && !N.gm) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('prep'); $('hudT').style.fontSize = '14px'; return; }
+    if (N.s.stop) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('prep'); $('hudT').style.fontSize = '14px'; return; }
     $('hudT').style.fontSize = ''; const w = N.wait(), ready = w <= 0;
     tm.className = ready ? 'ready' : ''; $('hudTL').textContent = t('hud_wait'); $('hudT').textContent = ready ? t('hud_ready') : TK.clock(w);
     if (ready !== wasReady) { wasReady = ready; refreshGlow(); if (selCell >= 0) showCell(selCell); }
     else if (!ready && selCell >= 0 && !$('cell').hidden) { const ck = N.canTake(selCell); if (ck.why === 'wait') $('cellWhy').textContent = t('why_wait', { t: TK.clock(w) }); }
   }
-  function refreshGlow() { MP.setGlow(N.me && !N.ended() ? N.takeable() : [], N.me && N.wait() <= 0 && (!N.s.stop || N.gm)); }
+  function refreshGlow() { MP.setGlow(N.me && !N.ended() ? N.takeable() : [], N.me && N.wait() <= 0 && !N.s.stop); }
   function showCell(i) {
     selCell = i; MP.select(i); const box = $('cell'); if (i < 0) { box.hidden = true; return; }
     const L = N.cells[i], f = TK.FI[L] || null, cas = N.CASTLE.get(i);
@@ -222,7 +221,7 @@
     $('loading').classList.add('off');
     if (fresh && N.me && G.gsap) { const z = MP.view.z; MP.view.z = z * 0.45; MP.go(MP.view.x, MP.view.y, z, 1.6); }
     if (N.me) N.ping().then(() => tick());
-    clearInterval(pollT); pollT = setInterval(poll, 30000);
+    clearInterval(pollT); pollAt = Date.now(); pollT = setInterval(() => { if (Date.now() - pollAt >= N.pollSec() * 1000 - 500) { pollAt = Date.now(); poll(); } }, 5000);
     // 留守の間の戦況
     const seen = N.store('tk_seen'); lastSeenLog = N.lastT;
     if (N.me && seen && events.length) { const my = N.me.f; let gain = 0, lost = 0; const by = {}; for (const e of events) { if (e.y !== 't' || e.t <= seen) continue; if (e.f === my) gain++; else if (e.p === my) { lost++; by[e.f] = (by[e.f] || 0) + 1; } } if (gain + lost > 0) openPanel('away', { gain, lost, by }); }
@@ -255,13 +254,12 @@
       B.innerHTML = h; B.querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c])); B.querySelectorAll('.pw').forEach(r => r.onclick = () => { closePanel(); MP.focusFaction(r.dataset.l); });
     } else if (kind === 'board') {
       T.textContent = t('nav_board'); const rooms = me ? [[me.f, t('bd_mine', { name: TK.fname(TK.FI[me.f]) })], ['all', t('bd_all')]] : [['all', t('bd_all')]];
-      if (N.gm && rooms[0][0] !== bdRoom && bdRoom !== 'all') bdRoom = rooms[0][0];
       if (!rooms.some(r => r[0] === bdRoom)) bdRoom = rooms[0][0]; if (arg && arg.room) bdRoom = arg.room;
       rooms.forEach(([r, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = r === bdRoom ? 'on' : ''; b.onclick = () => { bdRoom = r; openPanel('board'); }; TB.appendChild(b); });
       B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
       if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('bd_wait') : t('net_err')); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
       else F.innerHTML = `<p class="note" style="text-align:center">${esc(t('bd_need'))}</p>`;
-      bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 20000);
+      bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 30000);
     } else if (kind === 'log') {
       T.textContent = t('nav_log'); B.innerHTML = `<p class="note">${esc(t('loading'))}</p>`; newLog = 0; updateHud();
       N.recent(60).then(list => { if (pKind !== 'log') return; if (!list.length) { B.innerHTML = `<p class="note">${esc(t('lg_empty'))}</p>`; return; } const now = N.now(); B.innerHTML = list.reverse().map(e => { const f = TK.FI[e.f], pf = TK.FI[e.p], who = '<b>' + esc(TK.who(e.n, e.h, e.r)) + '</b>'; const txt = e.y === 'f' ? t('lg_fail', { who, p: esc(TK.kuni(M.prov[+e.c])), to: esc(pf ? TK.fname(pf) : '') }) : e.y === 'd' ? t('lg_defect', { who, from: esc(pf ? TK.fname(pf) : ''), to: esc(TK.fname(f)) }) : pf ? t('lg_take', { who, p: esc(TK.kuni(M.prov[+e.c])), from: esc(TK.fname(pf)) }) : t('lg_takew', { who, p: esc(TK.kuni(M.prov[+e.c])) }); const lmK = e.k && N.LM.find(l => l.id === e.k), lmX = e.x && N.LM.find(l => l.id === e.x); let ex = '';
@@ -270,7 +268,7 @@
         return ex + `<div class="lg" data-c="${e.y === 'd' ? -1 : +e.c}"><i style="background:${f ? f.col : '#fff'}"></i><div>${txt}</div><span>${esc(TK.ago(e.t, now))}</span></div>`; }).join(''); B.querySelectorAll('.lg').forEach(r => r.onclick = () => { const c = +r.dataset.c; if (c >= 0) { closePanel(); MP.focusCell(c, 18); MP.flash(c, '#fff', 1500); } }); }).catch(() => { B.innerHTML = `<p class="note">${esc(t('net_err'))}</p>`; });
     } else if (kind === 'defect') {
       T.textContent = t('nav_defect'); let h = `<p>${esc(t('df_body'))}</p>`;
-      if (N.gm) h += `<p class="note">GMモードでは、上の家紋を押して陣営を切りかえます。</p>`; else if (!me) h += `<p class="note">${esc(t('why_nome'))}</p>`; else if (N.ended()) h += `<p class="note">${esc(t('t_ended'))}</p>`;
+      if (!me) h += `<p class="note">${esc(t('why_nome'))}</p>`; else if (N.ended()) h += `<p class="note">${esc(t('t_ended'))}</p>`;
       else if (N.s.stop) h += `<p class="note">${esc(t('prep'))}</p>`;
       else { const w = N.defectWait(), weak = N.weakest().filter(L => L !== me.f); if (w > 0) h += `<p style="font-weight:800;color:var(--shu2)">${esc(t('df_wait', { t: TK.dur(w) }))}</p>`; h += `<p class="note" style="margin-top:12px">${esc(t('df_to'))}</p>`; if (!weak.length) h += `<p style="font-weight:800">${esc(t('df_none'))}</p>`; for (const L of weak) { const f = TK.FI[L]; h += `<div class="dfTo"><canvas width="114" height="114" data-c="${L}"></canvas><b>${esc(TK.fname(f))}<br><small style="font-weight:500;color:var(--sub)">${esc(t('cells', { n: N.s.n[L] || 0 }))}</small></b>${w > 0 ? '' : `<button class="btn" data-go="${L}">${esc(t('df_yes'))}</button>`}</div>`; } }
       B.innerHTML = h; B.querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
@@ -285,12 +283,6 @@
     } else if (kind === 'ask') {
       T.textContent = t('askbtn'); B.innerHTML = `<textarea id="akM" maxlength="300" placeholder="${esc(t('ak_ph'))}"></textarea><input id="akX" maxlength="16" placeholder="${esc(t('ak_x'))}" autocomplete="off"><p class="note" id="akMsg"></p>`;
       F.innerHTML = `<button class="btn main" id="akS">${esc(t('ak_send'))}</button>`; $('akS').onclick = async () => { const m = $('akM').value.trim(); if (!m) return; $('akS').disabled = true; try { await N.ask(m, $('akX').value, TK.lang(), me ? TK.fname(TK.FI[me.f]) + ' ' + me.n : ''); B.innerHTML = `<p style="text-align:center;font-weight:800;margin:26px 0">${esc(t('ak_done'))}</p>`; F.innerHTML = ''; ev('ask'); } catch (e) { $('akMsg').textContent = e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('ak_wait') : t('net_err'); $('akS').disabled = false; } };
-    } else if (kind === 'gmkey') {
-      T.textContent = 'GMモード'; B.innerHTML = `<p>管理のかぎを入れてください（Fairies' Tower・エンピツライフと同じかぎ）。</p><input id="gmKey" type="password" autocomplete="off"><p class="note" id="gmMsg" style="margin-top:8px"></p>`;
-      F.innerHTML = `<button class="btn main" id="gmGo">入る</button>`; $('gmGo').onclick = async () => { $('gmGo').disabled = true; try { await N.gmLogin($('gmKey').value); gmStart(); } catch (e) { $('gmMsg').textContent = 'かぎが合いません'; $('gmGo').disabled = false; } };
-    } else if (kind === 'gmpick') {
-      T.textContent = 'GM：陣営を選ぶ'; const d = document.createElement('div'); d.className = 'gmGrid'; for (const f of TK.F) { const b = document.createElement('button'); b.innerHTML = `<canvas width="138" height="138"></canvas>${esc(f.nm[0])}<br>${N.s.n[f.L] || 0}`; drawCrest(b.querySelector('canvas'), f); b.onclick = async () => { N.gmSet(f.L); closePanel(); if (scr !== 'game') await enterGame(); else { refreshGlow(); updateHud(); MP.focusFaction(f.L); } }; d.appendChild(b); } B.appendChild(d);
-      B.insertAdjacentHTML('beforeend', '<p class="note" style="margin-top:12px">GMモード：どの陣営にもなれて、待ちなしで何マスでも取れます。軍議はどの陣営の板にも「なすP」として書けます。公開のときに、記録は全部消します。</p>');
     } else if (kind === 'away') {
       T.textContent = t('aw_title'); let h = `<div class="aw"><div class="g">${esc(t('aw_gain'))}<b>＋${arg.gain}</b></div><div class="l">${esc(t('aw_lost'))}<b>−${arg.lost}</b></div></div>`;
       const top = Object.entries(arg.by).sort((a, b) => b[1] - a[1])[0]; if (top) h += `<p style="font-weight:800;text-align:center">${esc(t('aw_by', { name: TK.fname(TK.FI[top[0]]), n: top[1] }))}</p>`;
@@ -330,20 +322,15 @@
   }
   const endText = () => { const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
 
-  // ---------- GMモード（公開までの試し用。URL に ?gm=1 をつけて、管理のかぎで入る） ----------
-  const GMQ = /[?&]gm=1/.test(location.search);
-  function gmStart() { N.gmSet(N.store('tk_gmf') || 'a'); renderTitle(); openPanel('gmpick'); }
-  async function gmBoot() { if (!GMQ || N.fake) return; try { if (N.store('tk_gm')) { await N.gmLogin(''); gmStart(); return; } } catch (e) { } openPanel('gmkey'); }
-
   // ---------- ボタン ----------
-  $('bStart').onclick = () => { if (N.gm) startQuiz(); else if (N.me || N.ended()) enterGame(); else startQuiz(); };
+  $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
   $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
   $('bWatch').onclick = () => enterGame(); $('bHow').onclick = () => openPanel('how'); $('bLang').onclick = () => openPanel('lang'); $('bAsk').onclick = () => openPanel('ask');
   $('qBack').onclick = () => { if (qi > 0) { qi--; renderQ(); } else { show('title'); scene('title'); } };
   $('rvJoin').onclick = join; $('rvName').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.target.blur(); join(); } });
   $('rvX').onclick = () => postX(quizText(rvF)); $('rvXi').onclick = async () => postImg(await quizCard(rvF), quizText(rvF), $('rvMsg'), 'tenkatori_' + rvF.L);
   $('rvGo').onclick = () => enterGame(true);
-  $('hudMe').onclick = () => { if (N.gm) openPanel('gmpick'); else if (N.me) MP.focusFaction(N.me.f); else if (!N.ended() && !N.s.stop) startQuiz(); };
+  $('hudMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else if (!N.ended() && !N.s.stop) startQuiz(); };
   const setLM = on => { MP.showLM = on; $('zLm').className = on ? '' : 'off'; N.store('tk_lmui', on ? 1 : 0); MP.kick(); };
   $('zLm').onclick = () => { setLM(!MP.showLM); toast(TK.L(MP.showLM ? ['名所の札を出しました', 'Site labels on', '已顯示名所標示', '명소 표시를 켰습니다'] : ['名所の札をかくしました（金のふちは残ります）', 'Site labels off (gold outlines stay)', '已隱藏名所標示（金框保留）', '명소 표시를 껐습니다 (금색 테두리는 남습니다)']), 1800); };
   if (N.store('tk_lmui') === 0) setLM(false);
@@ -368,7 +355,7 @@
     await fontReady('毘天下取りマース一二三四勢議報返他');
     try { await Promise.race([N.loadState(), sleep(6000)]); } catch (e) { }
     try { if (!N.fake) { if ((N.store('tk_auth') || {}).rt) await Promise.race([N.loadMe(), sleep(6000)]); } else await N.loadMe(); } catch (e) { }
-    renderTitle(); $('loading').classList.add('off'); setInterval(tick, 1000); gmBoot();
+    renderTitle(); $('loading').classList.add('off'); setInterval(tick, 1000);
     const q = new URLSearchParams(location.search);
     if (q.get('go') === 'map') enterGame(); else if (q.get('go') === 'quiz') startQuiz(); else if (q.get('go') === 'reveal') showReveal(TK.F[+(q.get('f') || 0)], 'new');
   })();
