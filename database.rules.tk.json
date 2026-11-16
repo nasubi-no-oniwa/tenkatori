@@ -149,6 +149,9 @@
    "r": {
     ".validate": "newData.val() === true"
    },
+   "u": {
+    ".validate": "newData.val() === auth.uid"
+   },
    "$other": {
     ".validate": false
    }

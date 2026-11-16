@@ -16,7 +16,7 @@ export async function run(drv, log = console.log) {
   const yes = async (p, m) => ok(await p === true, m), no = async (p, m) => ok(await p === false, m + '（はじかれる）');
   const A = await drv.user('A'), B = await drv.user('B'), C = await drv.user('C'), D = await drv.user('D'), E = await drv.user('E');
   const join = (u, f, nm, x = {}) => drv.update(Object.assign({ ['u/' + u + '/f']: f, ['u/' + u + '/h']: f, ['u/' + u + '/n']: nm, ['u/' + u + '/j']: SV, ['s/m/' + f]: INC(1) }, x), u);
-  const take = (u, c, v, f, p, nm, x = {}) => { const id = pid(); return drv.update(Object.assign({ ['c/' + c]: f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(c), ['u/' + u + '/v']: String(v), ['u/' + u + '/l']: id, ['s/n/' + f]: INC(1), ['s/n/' + p]: INC(-1), ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(c), f, p, n: nm, h: x.h || f }, x.r ? { r: true } : {}) }, x.more || {}), u); };
+  const take = (u, c, v, f, p, nm, x = {}) => { const id = pid(); return drv.update(Object.assign({ ['c/' + c]: f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(c), ['u/' + u + '/v']: String(v), ['u/' + u + '/l']: id, ['s/n/' + f]: INC(1), ['s/n/' + p]: INC(-1), ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(c), f, p, n: nm, h: x.h || f, u: x.u || u }, x.r ? { r: true } : {}) }, x.more || {}), u); };
 
   log('1) 仕える');
   await no(drv.update({ ['u/' + A + '/f']: 'a', ['u/' + A + '/h']: 'b', ['u/' + A + '/n']: '与作', ['u/' + A + '/j']: SV, ['s/m/a']: INC(1) }, A), '名前の国を別の武将にはできない');
@@ -43,6 +43,7 @@ export async function run(drv, log = console.log) {
   await no(drv.update({ 's/n/a': INC(1) }, A), 'マスの数だけを増やせない');
   await no(drv.update({ 'c/2': 'a' }, A), 'マスだけを書きかえられない');
   await no(take(A, 2, 1, 'a', 'w', 'にせ者'), '記録の名前をいつわれない');
+  await no(take(A, 2, 1, 'a', 'w', '与作', { u: B }), '記録の匿名IDをいつわれない');
   await yes(take(A, 2, 1, 'a', 'w', '与作'), 'Aが白いマス2を取る');
   ok((await drv.read('c/2', B)).val === 'a', 'マス2が織田のものになった');
   ok((await drv.read('s/n/a', B)).val === 3 && (await drv.read('s/n/w', B)).val === 2, '織田3マス・白2マス');

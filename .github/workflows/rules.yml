@@ -8,6 +8,8 @@ on:
       - 'database.rules.tk.json'
       - 'data/map.json'
       - 'tools/**'
+      - 'js/net.js'
+      - 'js/data.js'
       - 'test/**'
       - '.github/workflows/rules.yml'
   workflow_dispatch:
@@ -43,6 +45,10 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: node tools/e2e.mjs
+      - name: ゲームの通信の部分を本物のデータベースで試験（試験用の場所 tkt）
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: node tools/e2e-client.mjs
       - name: 最初の地図を入れる（まだないときだけ）
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json

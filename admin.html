@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>天下取りマース 管理画面</title>
+<style>
+:root{--bg:#14100d;--pn:#211a14;--ln:#4a3b2a;--tx:#f1e7cf;--sub:#b9a67c;--gold:#ecd58f;--shu:#d8402b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%;touch-action:manipulation}
+header{position:sticky;top:0;z-index:5;background:#0d0a08;border-bottom:1px solid var(--gold);padding:10px 12px 0}
+h1{font-size:17px;margin:0 0 8px;color:var(--gold);font-weight:700}
+#tabs{display:flex;gap:2px;overflow-x:auto}
+#tabs button{flex:none;padding:9px 13px;background:var(--pn);color:var(--sub);border:1px solid var(--ln);border-bottom:0;border-radius:6px 6px 0 0;font-size:14px}
+#tabs button.on{background:var(--gold);color:#14100d;font-weight:700}
+main{padding:14px 12px 60px;max-width:860px;margin:0 auto}
+button,input,select,textarea{font:inherit}
+.b{padding:8px 14px;background:var(--pn);color:var(--tx);border:1px solid var(--gold);border-radius:6px;cursor:pointer}
+.b.red{border-color:var(--shu);color:#ffb3a6}.b.go{background:var(--gold);color:#14100d;font-weight:700}
+input,select,textarea{background:#0d0a08;color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:8px 10px;max-width:100%}
+textarea{width:100%;height:80px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.box{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:12px;margin:0 0 14px}
+.box h2{font-size:15px;margin:0 0 8px;color:var(--gold)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:5px 6px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:top}th{color:var(--sub);font-weight:400}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;border:1px solid #0008;vertical-align:-1px}
+.msg{border-bottom:1px solid var(--ln);padding:8px 0}.msg small{color:var(--sub)}.msg p{margin:2px 0 4px;white-space:pre-wrap;word-break:break-word}
+.gm{border-left:3px solid var(--shu);padding-left:8px}
+.rooms{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}.rooms button{padding:5px 9px;font-size:13px;background:#0d0a08;color:var(--sub);border:1px solid var(--ln);border-radius:14px}.rooms button.on{background:var(--tx);color:#14100d}
+#msg{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#000d;border:1px solid var(--gold);padding:8px 16px;border-radius:6px;z-index:9;max-width:90vw}
+small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-all}
+</style>
+</head>
+<body>
+<header><h1>天下取りマース 管理画面</h1><div id="tabs" hidden></div></header>
+<main>
+ <div id="login" class="box"><h2>管理のかぎ</h2><p style="margin:0 0 8px;color:var(--sub)">Fairies' Tower・エンピツライフと同じかぎです。</p><div class="row"><input id="key" type="password" placeholder="かぎ" autocomplete="off"><button class="b go" id="bLogin">入る</button></div></div>
+ <div id="view"></div>
+</main>
+<div id="msg" hidden></div>
+<script src="js/config.js"></script>
+<script src="js/mapdata.js"></script>
+<script src="js/data.js"></script>
+<script>
+(function () {
+  const TK = window.TK, M = window.TK_MAP, C = window.TK_CONFIG, DB = C.databaseURL.replace(/\/$/, ''), P = '/tk/';
+  const $ = id => document.getElementById(id), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } };
+  const T = {}; let tabNow = 'state', room = 'all', timer = 0;
+  // 名乗り（ゲームと同じ匿名ID）
+  async function token(force) {
+    if (!force && T.tok && Date.now() < T.exp) return T.tok;
+    const sv = store('tk_auth');
+    if (sv && sv.rt) { const r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + C.apiKey, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(sv.rt) }); if (r.ok) { const j = await r.json(); T.tok = j.id_token; T.exp = Date.now() + 50 * 60000; T.uid = j.user_id; store('tk_auth', { rt: j.refresh_token, uid: j.user_id }); return T.tok; } }
+    const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + C.apiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"returnSecureToken":true}' }); if (!r.ok) throw new Error('auth');
+    const j = await r.json(); T.tok = j.idToken; T.exp = Date.now() + 50 * 60000; T.uid = j.localId; store('tk_auth', { rt: j.refreshToken, uid: j.localId }); return T.tok;
+  }
+  const qs = q => q ? Object.entries(q).map(([k, v]) => k + '=' + encodeURIComponent(/^(limitTo|shallow)/.test(k) ? String(v) : JSON.stringify(v))).join('&') + '&' : '';
+  async function get(path, q) { const r = await fetch(DB + P + path + '.json?' + qs(q) + 'auth=' + encodeURIComponent(await token())); if (!r.ok) throw new Error('読めません（' + r.status + '）'); return r.json(); }
+  async function send(method, path, val, root) { const r = await fetch(DB + (root ? '/' : P) + path + '.json?print=silent&auth=' + encodeURIComponent(await token()), { method, body: JSON.stringify(val) }); if (!r.ok) throw new Error('書けません（' + r.status + '）'); }
+  const patch = o => send('PATCH', '', o);
+  const SV = { '.sv': 'timestamp' }, INC = n => ({ '.sv': { increment: n } });
+  const pid = () => 'G' + Date.now().toString(36) + Math.random().toString(36).slice(2, 11).padEnd(9, '0');
+  const say = (m, ms) => { const e = $('msg'); e.textContent = m; e.hidden = false; clearTimeout(say.t); say.t = setTimeout(() => e.hidden = true, ms || 3000); };
+  const when = t => { const d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  const fn = L => TK.FI[L] ? TK.FI[L].nm[0] : (L === 'w' ? '白いマス' : L || '');
+  const who = e => (e.r ? '寝返った' : '') + (TK.FI[e.h] ? TK.FI[e.h].home[0] + 'の' : '') + e.n;
+  const list = v => Object.keys(v || {}).map(k => Object.assign({ id: k }, v[k])).sort((a, b) => (b.t || 0) - (a.t || 0));
+  const dot = L => `<i class="dot" style="background:${TK.FI[L] ? TK.FI[L].col : '#fff'}"></i>`;
+  async function login() {
+    try { await token(); await send('PUT', 'ft_admins/' + T.uid, String($('key').value), true); await get('ask', { limitToLast: 1, orderBy: 't' }); store('tk_adm', 1); start(); }
+    catch (e) { say('かぎが合いません'); }
+  }
+  function start() {
+    $('login').hidden = true; const tb = $('tabs'); tb.hidden = false; tb.innerHTML = '';
+    for (const [k, nm] of [['state', 'ようす'], ['board', '掲示板'], ['ask', '質問・要望'], ['log', '記録・荒らし対応'], ['set', '設定']]) { const b = document.createElement('button'); b.textContent = nm; b.dataset.k = k; b.onclick = () => tab(k); tb.appendChild(b); }
+    tab('state');
+  }
+  function tab(k) { tabNow = k; clearInterval(timer); for (const b of $('tabs').children) b.className = b.dataset.k === k ? 'on' : ''; render(); if (k === 'state' || k === 'board') timer = setInterval(render, 30000); }
+  async function render() {
+    const V = $('view');
+    try {
+      if (tabNow === 'state') {
+        const [s, on] = await Promise.all([get('s'), get('on', { orderBy: 't', startAt: Date.now() - 150000 })]);
+        const fs = TK.F.slice().sort((a, b) => (s.n[b.L] || 0) - (s.n[a.L] || 0)); const mem = TK.F.reduce((x, f) => x + ((s.m || {})[f.L] || 0), 0);
+        const left = Date.UTC(2026, 10, 30, 14, 59, 59) - Date.now();
+        V.innerHTML = `<div class="box"><h2>いま</h2>いま開いている人（2分半以内）：<b>${Object.keys(on || {}).length}人</b>　／　仕えた人：<b>${mem}人</b>　／　白いマス：<b>${s.n.w || 0}</b><br>終わりまで：${left > 0 ? Math.floor(left / 86400000) + '日' + Math.floor(left % 86400000 / 3600000) + '時間' : '終了'}　${s.end ? '<b style="color:#ffb3a6">天下統一：' + esc(fn(s.end.f)) + '</b>' : ''}${s.stop ? '<b style="color:#ffb3a6">　一時停止中</b>' : ''}</div>
+        <div class="box"><h2>勢力</h2><table><tr><th>順</th><th>武将</th><th>マス</th><th>家臣</th></tr>${fs.map((f, i) => `<tr><td>${i + 1}</td><td>${dot(f.L)}${esc(f.nm[0])}</td><td class="n">${s.n[f.L] || 0}</td><td class="n">${(s.m || {})[f.L] || 0}</td></tr>`).join('')}</table></div>`;
+      } else if (tabNow === 'board') {
+        const v = list(await get('b/' + room, { orderBy: 't', limitToLast: 80 }));
+        V.innerHTML = `<div class="rooms">${[['all', '全体']].concat(TK.F.map(f => [f.L, f.nm[0]])).map(([r, nm]) => `<button data-r="${r}" class="${r === room ? 'on' : ''}">${esc(nm)}</button>`).join('')}</div>
+        <div class="box"><h2>なすPとして書く（${esc(room === 'all' ? '全体' : fn(room) + '軍の軍議')}）</h2><textarea id="gmM" maxlength="100" placeholder="100文字まで"></textarea><div class="row"><button class="b go" id="gmS">この板に書く</button><button class="b" id="gmAll">全部の板（全体＋20陣営）に書く</button></div></div>
+        <div class="box"><h2>書きこみ（新しい順・${v.length}件）</h2>${v.map(e => `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e)) + '（' + esc(fn(e.f)) + '軍）'}</small><p>${esc(e.m)}</p><button class="b red" data-del="${e.id}">消す</button> ${e.g ? '' : `<button class="b red" data-ban="${esc(e.u)}">この人を書きこめなくする</button> <small class="u">${esc(e.u)}</small>`}</div>`).join('') || 'まだありません'}</div>`;
+        V.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { room = b.dataset.r; render(); });
+        const post = async rooms => { const m = $('gmM').value.trim(); if (!m) return; const o = {}; for (const r of rooms) o['b/' + r + '/' + pid()] = { t: SV, u: T.uid, n: 'なすP', m: m.slice(0, 100), g: true }; await patch(o); say('書きました'); render(); };
+        $('gmS').onclick = () => post([room]).catch(e => say(e.message)); $('gmAll').onclick = () => { if (confirm('全部の板（21か所）に書きます。よいですか？')) post(['all'].concat(TK.F.map(f => f.L))).catch(e => say(e.message)); };
+        V.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('この書きこみを消しますか？')) return; await patch({ ['b/' + room + '/' + b.dataset.del]: null }); render(); });
+        V.querySelectorAll('[data-ban]').forEach(b => b.onclick = () => ban(b.dataset.ban));
+      } else if (tabNow === 'ask') {
+        const v = list(await get('ask', { orderBy: 't', limitToLast: 100 }));
+        V.innerHTML = `<div class="box"><h2>なすPへの質問・要望（新しい順・${v.length}件）</h2>${v.map(e => `<div class="msg"><small>${when(e.t)}　${esc(e.n || '（仕える前）')}　ことば：${esc(e.l)}${e.x ? `　X：<a href="https://x.com/${esc(e.x)}" target="_blank" style="color:var(--gold)">@${esc(e.x)}</a>` : ''}</small><p>${esc(e.m)}</p><button class="b red" data-del="${e.id}">消す</button></div>`).join('') || 'まだありません'}</div>`;
+        V.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await patch({ ['ask/' + b.dataset.del]: null }); render(); });
+      } else if (tabNow === 'log') {
+        const v = list(await get('log', { orderBy: 't', limitToLast: 150 })); const cnt = {}; for (const e of v) if (e.u) cnt[e.u] = (cnt[e.u] || 0) + 1;
+        const bans = await get('ban').catch(() => null);
+        V.innerHTML = `<div class="box"><h2>マスを直す</h2><div class="row">マス番号 <input id="fxC" inputmode="numeric" style="width:90px"> を <select id="fxF"><option value="w">白いマス</option>${TK.F.map(f => `<option value="${f.L}">${esc(f.nm[0])}</option>`).join('')}</select> のものにする <button class="b" id="fxGo">直す</button></div><div class="row"><button class="b" id="fxCount">マスの数を数えなおす</button><span style="color:var(--sub);font-size:13px">（地図と数字がずれたとき）</span></div></div>
+        <div class="box"><h2>書きこめなくした人</h2>${Object.keys(bans || {}).map(u => `<div class="row"><small class="u">${esc(u)}</small><button class="b" data-unban="${esc(u)}">もどす</button></div>`).join('') || 'いません'}</div>
+        <div class="box"><h2>記録（新しい順・150件）　※同じ人が3時間に2マス以上取っていたら、ずるです</h2><table><tr><th>時刻</th><th>だれが</th><th>何を</th><th></th></tr>${v.map(e => `<tr><td>${when(e.t)}</td><td>${dot(e.f)}${esc(who(e))}<br><small class="u">${esc((e.u || '').slice(0, 10))}（この中で${cnt[e.u] || 0}回）</small></td><td>${e.y === 'd' ? esc(fn(e.p)) + ' → ' + esc(fn(e.f)) + ' へ寝返り' : 'マス' + esc(e.c) + '（' + esc(M.provs[M.prov[+e.c]]) + '）を ' + esc(fn(e.p)) + ' から'}</td><td>${e.y === 't' ? `<button class="b" data-back="${esc(e.c)}|${esc(e.p)}">もどす</button> ` : ''}${e.u ? `<button class="b red" data-ban="${esc(e.u)}">止める</button>` : ''}</td></tr>`).join('')}</table></div>`;
+        const fix = async (c, to) => { c = String(+c); if (!(+c >= 0 && +c < M.n)) return say('マス番号がちがいます'); const cur = await get('c/' + c); if (cur === to) return say('もうそうなっています'); const s = await get('s'); await patch({ ['c/' + c]: to, ['s/n/' + to]: (s.n[to] || 0) + 1, ['s/n/' + cur]: Math.max(0, (s.n[cur] || 0) - 1), 's/ver': (s.ver || 0) + 1 }); say('直しました'); render(); };
+        $('fxGo').onclick = () => fix($('fxC').value, $('fxF').value).catch(e => say(e.message));
+        $('fxCount').onclick = async () => { const c = await get('c'), s = await get('s'), n = { w: 0 }; for (const f of TK.F) n[f.L] = 0; for (let i = 0; i < M.n; i++) n[(c && c[i]) || M.own[i]]++; await patch({ 's/n': n, 's/ver': (s.ver || 0) + 1 }); say('数えなおしました'); };
+        V.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { const [c, p] = b.dataset.back.split('|'); if (confirm('マス' + c + ' を ' + fn(p) + ' にもどしますか？')) fix(c, p).catch(e => say(e.message)); });
+        V.querySelectorAll('[data-ban]').forEach(b => b.onclick = () => ban(b.dataset.ban));
+        V.querySelectorAll('[data-unban]').forEach(b => b.onclick = async () => { await patch({ ['ban/' + b.dataset.unban]: null }); render(); });
+      } else if (tabNow === 'set') {
+        const s = await get('s');
+        V.innerHTML = `<div class="box"><h2>お知らせ（タイトルと地図の上に出ます。300文字まで）</h2><textarea id="pin" maxlength="300">${esc(s.pin || '')}</textarea><div class="row"><button class="b go" id="pinS">出す</button><button class="b" id="pinX">消す</button></div></div>
+        <div class="box"><h2>一時停止（マスを取れなくする）</h2>いま：<b>${s.stop ? '止めています' : '動いています'}</b><div class="row"><button class="b red" id="stopOn">止める</button><button class="b" id="stopOff">再開する</button></div></div>
+        <div class="box"><h2>終わり</h2>いま：<b>${s.end ? esc(fn(s.end.f)) + ' が天下統一（' + when(s.end.t) + '）' : 'まだ終わっていません'}</b><br><span style="color:var(--sub);font-size:13px">2500マスに届くと自動で終わります。11/30 23:59 を過ぎても自動で終わります。</span>${s.end ? '<div class="row"><button class="b red" id="endX">終わりを取り消す（まちがって終わったとき）</button></div>' : ''}</div>`;
+        $('pinS').onclick = async () => { await send('PUT', 's/pin', $('pin').value.slice(0, 300)); say('出しました'); }; $('pinX').onclick = async () => { await patch({ 's/pin': null }); say('消しました'); render(); };
+        $('stopOn').onclick = async () => { if (confirm('マスを取れなくします。よいですか？')) { await send('PUT', 's/stop', true); render(); } }; $('stopOff').onclick = async () => { await patch({ 's/stop': null }); render(); };
+        if ($('endX')) $('endX').onclick = async () => { if (confirm('終わりを取り消します。よいですか？')) { await patch({ 's/end': null }); render(); } };
+      }
+    } catch (e) { V.innerHTML = '<div class="box">' + esc(e.message) + '</div>'; }
+  }
+  async function ban(u) { if (!u || !confirm('この人を、マスを取れず・板にも書けなくします。よいですか？\n' + u)) return; try { await send('PUT', 'ban/' + u, true); say('止めました'); render(); } catch (e) { say(e.message); } }
+  $('bLogin').onclick = login; $('key').onkeydown = e => { if (e.key === 'Enter') login(); };
+  if (store('tk_adm')) token().then(() => get('ask', { limitToLast: 1, orderBy: 't' })).then(start).catch(() => { });
+})();
+</script>
+</body>
+</html>
