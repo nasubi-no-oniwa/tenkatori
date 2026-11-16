@@ -11,6 +11,10 @@
 body{margin:0;background:var(--bg);color:var(--tx);font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%;touch-action:manipulation}
 header{position:sticky;top:0;z-index:5;background:#0d0a08;border-bottom:1px solid var(--gold);padding:10px 12px 0}
 h1{font-size:17px;margin:0 0 8px;color:var(--gold);font-weight:700}
+.hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}.hd h1{margin:0;flex:1;min-width:0}
+#refAt{font-size:12px;color:var(--sub);white-space:nowrap}
+#bRef{flex:none;padding:8px 16px;background:var(--gold);color:#14100d;font-weight:700;font-size:14px;border:0;border-radius:6px}
+#bRef:disabled{opacity:.5}
 #tabs{display:flex;gap:2px;overflow-x:auto}
 #tabs button{flex:none;padding:9px 13px;background:var(--pn);color:var(--sub);border:1px solid var(--ln);border-bottom:0;border-radius:6px 6px 0 0;font-size:14px}
 #tabs button.on{background:var(--gold);color:#14100d;font-weight:700}
@@ -34,7 +38,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
 </style>
 </head>
 <body>
-<header><h1>天下取りマース 管理画面</h1><div id="tabs" hidden></div></header>
+<header><div class="hd"><h1>天下取りマース 管理画面</h1><span id="refAt"></span><button id="bRef" hidden>更新</button></div><div id="tabs" hidden></div></header>
 <main>
  <div id="login" class="box"><h2>管理のかぎ</h2><p style="margin:0 0 8px;color:var(--sub)">Fairies' Tower・エンピツライフと同じかぎです。</p><div class="row"><input id="key" type="password" placeholder="かぎ" autocomplete="off"><button class="b go" id="bLogin">入る</button></div></div>
  <div id="view"></div>
@@ -74,11 +78,17 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
     catch (e) { say('かぎが合いません'); }
   }
   function start() {
-    $('login').hidden = true; const tb = $('tabs'); tb.hidden = false; tb.innerHTML = '';
+    $('login').hidden = true; $('bRef').hidden = false; $('bRef').onclick = () => refresh().then(() => say('更新しました')); const tb = $('tabs'); tb.hidden = false; tb.innerHTML = '';
     for (const [k, nm] of [['state', 'ようす'], ['board', '掲示板'], ['ask', '質問・要望'], ['log', '記録・荒らし対応'], ['set', '設定']]) { const b = document.createElement('button'); b.textContent = nm; b.dataset.k = k; b.onclick = () => tab(k); tb.appendChild(b); }
     tab('state');
   }
-  function tab(k) { tabNow = k; clearInterval(timer); for (const b of $('tabs').children) b.className = b.dataset.k === k ? 'on' : ''; render(); if (k === 'state' || k === 'board') timer = setInterval(render, 30000); }
+  // 読みなおす（書きかけの文と、カーソルの場所は残す）
+  async function refresh() {
+    const keep = {}, act = document.activeElement && document.activeElement.id; $('view').querySelectorAll('textarea[id],input[id]').forEach(e => { keep[e.id] = e.value; });
+    $('bRef').disabled = true; try { await render(); } finally { $('bRef').disabled = false; }
+    for (const id in keep) { const e = $(id); if (e && keep[id]) e.value = keep[id]; } if (act && keep[act] !== undefined && $(act)) $(act).focus();
+  }
+  function tab(k) { tabNow = k; clearInterval(timer); for (const b of $('tabs').children) b.className = b.dataset.k === k ? 'on' : ''; render(); if (k === 'state' || k === 'board') timer = setInterval(refresh, 30000); }
   async function render() {
     const V = $('view');
     try {
@@ -125,6 +135,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         $('stopOn').onclick = async () => { if (confirm('マスを取れなくします。よいですか？')) { await send('PUT', 's/stop', true); render(); } }; $('stopOff').onclick = async () => { await patch({ 's/stop': null }); render(); };
         if ($('endX')) $('endX').onclick = async () => { if (confirm('終わりを取り消します。よいですか？')) { await patch({ 's/end': null }); render(); } };
       }
+      const d = new Date(), z = n => String(n).padStart(2, '0'); $('refAt').textContent = z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds()) + ' 時点';
     } catch (e) { V.innerHTML = '<div class="box">' + esc(e.message) + '</div>'; }
   }
   async function ban(u) { if (!u || !confirm('この人を、マスを取れず・板にも書けなくします。よいですか？\n' + u)) return; try { await send('PUT', 'ban/' + u, true); say('止めました'); render(); } catch (e) { say(e.message); } }
