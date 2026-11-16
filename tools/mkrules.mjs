@@ -9,7 +9,7 @@
 //   s/stop              : true   管理人の一時停止 ／ s/pin：管理人のお知らせ ／ s/ver：管理人がマスを直した回数
 //   u/{匿名ID}          : { f：仕える武将, h：最初に仕えた武将（名前の国）, n：名前, j：仕えた時刻, t：最後に取った時刻, c：取ったマス, v：足場にしたとなりのマス, w：足場のとなりの、自分の陣営か白のマス,
 //                          l：そのときの記録の番号, d：最後に寝返った時刻, r：寝返ったことがある, bt：最後に板へ書いた時刻, a：最後に質問を送った時刻 }
-//   log/{番号}          : { t, y：'t' 取った／'d' 寝返った, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID }
+//   log/{番号}          : { t, y：'t' 取った／'d' 寝返った, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID, k：この一手で占領した名所, x：この一手で占領をくずした名所 }
 //   b/{板}/{番号}       : 掲示板 { t, u, n, h, r, f, m, g：管理人 }   板は all（全体）と a〜t（陣営ごと。その陣営の人だけ読み書きできる）
 //   ask/{番号}          : なすPへの質問・要望（管理人だけ読める）   on/{匿名ID}：いま開いている人   ban/{匿名ID}：書きこめなくした人
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
@@ -140,6 +140,8 @@ tk.k = { '.read': false, '.write': false };
       h: { '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/)" },
       r: { '.validate': 'newData.val() === true' },
       u: { '.validate': 'newData.val() === auth.uid' },
+      k: { '.validate': "newData.isString() && newData.val().matches(/^[a-z]{2,16}$/) && newData.parent().child('y').val() === 't'" },
+      x: { '.validate': "newData.isString() && newData.val().matches(/^[a-z]{2,16}$/) && newData.parent().child('y').val() === 't'" },
       $other: { '.validate': false },
     },
   };

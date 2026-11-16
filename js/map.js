@@ -101,15 +101,23 @@
       c.textAlign = 'center'; c.textBaseline = 'middle'; const fs = Math.max(11, Math.min(22, z * 1.25)); c.font = `700 ${fs}px ${TK.FONT_B}`;
       for (let p = 0; p < M.provs.length; p++) { const l = M.plab[p]; if (!l) continue; const x = sx(l[0]), y = sy(l[1]); if (x < -60 || y < -20 || x > vw + 60 || y > vh + 20) continue; if (l[2] < 4 && z < 12) continue; const nm = TK.provName(p); c.lineWidth = 3.5; c.strokeStyle = 'rgba(244,236,214,.82)'; c.strokeText(nm, x, y); c.fillStyle = 'rgba(38,28,20,.86)'; c.fillText(nm, x, y); }
     }
-    // 名所の印（占領されていれば、その武将の家紋を右上に）
+    // 名所の札（印＋名前）。マスが見えるように、マスの上にはのせず、上のふちの外に出す。占領されていれば、その武将の家紋もつける
     if (z >= 3.4) {
-      c.textAlign = 'center'; c.textBaseline = 'top';
+      c.textBaseline = 'middle';
       for (const lm of N.LM) {
-        const x = sx(lm.x), y = sy(lm.y), big = lm.c.length > 4, bs = Math.max(13, Math.min(big ? 44 : 32, z * (big ? 1.9 : 1.45)));
-        if (x < -60 || y < -60 || x > vw + 60 || y > vh + 60) continue;
-        c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 4; c.shadowOffsetY = 1.5; c.drawImage(TK.badge(lm.k, Math.round(bs * dpr), lm.id === 'azuchi'), x - bs / 2, y - bs / 2, bs, bs); c.restore();
-        const h = N.holder(lm, cells); if (h) { const hs = bs * 0.62; c.drawImage(TK.crest(TK.FI[h], Math.round(hs * dpr)), x + bs * 0.22, y - bs * 0.72, hs, hs); }
-        if (z >= 9.5) { const nm = TK.L(lm.n), fs = Math.max(10, Math.min(15, z * 0.8)); c.font = `800 ${fs}px ${TK.FONT_B}`; c.lineWidth = 3; c.strokeStyle = 'rgba(20,14,8,.85)'; c.strokeText(nm, x, y + bs / 2 + 1); c.fillStyle = lm.id === 'azuchi' ? '#ffd9cf' : '#ffe9a8'; c.fillText(nm, x, y + bs / 2 + 1); }
+        let top = 1e9; for (const i of lm.c) top = Math.min(top, cy(i));
+        const x = sx(lm.x), yt = sy(top), key = lm.id === 'azuchi';
+        if (x < -90 || yt < -40 || x > vw + 90 || yt > vh + 60) continue;
+        const h = N.holder(lm, cells), bs = Math.max(12, Math.min(22, z * 1.15)), showName = z >= 8.5;
+        const nm = showName ? TK.L(lm.n) : '', fs = Math.max(10, Math.min(13.5, z * 0.72)); c.font = `800 ${fs}px ${TK.FONT_B}`;
+        const tw = showName ? c.measureText(nm).width + 5 : 0, hw = h ? bs * 0.92 : 0, w = bs + tw + hw + 6, ht = bs + 4, px = x - w / 2, py = yt - ht - Math.max(2, z * 0.12);
+        c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 4; c.shadowOffsetY = 1.5; c.beginPath(); c.roundRect(px, py, w, ht, ht / 2); c.fillStyle = key ? 'rgba(120,24,12,.94)' : 'rgba(20,14,8,.9)'; c.fill(); c.restore();
+        c.lineWidth = 1; c.strokeStyle = key ? '#ffb19f' : '#f0c850'; c.stroke();
+        c.drawImage(TK.badge(lm.k, Math.round(bs * dpr), key), px + 2, py + 2, bs, bs);
+        if (showName) { c.textAlign = 'left'; c.fillStyle = key ? '#ffe6df' : '#ffe9a8'; c.fillText(nm, px + bs + 4, py + ht / 2 + 0.5); }
+        if (h) c.drawImage(TK.crest(TK.FI[h], Math.round(bs * dpr)), px + w - bs - 2, py + 2, bs, bs);
+        // 札からマスへ、短い線でつなぐ
+        c.beginPath(); c.moveTo(x, py + ht); c.lineTo(x, yt); c.strokeStyle = key ? '#ffb19f' : '#f0c850'; c.lineWidth = 1.5; c.stroke();
       }
     }
     // 天守閣（武将の印）
@@ -173,7 +181,7 @@
     x.imageSmoothingQuality = 'high'; x.drawImage(base, -ox * z, -oy * z, W * z, H * z);
     const cs = Math.max(20, z * 2.2);
     for (const f of TK.F) { const i = M.castle[f.L], px = (cx(i) + .5 - ox) * z, py = (cy(i) + .5 - oy) * z; if (px < -cs || py < -cs || px > w + cs || py > h + cs) continue; x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 6; x.shadowOffsetY = 2; x.drawImage(TK.crest(f, Math.round(cs * 2)), px - cs / 2, py - cs / 2, cs, cs); x.restore(); }
-    for (const lm of N.LM) { const big = lm.c.length > 4, bs = Math.max(16, z * (big ? 1.9 : 1.45)), px = (lm.x - ox) * z, py = (lm.y - oy) * z; if (px < -bs || py < -bs || px > w + bs || py > h + bs) continue; x.drawImage(TK.badge(lm.k, Math.round(bs * 2), lm.id === 'azuchi'), px - bs / 2, py - bs / 2, bs, bs); const hd = N.holder(lm); if (hd) x.drawImage(TK.crest(TK.FI[hd], Math.round(bs * 1.3)), px + bs * 0.22, py - bs * 0.72, bs * 0.62, bs * 0.62); }
+    for (const lm of N.LM) { let top = 1e9; for (const i of lm.c) top = Math.min(top, cy(i)); const bs = Math.max(14, Math.min(34, z * 1.2)), px = (lm.x - ox) * z, py = (top - oy) * z - bs * 0.62; if (px < -bs || py < -bs || px > w + bs || py > h + bs) continue; x.drawImage(TK.badge(lm.k, Math.round(bs * 2), lm.id === 'azuchi'), px - bs / 2, py - bs / 2, bs, bs); const hd = N.holder(lm); if (hd) x.drawImage(TK.crest(TK.FI[hd], Math.round(bs * 1.6)), px + bs * 0.4, py - bs / 2, bs * 0.8, bs * 0.8); }
     if (opt.focus != null && opt.focus >= 0 && !opt.nomark) { const px = (cx(opt.focus) - ox) * z, py = (cy(opt.focus) - oy) * z; x.lineWidth = 6; x.strokeStyle = '#fff'; x.strokeRect(px - 3, py - 3, z + 6, z + 6); x.lineWidth = 3; x.strokeStyle = '#c8321f'; x.strokeRect(px - 8, py - 8, z + 16, z + 16); }
     return c;
   };

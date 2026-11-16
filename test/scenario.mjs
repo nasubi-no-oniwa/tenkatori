@@ -16,7 +16,7 @@ export async function run(drv, log = console.log) {
   const yes = async (p, m) => ok(await p === true, m), no = async (p, m) => ok(await p === false, m + '（はじかれる）');
   const A = await drv.user('A'), B = await drv.user('B'), C = await drv.user('C'), D = await drv.user('D'), E = await drv.user('E');
   const join = (u, f, nm, x = {}) => drv.update(Object.assign({ ['u/' + u + '/f']: f, ['u/' + u + '/h']: f, ['u/' + u + '/n']: nm, ['u/' + u + '/j']: SV, ['s/m/' + f]: INC(1) }, x), u);
-  const take = (u, c, v, f, p, nm, x = {}) => { const id = pid(), w = x.w !== undefined ? x.w : (c > v ? v - 1 : v + 1); return drv.update(Object.assign({ ['c/' + c]: f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(c), ['u/' + u + '/v']: String(v), ['u/' + u + '/l']: id, ['s/n/' + f]: INC(1), ['s/n/' + p]: INC(-1), ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(c), f, p, n: nm, h: x.h || f, u: x.u || u }, x.r ? { r: true } : {}) }, w === null ? {} : { ['u/' + u + '/w']: String(w) }, x.more || {}), u); };
+  const take = (u, c, v, f, p, nm, x = {}) => { const id = pid(), w = x.w !== undefined ? x.w : (c > v ? v - 1 : v + 1); return drv.update(Object.assign({ ['c/' + c]: f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(c), ['u/' + u + '/v']: String(v), ['u/' + u + '/l']: id, ['s/n/' + f]: INC(1), ['s/n/' + p]: INC(-1), ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(c), f, p, n: nm, h: x.h || f, u: x.u || u }, x.r ? { r: true } : {}, x.k ? { k: x.k } : {}, x.xx ? { x: x.xx } : {}) }, w === null ? {} : { ['u/' + u + '/w']: String(w) }, x.more || {}), u); };
 
   log('1) 仕える');
   await no(drv.update({ ['u/' + A + '/f']: 'a', ['u/' + A + '/h']: 'b', ['u/' + A + '/n']: '与作', ['u/' + A + '/j']: SV, ['s/m/a']: INC(1) }, A), '名前の国を別の武将にはできない');
@@ -105,7 +105,7 @@ export async function run(drv, log = console.log) {
     await drv.admin({ 'c/2': 'w', 's/n/w': 5 });
     await yes(take(F, 4, 3, 'e', 'b', '五郎', { w: 2 }), 'となりに白いマスがあれば、足場にできる');
     await yes(take(H, 2, 3, 'e', 'w', '七郎', { w: 2 }), '白いマスを取るときは、その白いマスが「となり」になる');
-    await yes(take(G2, 1, 0, 'a', 'b', '六郎', { w: null }), '天守閣は、囲まれていても足場にできる');
+    await yes(take(G2, 1, 0, 'a', 'b', '六郎', { w: null, k: 'fuji', xx: 'aso' }), '天守閣は、囲まれていても足場にできる（名所の占領・くずしも記録に入れられる）');
     await drv.admin({ 'c/1': 'a', 'c/2': 'b', 'c/3': 'b', 'c/4': 'b' }); }
 
   log('7) 天下統一（半分の2500マス）');

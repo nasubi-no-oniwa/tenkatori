@@ -156,6 +156,12 @@
    "u": {
     ".validate": "newData.val() === auth.uid"
    },
+   "k": {
+    ".validate": "newData.isString() && newData.val().matches(/^[a-z]{2,16}$/) && newData.parent().child('y').val() === 't'"
+   },
+   "x": {
+    ".validate": "newData.isString() && newData.val().matches(/^[a-z]{2,16}$/) && newData.parent().child('y').val() === 't'"
+   },
    "$other": {
     ".validate": false
    }

@@ -49,7 +49,7 @@ if (renderer) {
   function frameTitle(t) {
     const k = (t / 1000 / 70) % 1, u = k < 0.5 ? k * 2 : 2 - k * 2, e = u * u * (3 - 2 * u);
     curve.getPoint(e, tgt); const a = Math.sin(t / 9000) * 0.5 - 0.5, narrow = cam.aspect < 0.8, d = narrow ? 120 : 62;
-    cam.position.set(tgt.x + Math.sin(a) * d, narrow ? 112 : 50, tgt.z + Math.cos(a) * d); cam.lookAt(tgt.x, 0, tgt.z + (narrow ? 6 : -6));
+    cam.position.set(tgt.x + Math.sin(a) * d, narrow ? 112 : 50, tgt.z + Math.cos(a) * d); cam.lookAt(tgt.x, 0, tgt.z + (window.TK_LOOK != null ? window.TK_LOOK : (narrow ? 6 : -6)));
     const ms = narrow ? 6.4 : 4.4; for (let i = 0; i < marks.length; i++) marks[i].scale.set(ms, ms, 1);
     for (let i = 0; i < marks.length; i++) marks[i].position.y = 7.5 + Math.sin(t / 700 + i) * 0.35;
     renderer.render(sT, cam);

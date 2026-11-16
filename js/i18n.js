@@ -33,6 +33,8 @@
     lm_tab: ['名所', 'Sites', '名所', '명소'],
     lm_occ: ['{army}が <b>{name}</b> を占領！', '{army} has captured <b>{name}</b>!', '{army}佔領了 <b>{name}</b>！', '{army}이(가) <b>{name}</b> 점령!'],
     lm_lost: ['<b>{name}</b> の占領がくずれた（{army}）', '{army} has lost its hold on <b>{name}</b>', '{army}對 <b>{name}</b> 的佔領被打破', '{army}의 <b>{name}</b> 점령이 무너졌다'],
+    lg_lm: ['{army}が {name} を占領！', '{army} captured {name}!', '{army}佔領了 {name}！', '{army}이(가) {name} 점령!'],
+    lg_lmx: ['{name} の占領がくずれた（{army}）', '{army} lost its hold on {name}', '{army}對 {name} 的佔領被打破', '{army}의 {name} 점령이 무너졌다'],
     lm_none: ['占領なし', 'Unheld', '無人佔領', '점령 없음'], lm_hold: ['{army}が占領', 'Held by {army}', '{army}佔領中', '{army} 점령 중'],
     lm_note: ['名所のマスを全部そろえると占領。安土城は、11/30 23:59 に占領している陣営が天下人になる城です。', 'Hold every tile of a site to capture it. Whoever holds Azuchi Castle at 23:59 on Nov 30 wins the realm.', '拿齊名所的所有格子就算佔領。安土城是決定天下的城：11/30 23:59 時佔領它的陣營成為天下人。', '명소의 칸을 모두 차지하면 점령. 아즈치성은 11/30 23:59에 점령한 진영이 천하인이 되는 성입니다.'],
     tk_lm: ['{name}を占領した！', 'You captured {name}!', '佔領了{name}！', '{name}을(를) 점령했다!'],

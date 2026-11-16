@@ -157,6 +157,9 @@
     const u = N.uid(), id = pid(), prev = N.cells[i];
     const w = { ['c/' + i]: me.f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
+    // この一手で名所を占領した・相手の占領をくずしたときは、記録に入れる（戦況に出す）
+    const lm = N.LM.find(l => l.c.includes(i));
+    if (lm) { const was = N.holder(lm); if (was && was !== me.f) w['log/' + id].x = lm.id; if (lm.c.every(c => c === i || N.cells[c] === me.f)) w['log/' + id].k = lm.id; }
     if ((N.s.n[me.f] || 0) + 1 >= TK.HALF) w['s/end'] = { f: me.f, t: SV, k: 'half' };
     if (N.gm) { for (const k of Object.keys(w)) if (k.startsWith('u/')) delete w[k]; }     // GMモード：管理人として書く（待ちなし）
     await update(w);
