@@ -89,7 +89,7 @@
     $('bHow').textContent = t('how'); $('bLang').textContent = '言語 / Language'; $('bAsk').textContent = t('askbtn'); $('bWatch').textContent = t('watch');
     $('qBack').textContent = '‹ ' + t('back'); $('rvYou').textContent = t('rv_you'); $('rvNameL').textContent = t('rv_name'); $('rvName').placeholder = t('rv_ph'); $('rvNote').textContent = t('rv_note'); $('rvJoin').textContent = t('rv_join');
     $('rvX').textContent = t('x_post'); $('rvXi').textContent = t('x_img'); $('rvGo').textContent = t('tk_back');
-    const nv = $('nav').querySelectorAll('button'); ['nav_power', 'nav_board', 'nav_log', 'nav_defect', 'nav_more'].forEach((k, i) => { nv[i].querySelector('span').textContent = t(k); });
+    const nv = $('nav').querySelectorAll('button'); ['nav_power', 'nav_board', 'nav_log', 'nav_defect', 'nav_scroll', 'nav_more'].forEach((k, i) => { if (nv[i]) nv[i].querySelector('span').textContent = t(k); }); if ($('scroll') && !$('scroll').hidden) renderScroll();
     $('tkX').textContent = t('x_post'); $('tkXi').textContent = t('x_img'); $('tkBack').textContent = t('tk_back');
     $('enX').textContent = t('x_post'); $('enXi').textContent = t('x_img'); $('enMap').textContent = t('en_map');
     renderTitle(); if (scr === 'quiz') renderQ(); if (scr === 'game') { updateHud(); MP.kick(); if (selCell >= 0) showCell(selCell); }
@@ -322,6 +322,54 @@
   }
   const endText = () => { const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
 
+  // ---------- 巻物（武将の功績）。最初は自分の陣営、上の家紋でほかの武将に切りかえ ----------
+  let scL = null;
+  const KD = '〇一二三四五六七八九';
+  function scYear(y) {
+    if (y == null) return '';
+    const ap = typeof y === 'string' && y[0] === '~', n = String(y).replace('~', ''), lg = TK.lang();
+    const kj = n.replace(/\d/g, d => KD[+d]);
+    if (lg === 'ja') return kj + '年' + (ap ? 'ごろ' : '');
+    if (lg === 'zh') return (ap ? '約' : '') + kj + '年';
+    if (lg === 'ko') return n + '년' + (ap ? '경' : '');
+    return (ap ? 'c. ' : '') + n;
+  }
+  function scLife(y) {
+    const lg = TK.lang(), v = lg === 'ja' || lg === 'zh', f = n => n == null ? '？' : (v ? String(n).replace(/\d/g, d => KD[+d]) : String(n));
+    return f(y[0]) + (v ? '〜' : '–') + f(y[1]);
+  }
+  function openScroll(L) {
+    if (!$('scroll') || !TK.SCROLL) return; closePanel(); scL = L || (N.me && N.me.f) || scL || 'a';
+    $('scroll').hidden = false; renderScroll(true);
+    if (G.gsap) gsap.fromTo('#scroll .maki', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+  }
+  function renderScroll(pickToo) {
+    const P = $('scPick');
+    if (pickToo || !P.children.length) {
+      P.innerHTML = '';
+      const order = TK.F.slice(); const mine = N.me && N.me.f;
+      if (mine) order.sort((a, b) => (b.L === mine) - (a.L === mine));
+      for (const f of order) {
+        const b = document.createElement('button'); b.dataset.l = f.L; b.title = TK.L(f.nm); b.setAttribute('aria-label', TK.L(f.nm));
+        if (f.L === mine) b.classList.add('me');
+        const c = document.createElement('canvas'); c.width = 80; c.height = 80; drawCrest(c, f); b.appendChild(c);
+        b.onclick = () => { scL = f.L; renderScroll(false); if (G.gsap) gsap.fromTo('#scroll .kami', { opacity: 0.35 }, { opacity: 1, duration: 0.35 }); };
+        P.appendChild(b);
+      }
+    }
+    for (const b of P.children) b.classList.toggle('on', b.dataset.l === scL);
+    const on = P.querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const f = TK.FI[scL], d = TK.SCROLL[scL], lg = TK.lang(), li = TK.langIndex(), B = $('scBody');
+    const V = lg === 'ja' || lg === 'zh'; B.className = V ? 'v' : '';
+    // 縦書きのときは、2〜3けたの数字は縦中横に、4けた以上は漢数字にする
+    const vt = x => V ? String(x).split(/(\d+)/).map((p, i) => i % 2 ? (p.length >= 4 ? p.replace(/\d/g, c => KD[+c]) : `<span class="tcy">${p}</span>`) : esc(p)).join('') : esc(x);
+    let h = `<div class="maki"><i class="jiku"></i><div class="kami"><div class="mkHd"><canvas width="128" height="128"></canvas><div><div class="ttl">${esc(t('sc_title', { name: TK.L(f.nm) }))}</div><small>${esc(t('sc_home'))}：${esc(TK.L(f.home))}・${esc(TK.L(f.castle))}<br>${esc(scLife(d.y))}</small>${N.me && N.me.f === f.L ? `<span class="mine">${esc(t('sc_mine'))}</span>` : ''}</div></div>`;
+    h += `<div class="mkTag">${vt(d.tag[li] || d.tag[0])}</div>`;
+    for (const r of d.s) { const y = scYear(r[0]); h += `<div class="ev">${y ? `<b>${esc(y)}</b>` : '<b>◇</b>'}${vt(r[1 + li] || r[1])}</div>`; }
+    h += '</div><i class="jiku"></i></div>';
+    B.innerHTML = h; drawCrest(B.querySelector('.mkHd canvas'), f);
+    B.scrollTop = 0; B.scrollLeft = 0;
+  }
   // ---------- ボタン ----------
   $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
   $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
@@ -335,7 +383,8 @@
   $('zLm').onclick = () => { setLM(!MP.showLM); toast(TK.L(MP.showLM ? ['名所の札を出しました', 'Site labels on', '已顯示名所標示', '명소 표시를 켰습니다'] : ['名所の札をかくしました（金のふちは残ります）', 'Site labels off (gold outlines stay)', '已隱藏名所標示（金框保留）', '명소 표시를 껐습니다 (금색 테두리는 남습니다)']), 1800); };
   if (N.store('tk_lmui') === 0) setLM(false);
   $('zIn').onclick = () => MP.zoomBy(1.6); $('zOut').onclick = () => MP.zoomBy(1 / 1.6); $('zMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else MP.fit(); };
-  $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { showCell(-1); openPanel(b.dataset.p); });
+  $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { showCell(-1); if (b.dataset.p === 'scroll') openScroll(); else openPanel(b.dataset.p); });
+  if ($('scX')) $('scX').onclick = () => { $('scroll').hidden = true; };
   $('cellX').onclick = () => showCell(-1); $('cellGo').onclick = doTake;
   $('pClose').onclick = closePanel; $('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
   $('tkBack').onclick = () => { $('taken').hidden = true; if (N.me) MP.focusFaction(N.me.f); };

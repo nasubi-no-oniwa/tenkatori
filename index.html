@@ -126,7 +126,7 @@ canvas{display:block}
 #zoom button{width:42px;height:42px;border-radius:50%;background:rgba(20,16,13,.88);color:var(--gold2);border:1px solid var(--gold);font-size:21px;line-height:1;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:var(--fb);font-weight:700}
 #zoom button:active{background:#000}
 #zLm{font-family:var(--ft)!important;font-weight:400!important;font-size:18px!important}#zLm.off{color:#7d6f55!important;border-color:#5a4d38!important;text-decoration:line-through}
-#nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(var(--sb) + 6px);background:linear-gradient(#1b1510,#14100d);border-top:1px solid var(--gold);box-shadow:0 -6px 18px rgba(0,0,0,.4)}
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(6,1fr);padding:6px 4px calc(var(--sb) + 6px);background:linear-gradient(#1b1510,#14100d);border-top:1px solid var(--gold);box-shadow:0 -6px 18px rgba(0,0,0,.4)}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;font-size:11.5px;letter-spacing:.08em;color:#e6d8b4;font-weight:700;position:relative}
 #nav button i{width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);display:grid;place-items:center;font-style:normal;font-family:var(--ft);font-size:18px;color:var(--gold2);background:radial-gradient(circle at 35% 30%,#3a2c1e,#17110c)}
 #nav button:active i{background:#000}
@@ -142,6 +142,41 @@ canvas{display:block}
 #cellX{flex:none;width:34px;height:34px;font-size:18px;color:var(--sub)}
 #cellWhy{font-size:13.5px;font-weight:800;color:var(--shu2);text-align:center;padding:3px 0}
 /* ---------- マスを取ったあとの画面（結果画面） ---------- */
+/* 巻物 */
+#scroll{display:flex;flex-direction:column;z-index:33;padding-top:var(--st);background:radial-gradient(120% 80% at 50% 0%,#2c2219,#14100d 70%)}
+#scroll[hidden]{display:none}
+.scAd{flex:none;min-height:0}
+.scHd{flex:none;display:flex;align-items:center;gap:6px;padding:8px 8px 7px 6px;border-bottom:1px solid rgba(201,164,76,.45)}
+#scPick{flex:1;min-width:0;display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px}
+#scPick::-webkit-scrollbar{display:none}
+#scPick button{flex:none;position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;opacity:.5;transition:opacity .2s,transform .2s}
+#scPick button.on{opacity:1;transform:scale(1.06);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(236,213,143,.55)}
+#scPick button.me::after{content:"";position:absolute;right:1px;bottom:1px;width:11px;height:11px;border-radius:50%;background:var(--shu);border:2px solid #14100d}
+#scPick canvas{width:40px;height:40px;display:block}
+#scX{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--gold);color:var(--gold2);font-size:17px;background:#17110c}
+#scBody{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 10px calc(var(--sb) + 18px);user-select:text;-webkit-user-select:text}
+#scBody.v{writing-mode:vertical-rl;overflow-y:hidden;overflow-x:auto;padding:14px 12px calc(var(--sb) + 14px)}
+.maki{display:flex;flex-direction:column;align-items:stretch;padding-block-end:16px}
+.tcy{text-combine-upright:all;-webkit-text-combine:horizontal}
+html[lang="ko"] .maki{word-break:keep-all}
+html[lang="en"] .mkHd .ttl,html[lang="ko"] .mkHd .ttl{font-family:var(--fb);font-weight:800;font-size:21px;letter-spacing:0}
+html[lang="en"] .mkTag,html[lang="ko"] .mkTag{font-family:var(--fb);font-weight:700;font-size:15.5px;letter-spacing:0}
+html[lang="en"] .ev b,html[lang="ko"] .ev b{font-family:var(--fb);font-weight:800;letter-spacing:0}
+.maki .jiku{flex:none;block-size:16px;border-radius:8px;background:linear-gradient(180deg,#5a3418,#9b6233 35%,#c58c4f 50%,#8a5428 65%,#4a2a12);box-shadow:0 3px 8px rgba(0,0,0,.5);margin-inline:-6px}
+#scBody.v .maki .jiku{background:linear-gradient(90deg,#5a3418,#9b6233 35%,#c58c4f 50%,#8a5428 65%,#4a2a12)}
+.maki .kami{flex:1;background:var(--paper) var(--washi);color:var(--ink);padding:18px 16px;box-shadow:inset 0 0 0 1px #b89a66,inset 0 0 26px rgba(120,84,40,.22)}
+#scBody.v .maki .kami{padding:16px 18px}
+.mkHd{display:flex;align-items:center;gap:12px;padding-block-end:12px;margin-block-end:12px;border-block-end:2px solid var(--shu)}
+#scBody.v .mkHd{flex-direction:row}
+.mkHd canvas{flex:none;width:64px;height:64px}
+.mkHd .ttl{font-family:var(--ft);font-size:25px;line-height:1.25;letter-spacing:.06em}
+.mkHd small{display:block;font-family:var(--fb);font-size:12.5px;color:var(--sub);letter-spacing:.02em;margin-block-start:4px;line-height:1.55}
+.mkHd .mine{display:inline-block;margin-block-start:5px;font-size:11.5px;font-weight:800;color:#fff;background:var(--shu);padding:1px 8px;border-radius:3px;letter-spacing:.06em}
+.mkTag{font-family:var(--ft);font-size:16.5px;line-height:1.7;color:var(--shu2);padding-block-end:12px;margin-block-end:4px}
+.ev{font-size:15.5px;line-height:1.8;padding-block:9px;border-block-start:1px dashed rgba(110,91,69,.45)}
+.ev b{display:inline-block;color:var(--shu);font-family:var(--ft);font-weight:400;margin-inline-end:.6em;letter-spacing:.04em}
+#scBody.v .ev{line-height:1.9;padding-inline:0;letter-spacing:.06em}
+#scBody.v .ev b{margin-inline-end:.4em}
 #taken{background:rgba(11,8,6,.82);overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:32}
 .tk{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:calc(var(--st) + 22px) 14px calc(var(--sb) + 30px)}
 #taken .card{width:min(100%,400px);padding:14px 12px 16px;display:flex;flex-direction:column;gap:9px;text-align:center}
@@ -225,7 +260,7 @@ function vis(e){if(!e||!e.isConnected||e.closest('[hidden]'))return false;var r=
 var was={};setInterval(function(){try{var any=false;for(var i=0;i<IDS.length;i++){if(vis(document.getElementById(IDS[i])))any=true;}if(any&&!was.v)ev('result_view');was.v=any;}catch(e){}},700);
 }catch(e){}})();</script>
 <!-- nasubi-ad: スマホのとき、結果画面とタイトル画面の決めた場所に広告の帯（と、決めた場所だけその下に大きい広告）を出す（遊んでいる最中は出さない・ボタンに重ねない・広告の幅320pxを切らない・画面が出たらすぐ見せるが、最初の1.2秒は押しても反応しない・画面が出るたびに新しい広告を読みこむ（場所ごとに30秒に1回まで）・画面が隠れて2秒たったら広告を外して止める・タイトル画面はタイトル用の広告枠を使う） -->
-<script>(function(){try{var C=[{"a": "#taken .card", "v": "#taken"}, {"a": "#title div.card", "v": "#title", "t": 1, "b": 1, "m": 20, "x": "", "x2": ""}],BIG=1,M=20,EX="",EX2="",AD='https://nasubi-no-oniwa.github.io/ad/',AD2='https://nasubi-no-oniwa.github.io/ad/big.html',TAD='https://nasubi-no-oniwa.github.io/ad/t.html',TAD2='https://nasubi-no-oniwa.github.io/ad/tbig.html',LOCK=1200,HOLD=2000,MIN=30000;
+<script>(function(){try{var C=[{"a": "#taken .card", "v": "#taken"}, {"a": "#scroll .scAd", "v": "#scroll", "b": 0, "m": 8}, {"a": "#title div.card", "v": "#title", "t": 1, "b": 1, "m": 20, "x": "", "x2": ""}],BIG=1,M=20,EX="",EX2="",AD='https://nasubi-no-oniwa.github.io/ad/',AD2='https://nasubi-no-oniwa.github.io/ad/big.html',TAD='https://nasubi-no-oniwa.github.io/ad/t.html',TAD2='https://nasubi-no-oniwa.github.io/ad/tbig.html',LOCK=1200,HOLD=2000,MIN=30000;
 if(/[?&]noad=1/.test(location.search))return;
 if(!/iPhone|iPod|Android|Mobile|Windows Phone|BlackBerry/i.test(navigator.userAgent||''))return;
 var S=[];
@@ -320,6 +355,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
   <button data-p="board"><i>議</i><span></span></button>
   <button data-p="log"><i>報</i><span></span></button>
   <button data-p="defect"><i>返</i><span></span></button>
+  <button data-p="scroll"><i>巻</i><span></span></button>
   <button data-p="more"><i>他</i><span></span></button>
  </nav>
  <div id="cell" class="paper" hidden style="pointer-events:auto">
@@ -340,6 +376,12 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
   <div id="tkMsg"></div>
   <button id="tkBack" class="btn main"></button>
  </div></div>
+</section>
+
+<section id="scroll" class="scr over" hidden>
+ <div class="scAd"></div>
+ <div class="scHd"><div id="scPick"></div><button id="scX">✕</button></div>
+ <div id="scBody"></div>
 </section>
 
 <div id="panel" class="over" hidden><div class="pbox paper">
@@ -366,6 +408,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
 <script src="js/config.js"></script>
 <script src="js/mapdata.js"></script>
 <script src="js/data.js"></script>
+<script src="js/scroll.js"></script>
 <script src="js/kamon.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/net.js"></script>
