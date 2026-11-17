@@ -310,7 +310,7 @@
     if (endShown || !N.ended() || scr !== 'game') return; endShown = true; refreshGlow();
     try { await N.loadState(); } catch (e) { }
     const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.s.end && N.s.end.k === 'half'), names = win.map(TK.fname).join('・');
-    $('enT').textContent = half ? t('en_title') : t('t_ended'); const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
+    $('enT').textContent = half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
     $('enS').textContent = t(enKey, { name: names });
     $('enWin').hidden = !(N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
     $('enList').innerHTML = sortedF().slice(0, 5).map(x => `<div class="pw"><span class="r">${rankOf(x.L)}</span><canvas width="90" height="90" data-c="${x.L}"></canvas><div class="nm">${esc(TK.fname(x))}</div><span class="n">${N.s.n[x.L] || 0}</span></div>`).join(''); $('enList').querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
