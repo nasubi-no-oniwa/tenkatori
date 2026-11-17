@@ -97,7 +97,7 @@
   };
   const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
   N.takeable = function () { const me = N.me, out = []; if (!me || !N.cells) return out; for (let i = 0; i < NC; i++) if (N.cells[i] !== me.f && !CASTLE.has(i) && ADJ[i].some(j => N.cells[j] === me.f && alive(j, me.f))) out.push(i); return out; };
-  N.wait = () => { const me = N.me; if (!me || !me.t) return 0; return Math.max(0, me.t + TK.WAIT - N.now()); };
+  N.wait = () => { const me = N.me; if (!me) return 0; const a = me.t ? me.t + TK.WAIT : 0, b = me.j ? me.j + (TK.JOINT || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };
   N.ended = () => !!(N.s && N.s.end) || N.now() > TK.END;
   // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
   // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
@@ -108,7 +108,7 @@
   N.winners = function () { if (N.s.end && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）
   N.weakest = function () { let mn = 1e9, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n < mn) { mn = n; w = [f.L]; } else if (n === mn) w.push(f.L); } return w; };
-  N.defectWait = () => { const me = N.me; if (!me || !me.d) return 0; return Math.max(0, me.d + TK.DEFECT - N.now()); };
+  N.defectWait = () => { const me = N.me; if (!me) return 0; const a = me.d ? me.d + TK.DEFECT : 0, b = me.j ? me.j + (TK.JOIND || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };
 
   // ---------- 読む ----------
   let stateAt = 0;

@@ -7,13 +7,13 @@ on:
         description: 'stop＝開戦準備中にする／open＝外す（開戦）／reset＝記録を全部消して最初の地図に戻す（準備中のまま）／launch＝消して開戦'
         required: true
         type: choice
-        options: [stop, open, reset, launch, find, ban]
+        options: [stop, open, reset, launch, find, ban, revert]
       q:
-        description: 'find・ban のとき：探す名前（「尾張の」などの国名はつけない）'
+        description: 'find・ban・revert のとき：探す名前（「尾張の」などの国名はつけない）'
         required: false
         default: ''
       h:
-        description: 'find・ban のとき：本拠の国の記号（a〜t。三河＝e）。空なら国を問わない'
+        description: 'find・ban・revert のとき：本拠の国の記号（a〜t。三河＝e）。空なら国を問わない'
         required: false
         default: ''
 permissions:

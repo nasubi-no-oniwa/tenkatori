@@ -32,7 +32,10 @@ export async function run(drv, log = console.log) {
   ok((await drv.read('u/' + A, A)).val.f === 'a', '自分の記録は読める');
   ok(!(await drv.read('u/' + A, B)).ok, '他人の記録は読めない');
 
+  const age = (...us) => drv.admin(Object.fromEntries(us.map(u => ['u/' + u + '/j', 1])));   // 仕官の時刻を昔にする（作り直し対策の待ちを過ぎた人として試す）
   log('2) マスを取る');
+  await no(take(A, 2, 1, 'a', 'w', '与作'), '仕官して1時間たつまで、最初の1マスは取れない');
+  await age(A, B, C);
   await no(take(A, 4, 1, 'a', 'w', '与作'), 'となりでないマスは取れない');
   await no(take(A, 2, 3, 'a', 'w', '与作'), '足場が自分の陣営のマスでないと取れない');
   await no(take(A, 1, 0, 'a', 'a', '与作'), '自分の陣営のマスは取れない');
@@ -77,6 +80,7 @@ export async function run(drv, log = console.log) {
 
   log('4) 寝返り');
   const defect = (u, from, to, nm, h) => { const id = pid(); return drv.update({ ['u/' + u + '/f']: to, ['u/' + u + '/d']: SV, ['u/' + u + '/r']: true, ['u/' + u + '/l']: id, ['s/m/' + to]: INC(1), ['s/m/' + from]: INC(-1), ['log/' + id]: { t: SV, y: 'd', f: to, p: from, n: nm, h, r: true } }, u); };
+  { const N1 = await drv.user('N1'); await yes(join(N1, 'a', '新入り'), '新入りが織田に仕える'); await no(defect(N1, 'a', 'd', '新入り', 'a'), '仕官して1日たつまで寝返れない'); }
   await no(defect(A, 'a', 'b', '与作', 'a'), 'マスがいちばん少なくない武将へは寝返れない');
   await yes(defect(A, 'a', 'd', '与作', 'a'), 'Aが、いちばん少ない武将（同じ数のうちの1人）へ寝返る');
   ok((await drv.read('u/' + A, A)).val.h === 'a', '名前の国は、最初に仕えた武将のまま');
@@ -99,7 +103,7 @@ export async function run(drv, log = console.log) {
 
   log('6b) 囲まれたマスは足場にできない（天守閣は別）');
   { const F = await drv.user('F'), G2 = await drv.user('G'), H = await drv.user('H');
-    await yes(join(F, 'e', '五郎'), 'Fが徳川に仕える'); await yes(join(G2, 'a', '六郎'), 'Gが織田に仕える'); await yes(join(H, 'e', '七郎'), 'Hが徳川に仕える');
+    await yes(join(F, 'e', '五郎'), 'Fが徳川に仕える'); await yes(join(G2, 'a', '六郎'), 'Gが織田に仕える'); await yes(join(H, 'e', '七郎'), 'Hが徳川に仕える'); await age(F, G2, H);
     await drv.admin({ 'c/1': 'b', 'c/2': 'b', 'c/3': 'e', 'c/4': 'b' });
     await no(take(F, 4, 3, 'e', 'b', '五郎', { w: 2 }), '四方を敵に囲まれた1マスは、足場にできない');
     await no(take(F, 4, 3, 'e', 'b', '五郎', { w: null }), '足場のとなりを言わずには取れない');
@@ -112,7 +116,7 @@ export async function run(drv, log = console.log) {
 
   log('6c) 同時に取り合ったとき（10秒以内）：マスの少ない陣営が勝つ。負けたほうも一手を失う');
   { const P = await drv.user('P'), Q1 = await drv.user('Q1'), Q2 = await drv.user('Q2'), Q3 = await drv.user('Q3'), Q4 = await drv.user('Q4');
-    await yes(join(P, 'a', '八郎'), 'Pが織田に仕える'); for (const [q, nm] of [[Q1, '九郎'], [Q2, '十郎'], [Q3, '十一'], [Q4, '十二']]) await yes(join(q, 'b', nm), nm + 'が武田に仕える');
+    await yes(join(P, 'a', '八郎'), 'Pが織田に仕える'); for (const [q, nm] of [[Q1, '九郎'], [Q2, '十郎'], [Q3, '十一'], [Q4, '十二']]) await yes(join(q, 'b', nm), nm + 'が武田に仕える'); await age(P, Q1, Q2, Q3, Q4);
     await drv.admin({ 'c/1': 'a', 'c/2': 'w', 'c/3': 'b', 'ct/2': null, 's/n/a': 5, 's/n/b': 9, 's/n/w': 5 });
     await yes(take(P, 2, 1, 'a', 'w', '八郎'), '織田（5マス）が白いマス2を取る');
     await no(take(Q1, 2, 3, 'b', 'a', '九郎'), 'すぐあとに来た武田（9マス）は、マスが多いので取れない');
@@ -123,11 +127,11 @@ export async function run(drv, log = console.log) {
     ok((await drv.read('c/2', P)).val === 'b', 'マス2は武田のもの');
     await drv.admin({ 'c/2': 'a', 's/n/a': 6, 's/n/b': 5, 'ct/2': SV });
     { let won = 0; for (const q of [Q3, Q4]) { if (await take(q, 2, 3, 'b', (await drv.read('c/2', q)).val, q === Q3 ? '十一' : '十二')) { won++; break; } } ok(drv.advance ? won === 1 : true, '同じ数（5マスと5マス）なら、くじ（時計の偶数・奇数）で決まる'); }
-    if (drv.advance) { await drv.admin({ 'c/2': 'a', 's/n/a': 5, 's/n/b': 9, 'ct/2': SV }); const Q5 = await drv.user('Q5'); await yes(join(Q5, 'b', '十三'), '十三が武田に仕える'); await no(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒以内は、マスの多い武田は取れない'); await drv.advance(11000); await yes(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒をすぎれば、いつもどおり奪える'); }
+    if (drv.advance) { await drv.admin({ 'c/2': 'a', 's/n/a': 5, 's/n/b': 9, 'ct/2': SV }); const Q5 = await drv.user('Q5'); await yes(join(Q5, 'b', '十三'), '十三が武田に仕える'); await age(Q5); await no(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒以内は、マスの多い武田は取れない'); await drv.advance(11000); await yes(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒をすぎれば、いつもどおり奪える'); }
     await drv.admin({ 'c/1': 'a', 'c/2': 'b', 'c/3': 'b', 'c/4': 'b', 'ct/1': null, 'ct/2': null }); }
 
   log('7) 天下統一（半分の2500マス）');
-  await yes(join(D, 'b', '三郎'), 'Dが武田に仕える');
+  await yes(join(D, 'b', '三郎'), 'Dが武田に仕える'); await age(D);
   const nb = (await drv.read('s/n/b', D)).val;
   await drv.admin({ 's/n/b': 2499 });
   const c2 = (await drv.read('c/2', D)).val, c3 = (await drv.read('c/3', D)).val;

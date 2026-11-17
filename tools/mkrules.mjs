@@ -16,6 +16,7 @@
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
 import fs from 'fs';
 const END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);          // 2026-11-30 23:59:59（日本時間）
+const JOINT = 1 * 3600 * 1000, JOIND = 24 * 3600 * 1000;   // 作り直し対策（11/17）：仕官してから最初の1マスまで1時間・最初の寝返りまで1日
 const WAIT = 1 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
@@ -108,7 +109,7 @@ tk.k = { '.read': false, '.write': false };
           + `(!data.exists() && newData.parent().child('h').val() === newData.val() && newData.parent().child('j').val() === now && newData.parent().child('n').exists()`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1)`
           // 寝返る（3日に1回。マスがいちばん少ない武将のところへだけ。同じ数ならどれでもよい）
-          + ` || (data.exists() && newData.val() !== data.val() && (!data.parent().child('d').exists() || now - data.parent().child('d').val() >= ${DEFECT})`
+          + ` || (data.exists() && newData.val() !== data.val() && (!data.parent().child('d').exists() || now - data.parent().child('d').val() >= ${DEFECT}) && data.parent().child('j').isNumber() && now - data.parent().child('j').val() >= ${JOIND}`
           + ` && newData.parent().child('d').val() === now && newData.parent().child('r').val() === true && ${least}`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1`
           + ` && ${T}.child('s/m/' + data.val()).val() === root.child('tk/s/m/' + data.val()).val() - 1))`,
@@ -117,7 +118,7 @@ tk.k = { '.read': false, '.write': false };
       h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val() === newData.parent().child('f').val()" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
-      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT}) && newData.parent().child('f').exists()` },
+      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       w: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },

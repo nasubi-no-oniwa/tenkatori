@@ -46,4 +46,35 @@ else if (op === 'launch' || op === 'reset') {
     if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
     console.log('止めました：' + ids.size + '人（マスを取る・板に書く・質問を送るができなくなる）。消した書きこみ：' + posts.length + '件（中身は上に残しています）');
   }
-} else { console.log('op は stop / open / reset / launch / find / ban のどれかにしてください'); process.exit(1); }
+} else if (op === 'revert') {
+  // 止めた人（名前 q・本拠 h で探して、止め済みの人だけ）が取ったマスを、取られる前の持ち主に戻す。
+  // そのあと誰かが取りなおしたマスはそのまま。勢力の数と家臣の数は数えなおす（何回流しても同じ結果になる）
+  const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim();
+  if (!q) { console.log('探す名前（q）を入れてください'); process.exit(1); }
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const [u, ban, logo, c0] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json'), get('/tk/c.json')]);
+  const ids = new Set(Object.entries(u).filter(([id, x]) => x && typeof x.n === 'string' && x.n.includes(q) && (!h || x.h === h) && ban[id]).map(([id]) => id));
+  console.log('戻す対象（止め済みの人）：' + ids.size + '人');
+  const c = Array.isArray(c0) ? c0.slice() : Object.assign([], c0);
+  const byCell = {};
+  for (const e of Object.values(logo).filter(e => e && e.y === 't' && e.c != null).sort((a, b) => a.t - b.t)) (byCell[+e.c] = byCell[+e.c] || []).push(e);
+  const w = {}, moved = {}; let n = 0, skip = 0;
+  for (const [cell, list] of Object.entries(byCell)) {
+    let k = list.length - 1; if (!ids.has(list[k].u)) continue;
+    if (c[cell] !== list[k].f) { skip++; continue; }   // 記録といまの持ち主が合わないマスはさわらない
+    while (k > 0 && ids.has(list[k - 1].u)) k--;
+    const back = list[k].p || 'w';
+    w['c/' + cell] = back; w['ct/' + cell] = null; c[cell] = back; n++;
+    const key = list[list.length - 1].f + '→' + back; moved[key] = (moved[key] || 0) + 1;
+  }
+  const cnt = {}; for (const x of c) if (x) cnt[x] = (cnt[x] || 0) + 1;
+  for (const L of ['w', ...'abcdefghijklmnopqrst']) w['s/n/' + L] = cnt[L] || 0;
+  const mem = {}; for (const [id, x] of Object.entries(u)) if (x && x.f && !ban[id]) mem[x.f] = (mem[x.f] || 0) + 1;
+  for (const L of 'abcdefghijklmnopqrst') w['s/m/' + L] = mem[L] || 0;
+  w['s/ver'] = Date.now();   // みんなのスマホに残った古い地図を読みなおさせる
+  await api('PATCH', '/tk.json', w, tok);
+  console.log('戻したマス：' + n + '（記録と合わずさわらなかったマス：' + skip + '）');
+  for (const [k2, v] of Object.entries(moved).sort((a, b) => b[1] - a[1])) console.log('  ' + k2 + '：' + v);
+  console.log('勢力の数：' + JSON.stringify(cnt));
+  console.log('家臣の数（止めた人をのぞく）：' + JSON.stringify(mem));
+} else { console.log('op は stop / open / reset / launch / find / ban / revert のどれかにしてください'); process.exit(1); }
