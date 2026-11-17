@@ -104,14 +104,14 @@
 
   // ---------- 診断 ----------
   let ans = [], qi = 0;
-  function startQuiz() { ans = []; qi = 0; show('quiz'); scene('title', { dim: 1 }); renderQ(); ev('quiz_start'); }
+  function startQuiz() { N.loadState().catch(() => { }); ans = []; qi = 0; show('quiz'); scene('title', { dim: 1 }); renderQ(); ev('quiz_start'); }
   function renderQ() {
     const q = TK.Q[qi]; $('qNo').textContent = t('q_no', { n: qi + 1 }) + ' / 10'; $('qBar').style.width = (qi * 10) + '%';
     $('qText').textContent = TK.L(q.q); const box = $('qAns'); box.innerHTML = '';
     q.a.forEach((a, k) => { const b = document.createElement('button'); b.className = 'qa'; b.innerHTML = '<i>' + '一二三四'[k] + '</i><span>' + esc(TK.L(a[0])) + '</span>'; b.onclick = () => pick(k); box.appendChild(b); });
     if (G.gsap) { gsap.fromTo('#qText', { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: 0.35, ease: 'power2.out' }); gsap.fromTo('.qa', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.06, delay: 0.08, ease: 'power2.out' }); }
   }
-  function pick(k) { ans[qi] = k; if (qi < 9) { qi++; renderQ(); } else { $('qBar').style.width = '100%'; const fi = TK.judge(ans); N.store('tk_quiz', { a: ans, f: fi }); ev('quiz_done', { warlord: TK.F[fi].L }); showReveal(TK.F[fi], 'new'); } }
+  function pick(k) { ans[qi] = k; if (qi < 9) { qi++; renderQ(); } else { $('qBar').style.width = '100%'; const fi = TK.judge(ans, N.s && N.s.m); N.store('tk_quiz', { a: ans, f: fi }); ev('quiz_done', { warlord: TK.F[fi].L }); showReveal(TK.F[fi], 'new'); } }
 
   // ---------- 仕える武将が決まる場面（mode：new＝はじめて、defect＝寝返ったあと） ----------
   let rvF = null, rvMode = 'new';

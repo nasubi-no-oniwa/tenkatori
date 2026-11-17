@@ -131,12 +131,18 @@
   TK.BIAS = [0.154, 0, 0.504, 0.014, 0.314, 0.23, 0.579, 0.556, 0.672, 1.245, 1.421, 1.817, 0.477, 0.314, 0.479, 0.476, 0.757, 0.305, 1.161, 0.984];
   // 答え（0〜3 が10個）→ 武将の番号。性格の向きがいちばん近い武将。同点は番号の小さいほう
   const NORM = F.map(f => Math.sqrt(f.v.reduce((s, x) => s + x * x, 0)));
-  TK.judge = function (ans) {
+  // 答えに近い順の武将の番号
+  TK.rank = function (ans) {
     const t = [0, 0, 0, 0, 0, 0, 0, 0];
     for (let i = 0; i < Q.length; i++) { const w = Q[i].a[ans[i]][1]; for (let k = 0; k < 8; k++) t[k] += w[k]; }
-    let best = 0, bs = -1e9;
-    for (let i = 0; i < F.length; i++) { let s = 0; for (let k = 0; k < 8; k++) s += t[k] * F[i].v[k]; s = s / NORM[i] + TK.BIAS[i]; if (s > bs + 1e-9) { bs = s; best = i; } }
-    return best;
+    const sc = F.map((f, i) => { let s = 0; for (let k = 0; k < 8; k++) s += t[k] * f.v[k]; return s / NORM[i] + TK.BIAS[i]; });
+    return F.map((f, i) => i).sort((a, b) => (sc[b] - sc[a]) || (a - b));
+  };
+  // 偏りをならす（11/18）：家臣の数 m がわかっていれば、答えに近い上位 TK.PICKN 人の中から、家臣のいちばん少ない武将にする
+  TK.PICKN = 3;
+  TK.judge = function (ans, m) {
+    const r = TK.rank(ans); if (!m) return r[0];
+    return r.slice(0, TK.PICKN).map((i, k) => [i, +(m[F[i].L]) || 0, k]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2]))[0][0];
   };
   // ---------- 決まりの数字 ----------
   TK.JOINT = 1 * 3600 * 1000;                    // 仕官してから最初の1マスまで（作り直し対策、11/17）
