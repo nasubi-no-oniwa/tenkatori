@@ -136,6 +136,12 @@
    }
   }
  },
+ "bp": {
+  "$room": {
+   ".read": "$room === 'all' || (auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (auth != null && root.child('tk/u/' + auth.uid).child('f').val() === $room)",
+   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"
+  }
+ },
  "sch": {
   ".read": false,
   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"

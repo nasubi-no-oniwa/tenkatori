@@ -267,7 +267,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden && scr === 'game') poll(); });
 
   // ---------- 巻物（勢力・軍議・戦況・寝返り・その他） ----------
-  let pKind = '', bdRoom = '', bdT = 0, bdLast = 0;
+  let pKind = '', bdRoom = '', bdT = 0, bdLast = 0, bdSeen = new Set();
   function openPanel(kind, arg) {
     pKind = kind; clearInterval(bdT); const T = $('pTitle'), B = $('pBody'), F = $('pFoot'), TB = $('pTabs'); B.innerHTML = ''; F.innerHTML = ''; TB.innerHTML = ''; B.scrollTop = 0;
     const me = N.me;
@@ -298,7 +298,7 @@
       T.textContent = t('nav_board'); const rooms = me ? [[me.f, t('bd_mine', { name: TK.fname(TK.FI[me.f]) })], ['all', t('bd_all')]] : [['all', t('bd_all')]];
       if (!rooms.some(r => r[0] === bdRoom)) bdRoom = rooms[0][0]; if (arg && arg.room) bdRoom = arg.room;
       rooms.forEach(([r, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = r === bdRoom ? 'on' : ''; b.onclick = () => { bdRoom = r; openPanel('board'); }; TB.appendChild(b); });
-      B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdSys"></div><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
+      B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdPin"></div><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
       if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('bd_wait') : t('net_err')); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
       else F.innerHTML = `<p class="note" style="text-align:center">${esc(t('bd_need'))}</p>`;
       bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 30000);
@@ -333,17 +333,24 @@
     const p = $('panel'), was = p.hidden; p.hidden = false; if (was && G.gsap) { gsap.fromTo(p, { opacity: 0 }, { opacity: 1, duration: 0.2 }); gsap.fromTo('.pbox', { y: 60 }, { y: 0, duration: 0.35, ease: 'power3.out' }); }
   }
   function closePanel() { clearInterval(bdT); $('panel').hidden = true; pKind = ''; }
+  // 掲示板：新しい書きこみが一番上。なすPのお知らせ（時間割から作るもの）も同じ流れに混ぜる。ピン止めは一番上に固定
+  const bdMsg = (e, room, now, pin) => { const f = TK.FI[e.f], d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : '') + (pin ? ' pin' : ''); d.innerHTML = `<div class="h">${pin ? '<em>📌</em>' : ''}${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; return d; };
   async function loadBoard(first) {
     if (pKind !== 'board') return; const room = bdRoom;
     try {
-      const raw = await N.board(room, first ? 0 : bdLast); if (pKind !== 'board' || room !== bdRoom) return; const box = $('bdList'); if (!box) return;
-      // なすPのお知らせ（時間割から作るもの）は、上にまとめて新しい順に出す
-      const sys = sysPosts(room).sort((a, b) => b.t - a.t), sb = $('bdSys');
-      if (sb && sys.map(e => e.id).join() !== sb.dataset.ids) { sb.dataset.ids = sys.map(e => e.id).join(); sb.innerHTML = sys.map(e => `<div class="msg gm"><div class="h"><b>${esc(t('gm'))}</b><span>${esc(TK.ago(e.t, N.now()))}</span></div><p>${esc(e.m)}</p></div>`).join(''); }
-      const list = first ? raw : raw.filter(e => e.t > bdLast);
+      const [raw, pins] = await Promise.all([N.board(room, first ? 0 : bdLast), first || !(loadBoard.pt > Date.now() - 120000) ? N.pins(room).catch(() => null) : Promise.resolve(undefined)]);
+      if (pKind !== 'board' || room !== bdRoom) return; const box = $('bdList'), pb = $('bdPin'); if (!box) return;
+      const now = N.now();
+      if (first) bdSeen = new Set();
+      if (pins !== undefined && pb) { loadBoard.pt = Date.now(); pb.innerHTML = ''; (pins || []).sort((x, y) => y.t - x.t).forEach(e => pb.appendChild(bdMsg(e, room, now, true))); }
+      const sys = sysPosts(room).filter(e => !bdSeen.has(e.id));
+      const list = raw.filter(e => first || e.t > bdLast).concat(sys).sort((x, y) => y.t - x.t);   // 新しい順
       if (first) box.innerHTML = list.length ? '' : `<p class="note">${esc(t('bd_empty'))}</p>`; else if (list.length && box.querySelector('.note')) box.innerHTML = '';
-      const now = N.now(); for (const e of list) { if (e.t <= bdLast && !first) continue; const f = TK.FI[e.f]; const d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : ''); d.innerHTML = `<div class="h">${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; box.appendChild(d); bdLast = Math.max(bdLast, e.t); }
-      if (first || list.length) $('pBody').scrollTop = 1e6;
+      const frag = document.createDocumentFragment();
+      for (const e of list) { frag.appendChild(bdMsg(e, room, now)); if (e.sys) bdSeen.add(e.id); else bdLast = Math.max(bdLast, e.t); }
+      if (first) box.appendChild(frag);
+      else if (list.length) { box.insertBefore(frag, box.firstChild); }   // 新しいものは上に足す（順番が前後したときも、上に出る）
+      if (first) $('pBody').scrollTop = 0;
     } catch (e) { const box = $('bdList'); if (box && first) box.innerHTML = `<p class="note">${esc(e && e.code === 'PERMISSION_DENIED' ? t('bd_only') : t('net_err'))}</p>`; }
   }
   // いまの戦況を投稿

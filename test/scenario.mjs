@@ -164,6 +164,16 @@ export async function run(drv, log = console.log) {
     await no(drv.update({ ['schd/D3']: { r: 1000, h: 'c'.repeat(24) } }, X), '時間割は書きかえられない');
     await drv.admin({ ['sch/' + K1]: null, ['sch/' + K2]: null, ['sch/' + K3]: null, ['schd/D1']: null, ['schd/D2']: null });
   }
+  log('6e) ピン止め（管理人だけが書ける。読めるのは掲示板と同じ人）');
+  {
+    const P1 = await drv.user('P6e'); await yes(join(P1, 'b', '読む人'), '武田に仕える');
+    await drv.admin({ 'bp/all/PINtest0001': { t: 1, n: 'なすP', m: '全体のピン', g: true }, 'bp/a/PINtest0002': { t: 1, n: 'なすP', m: '織田のピン', g: true } });
+    ok((await drv.read('bp/all', P1)).ok, '全体のピン止めはだれでも読める');
+    ok(!(await drv.read('bp/a', P1)).ok, 'ほかの陣営のピン止めは読めない');
+    await no(drv.update({ 'bp/all/PINtest0003': { t: SV, n: 'にせ', m: 'ピンにしたい', g: true } }, P1), 'ふつうの人はピン止めできない');
+    await no(drv.update({ 'bp/all/PINtest0001': null }, P1), 'ふつうの人はピン止めを外せない');
+    await drv.admin({ 'bp/all/PINtest0001': null, 'bp/a/PINtest0002': null });
+  }
   log('7) 天下統一（半分の2500マス）');
   await yes(join(D, 'b', '三郎'), 'Dが武田に仕える'); await age(D);
   const nb = (await drv.read('s/n/b', D)).val;

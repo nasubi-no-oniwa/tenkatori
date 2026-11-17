@@ -209,6 +209,11 @@
     await N.loadMe(); await N.loadState().catch(() => { }); return N.me;
   };
   // 掲示板（room：'all'＝全体、a〜t＝陣営の軍議）
+  // 管理人がピン止めした書きこみ（bp/{板}/{番号}）
+  N.pins = async function (room) {
+    if (N.fake) return FK.pins ? FK.pins(room) : [];
+    const v = await rest('bp/' + room, null, room !== 'all'); return v ? Object.entries(v).map(([id, e]) => Object.assign({ id }, e)) : [];
+  };
   N.board = async function (room, since) {
     if (N.fake) return FK.board(room, since);
     const auth = room !== 'all';
