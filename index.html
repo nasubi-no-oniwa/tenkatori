@@ -111,6 +111,8 @@ canvas{display:block}
 #hudTimer.ready #hudTL{display:none}
 #hudTimer.ready #hudT{font-family:var(--ft);font-weight:400;font-size:16px;color:#fff3da;background:var(--shu);padding:6px 9px;border-radius:3px;box-shadow:inset 0 0 0 1.5px rgba(255,243,218,.6);animation:rdy 1.6s ease-in-out infinite;text-align:center}
 @keyframes rdy{50%{filter:brightness(1.25)}}
+#bdSys{position:sticky;top:-14px;z-index:2;max-height:34vh;overflow:auto;margin:-2px 0 8px;background:var(--paper) var(--washi);box-shadow:0 6px 10px -6px rgba(0,0,0,.35)}
+#bdSys:empty{display:none}
 #fastBar{position:fixed;left:8px;top:calc(var(--st) + 100px);z-index:9;max-width:calc(100% - 16px);font:inherit;font-size:12.5px;font-weight:800;letter-spacing:.03em;line-height:1.4;padding:5px 12px;background:rgba(20,16,13,.88);color:#f3e7c9;border:1px solid rgba(201,164,76,.7);border-radius:15px;text-align:left;cursor:pointer}
 #fastBar.hot{background:linear-gradient(90deg,#b8261a,#e0582a);color:#fff;border-color:#ffd27a;box-shadow:0 0 0 2px rgba(255,210,122,.35),0 4px 14px rgba(224,88,42,.5);animation:fsPulse 1.6s ease-in-out infinite}
 @keyframes fsPulse{50%{box-shadow:0 0 0 5px rgba(255,210,122,.15),0 4px 18px rgba(224,88,42,.7)}}
