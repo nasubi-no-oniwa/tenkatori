@@ -268,8 +268,8 @@
 
   // ---------- 巻物（勢力・軍議・戦況・寝返り・その他） ----------
   let pKind = '', bdRoom = '', bdT = 0, bdLast = 0, bdSeen = new Set();
-  function openPanel(kind, arg) {
-    pKind = kind; clearInterval(bdT); const T = $('pTitle'), B = $('pBody'), F = $('pFoot'), TB = $('pTabs'); B.innerHTML = ''; F.innerHTML = ''; TB.innerHTML = ''; B.scrollTop = 0;
+  function openPanel(kind, arg) {   // 下のボタンから開く画面だけ、一番上に広告の帯（data-ad）
+    pKind = kind; clearInterval(bdT); if (['power', 'sites', 'sched', 'board', 'log', 'defect', 'more'].includes(kind)) $('panel').dataset.ad = '1'; else delete $('panel').dataset.ad; const T = $('pTitle'), B = $('pBody'), F = $('pFoot'), TB = $('pTabs'); B.innerHTML = ''; F.innerHTML = ''; TB.innerHTML = ''; B.scrollTop = 0;
     const me = N.me;
     if (kind === 'power' || kind === 'sites' || kind === 'sched') {
       T.textContent = t('nav_power'); [['power', t('nav_power')], ['sched', t('fs_tab')], ['sites', t('lm_tab') + '（' + N.LM.length + '）']].forEach(([k, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = k === kind ? 'on' : ''; b.onclick = () => openPanel(k); TB.appendChild(b); });
@@ -332,7 +332,7 @@
     }
     const p = $('panel'), was = p.hidden; p.hidden = false; if (was && G.gsap) { gsap.fromTo(p, { opacity: 0 }, { opacity: 1, duration: 0.2 }); gsap.fromTo('.pbox', { y: 60 }, { y: 0, duration: 0.35, ease: 'power3.out' }); }
   }
-  function closePanel() { clearInterval(bdT); $('panel').hidden = true; pKind = ''; }
+  function closePanel() { clearInterval(bdT); $('panel').hidden = true; delete $('panel').dataset.ad; pKind = ''; }
   // 掲示板：新しい書きこみが一番上。なすPのお知らせ（時間割から作るもの）も同じ流れに混ぜる。ピン止めは一番上に固定
   const bdMsg = (e, room, now, pin) => { const f = TK.FI[e.f], d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : '') + (pin ? ' pin' : ''); d.innerHTML = `<div class="h">${pin ? '<em>📌</em>' : ''}${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; return d; };
   async function loadBoard(first) {
