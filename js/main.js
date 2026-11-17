@@ -158,7 +158,7 @@
     if (room === 'all') {
       const list = []; for (let i = 0; i < 24; i++) if (hs[i] !== '*') list.push(fsH(i) + ' ' + nm(hs[i]));
       out.push({ id: 'd' + d, t: d, m: t('sy_day', { list: list.join('、') }) });
-      for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; out.push({ id: 'h' + a, t: a + 1, m: hs[i] === '*' ? t('sy_hall', { b: fsH(i + 1) }) : t('sy_hour', { name: nm(hs[i]), b: fsH(i + 1) }) }); }
+      for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (hs[i] === '*') out.push({ id: 'h' + a, t: a + 1, m: t('sy_hall', { b: fsH(i + 1) }) }); }   // 陣営ごとの番（2分）は、その陣営の軍議だけに出す
     } else {
       const i = hs.indexOf(room); if (i < 0) return out; const a = d + i * 3600000;
       out.push({ id: 'd' + d, t: d, m: t('sy_fday', { a: fsH(i), b: fsH(i + 1) }) });
