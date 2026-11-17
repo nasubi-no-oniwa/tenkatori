@@ -117,7 +117,66 @@ else if (op === 'launch' || op === 'reset') {
   }
   if (made.length) await api('PATCH', '/tk.json', w, tok);
   console.log('作った日：' + made.length + '日'); for (const m of made) console.log('  ' + m);
-} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched のどれかにしてください'); process.exit(1); }
+} else if (op === 'bots') {
+  // Bot らしい人を探す（11/18）。q：何点以上を対象にするか（ふだん 3）。h に go と入れたときだけ、止めて取ったマスも戻す
+  //  見るところ：①決まりの最短の間隔ぴったりで取りつづける ②眠らない（24時間のうち20時間以上で取っている） ③間隔のばらつきが小さすぎる（機械のように一定）
+  //             ④同じ名前・似た名前の人が短い間にたくさん仕官 ⑤仕官してちょうど1時間で最初の1マス
+  const lim = +(process.argv[3] || '') || 3, go = (process.argv[4] || '').trim() === 'go';
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const [u, ban0, logo, schd] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json'), get('/tk/schd.json')]);
+  const HR = 3600000, DAYM = 86400000, JST = 9 * HR, day = t => Math.floor((t + JST) / DAYM) * DAYM - JST;
+  const need = e => { const d = day(e.t), h = schd[d] && schd[d].h; const L = h ? h[Math.floor((e.t - d) / HR)] : ''; return L === e.f ? 120000 : L === '*' ? 300000 : HR; };
+  const by = {}; for (const e of Object.values(logo)) if (e && e.y === 't' && e.u) (by[e.u] = by[e.u] || []).push(e);
+  const nameCnt = {}; for (const x of Object.values(u)) if (x && x.n) { const k = String(x.n).replace(/[0-9０-９_\-ー]+$/, ''); nameCnt[k] = (nameCnt[k] || 0) + 1; }
+  const res = [];
+  for (const [id, list] of Object.entries(by)) {
+    if (ban0[id]) continue; const x = u[id] || {}; list.sort((a, b) => a.t - b.t);
+    const n = list.length; let tight = 0, ivs = []; const hrs = new Set();
+    for (let i = 0; i < n; i++) { hrs.add(Math.floor((list[i].t - day(list[i].t)) / HR) + ':' + day(list[i].t));
+      if (i) { const iv = list[i].t - list[i - 1].t, nd = need(list[i]); ivs.push(iv); if (iv >= nd && iv <= nd + 60000) tight++; } }
+    // 24時間の窓で、何時間に取っているか（いちばん多い窓）
+    let wake = 0; for (let i = 0; i < n; i++) { const hs = new Set(); for (let j = i; j < n && list[j].t - list[i].t < DAYM; j++) hs.add(Math.floor(list[j].t / HR)); wake = Math.max(wake, hs.size); }
+    const nm = ivs.filter(v => v >= HR && v < HR + 600000); const mean = nm.reduce((a, b) => a + b, 0) / (nm.length || 1);
+    const sd = Math.sqrt(nm.reduce((a, b) => a + (b - mean) ** 2, 0) / (nm.length || 1));
+    const nk = String(x.n || '').replace(/[0-9０-９_\-ー]+$/, '');
+    let sc = 0, why = [];
+    if (ivs.length >= 8 && tight / ivs.length >= 0.85) { sc += 2; why.push('最短ぴったり' + tight + '/' + ivs.length); }
+    if (wake >= 20) { sc += 2; why.push('24時間で' + wake + '時間'); } else if (wake >= 17) { sc += 1; why.push('24時間で' + wake + '時間'); }
+    if (nm.length >= 6 && sd < 8000) { sc += 2; why.push('間隔のぶれ' + (sd / 1000).toFixed(1) + '秒'); }
+    if (nk && nameCnt[nk] >= 5) { sc += 1; why.push('同じ名前' + nameCnt[nk] + '人'); }
+    if (x.j && list[0] && list[0].t - x.j >= HR && list[0].t - x.j < HR + 20000) { sc += 1; why.push('仕官ちょうど1時間で最初'); }
+    if (sc >= 1) res.push({ id, n: x.n, f: x.f, take: n, sc, why: why.join('・') });
+  }
+  res.sort((a, b) => b.sc - a.sc || b.take - a.take);
+  console.log('調べた人（マスを取ったことがある人）：' + Object.keys(by).length + '人');
+  console.log(lim + '点以上：' + res.filter(r => r.sc >= lim).length + '人');
+  for (const r of res.slice(0, 80)) console.log('  ' + r.sc + '点　' + r.id + '　' + r.n + '（' + r.f + '）　取った' + r.take + '回　' + r.why);
+  if (go) {
+    const ids = new Set(res.filter(r => r.sc >= lim).map(r => r.id)), w = {};
+    for (const id of ids) w['ban/' + id] = true;
+    if (ids.size) await api('PATCH', '/tk.json', w, tok);
+    console.log('止めました：' + ids.size + '人');
+    const ban = Object.assign({}, ban0); for (const id of ids) ban[id] = true;
+    await revertIds(new Set(ids), u, ban, logo, await get('/tk/c.json'));
+  }
+} else if (op === 'fac') {
+  // 陣営の家臣を調べる（11/18）。q：陣営の記号（毛利＝g）
+  const L = (process.argv[3] || '').trim();
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const [u, ban, logo, on] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json'), get('/tk/on.json')]);
+  const takes = {}; for (const e of Object.values(logo)) if (e && e.y === 't' && e.u) takes[e.u] = (takes[e.u] || 0) + 1;
+  const all = Object.entries(u).filter(([id, x]) => x && x.f);
+  const cnt = {}; for (const [id, x] of all) if (!ban[id]) cnt[x.f] = (cnt[x.f] || 0) + 1;
+  console.log('陣営ごとの家臣（止めた人をのぞく）：' + JSON.stringify(Object.entries(cnt).sort((a, b) => b[1] - a[1])));
+  const mem = all.filter(([id, x]) => x.f === L);
+  const jst = t => t ? new Date(t + 9 * 3600000).toISOString().slice(5, 16).replace('T', ' ') : '—';
+  console.log(L + ' の家臣：' + mem.length + '人（止めた人 ' + mem.filter(([id]) => ban[id]).length + '人）／ 1マスも取っていない人 ' + mem.filter(([id]) => !takes[id]).length + '人 ／ 本拠が別の陣営（寝返ってきた）' + mem.filter(([id, x]) => x.h !== L).length + '人');
+  const hist = {}; for (const [id, x] of mem) { const k = jst(x.j).slice(0, 11) + '0'; hist[k] = (hist[k] || 0) + 1; }
+  console.log('仕官した時刻（10分ごと）：'); for (const [k, v] of Object.entries(hist).sort()) console.log('  ' + k + '  ' + '■'.repeat(Math.min(v, 60)) + ' ' + v);
+  const nm = {}; for (const [id, x] of mem) nm[x.n] = (nm[x.n] || 0) + 1;
+  console.log('名前（多い順）：' + JSON.stringify(Object.entries(nm).sort((a, b) => b[1] - a[1]).slice(0, 40)));
+  for (const [id, x] of mem.sort((a, b) => (a[1].j || 0) - (b[1].j || 0))) console.log('  ' + jst(x.j) + '　' + id + '　' + x.n + '　本拠' + x.h + '　取った' + (takes[id] || 0) + '回　最後に取った' + jst(x.t) + (x.r ? '　寝返り' : '') + (ban[id] ? '　止め済み' : '') + (on[id] ? '　いま開いている' : ''));
+} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac のどれかにしてください'); process.exit(1); }
 
 async function revertIds(ids, u, ban, logo, c0) {
   const c = Array.isArray(c0) ? c0.slice() : Object.assign([], c0);
