@@ -111,6 +111,12 @@ canvas{display:block}
 #hudTimer.ready #hudTL{display:none}
 #hudTimer.ready #hudT{font-family:var(--ft);font-weight:400;font-size:16px;color:#fff3da;background:var(--shu);padding:6px 9px;border-radius:3px;box-shadow:inset 0 0 0 1.5px rgba(255,243,218,.6);animation:rdy 1.6s ease-in-out infinite;text-align:center}
 @keyframes rdy{50%{filter:brightness(1.25)}}
+#ksBar{position:fixed;right:8px;top:calc(var(--st) + 66px);z-index:9;max-width:calc(52% - 12px);font-size:12px;font-weight:800;letter-spacing:.03em;padding:4px 11px 4px 5px;background:rgba(20,16,13,.9);color:#fff3da;border:1px solid #f0c850;border-radius:15px;display:flex;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(0,0,0,.4);cursor:pointer}
+#ksBar canvas{flex:none;width:22px;height:22px}
+#ksTx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#keyBar{max-width:calc(48% - 8px)}
+#keyTx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cellRice{font-size:13px;font-weight:800;color:#8a5a00;background:rgba(240,200,80,.25);border-radius:4px;padding:4px 8px}
 #fastBar{position:fixed;left:8px;top:calc(var(--st) + 100px);z-index:9;max-width:calc(100% - 16px);font:inherit;font-size:12.5px;font-weight:800;letter-spacing:.03em;line-height:1.4;padding:5px 12px;background:rgba(20,16,13,.88);color:#f3e7c9;border:1px solid rgba(201,164,76,.7);border-radius:15px;text-align:left;cursor:pointer}
 #fastBar.hot{background:linear-gradient(90deg,#b8261a,#e0582a);color:#fff;border-color:#ffd27a;box-shadow:0 0 0 2px rgba(255,210,122,.35),0 4px 14px rgba(224,88,42,.5);animation:fsPulse 1.6s ease-in-out infinite}
 @keyframes fsPulse{50%{box-shadow:0 0 0 5px rgba(255,210,122,.15),0 4px 18px rgba(224,88,42,.7)}}
@@ -380,6 +386,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
   <div id="hudTimer"><small id="hudTL"></small><b id="hudT"></b></div>
  </div>
  <button id="keyBar" hidden style="pointer-events:auto"><canvas id="keyIc" width="66" height="66"></canvas><span id="keyTx"></span></button>
+ <button id="ksBar" hidden style="pointer-events:auto"><canvas id="ksIc" width="66" height="66"></canvas><span id="ksTx"></span></button>
  <button id="fastBar" hidden style="pointer-events:auto"></button>
  <div id="pinBar" hidden></div>
  <div id="zoom" style="pointer-events:auto"><button id="zLm">名</button><button id="zIn">＋</button><button id="zOut">－</button><button id="zMe">◎</button></div>
@@ -394,6 +401,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
  <div id="cell" class="paper" hidden style="pointer-events:auto">
   <div class="cellTop"><canvas id="cellCrest" width="132" height="132"></canvas><i id="cellChip" hidden></i><div><div id="cellProv"></div><div id="cellOwner"></div></div><button id="cellX">✕</button></div>
   <div id="cellLm" hidden></div>
+  <div id="cellRice" hidden></div>
   <div id="cellWhy"></div>
   <button id="cellGo" class="btn main"></button>
  </div>

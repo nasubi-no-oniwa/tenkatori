@@ -117,10 +117,10 @@
       c.textBaseline = 'middle';
       for (const lm of N.LM) {
         let top = 1e9; for (const i of lm.c) top = Math.min(top, cy(i));
-        const x = sx(lm.x), yt = sy(top), key = lm.id === 'azuchi';
+        const x = sx(lm.x), yt = sy(top), key = lm.id === 'azuchi' || lm.id === MP.kessen;
         if (x < -90 || yt < -40 || x > vw + 90 || yt > vh + 60) continue;
         const h = N.holder(lm, cells), bs = Math.max(12, Math.min(22, z * 1.15)), showName = z >= 8.5;
-        const nm = showName ? TK.L(lm.n) : '', fs = Math.max(10, Math.min(13.5, z * 0.72)); c.font = `800 ${fs}px ${TK.FONT_B}`;
+        const nm = showName ? (lm.id === MP.kessen ? '⚔' : '') + TK.L(lm.n) : '', fs = Math.max(10, Math.min(13.5, z * 0.72)); c.font = `800 ${fs}px ${TK.FONT_B}`;
         const tw = showName ? c.measureText(nm).width + 5 : 0, hw = h ? bs * 0.92 : 0, w = bs + tw + hw + 6, ht = bs + 4, px = x - w / 2, py = yt - ht - Math.max(2, z * 0.12);
         c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 4; c.shadowOffsetY = 1.5; c.beginPath(); c.roundRect(px, py, w, ht, ht / 2); c.fillStyle = key ? 'rgba(120,24,12,.94)' : 'rgba(20,14,8,.9)'; c.fill(); c.restore();
         c.lineWidth = 1; c.strokeStyle = key ? '#ffb19f' : '#f0c850'; c.stroke();
@@ -135,6 +135,15 @@
     if (z >= 3.4 && MP.showLM) {
       for (const lm of N.LM) { const h = N.holder(lm, cells); if (!h) continue; const x = sx(lm.x), y = sy(lm.y) + z * 0.3; if (x < -60 || y < -10 || x > vw + 60 || y > vh + 90) continue; drawFlag(c, x, y, Math.max(20, Math.min(64, z * (lm.c.length > 4 ? 3.1 : 2.5))), TK.FI[h], t, dpr); need = true; }
     }
+    // 米俵（兵糧集め、11/18）。まだ取られていない今日の米俵
+    { const rl = N.riceLeft ? N.riceLeft() : []; if (rl.length) {
+      const rs = Math.max(6, Math.min(30, z * 1.05)), big = z >= 6;
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `${Math.round(rs)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+      const pulse = 0.75 + 0.25 * Math.sin(t / 380);
+      for (const i of rl) { const x = sx(cx(i) + .5), y = sy(cy(i) + .5); if (x < -rs || y < -rs || x > vw + rs || y > vh + rs) continue;
+        c.save(); c.globalAlpha = pulse; c.fillStyle = 'rgba(255,214,90,.45)'; c.beginPath(); c.arc(x, y, Math.max(3, rs * 0.62), 0, 6.283); c.fill(); c.restore();
+        if (big) c.fillText('🌾', x, y + rs * 0.04); else { c.fillStyle = '#f0c850'; c.strokeStyle = '#5a3a10'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, Math.max(2.2, rs * 0.32), 0, 6.283); c.fill(); c.stroke(); } }
+      need = true; } }
     // 天守閣（武将の印）
     const cs = Math.max(15, Math.min(46, z * 2.1));
     for (const f of TK.F) { const i = M.castle[f.L], x = sx(cx(i) + .5), y = sy(cy(i) + .5); if (x < -cs || y < -cs || x > vw + cs || y > vh + cs) continue; const im = TK.crest(f, Math.round(cs * dpr)); c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 5; c.shadowOffsetY = 2; c.drawImage(im, x - cs / 2, y - cs / 2, cs, cs); c.restore(); if (N.me && N.me.f === f.L) { c.strokeStyle = '#ffe08a'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, cs / 2 + 2.5, 0, 6.283); c.stroke(); } }
@@ -169,7 +178,7 @@
     cv.addEventListener('wheel', e => { e.preventDefault(); const p = loc(e), wx = view.x + (p.x - vw / 2) / view.z, wy = view.y + (p.y - vh / 2) / view.z; view.z = Math.max(minZ, Math.min(maxZ, view.z * Math.exp(-e.deltaY * 0.0016))); view.x = wx - (p.x - vw / 2) / view.z; view.y = wy - (p.y - vh / 2) / view.z; clampView(); MP.kick(); }, { passive: false });
     cv.addEventListener('dblclick', e => e.preventDefault());
   };
-  MP.showLM = true;                                  // 名所の札を出すか（右下の「名」ボタンで切りかえ）
+  MP.showLM = true; MP.kessen = '';   // 本日の決戦地（名所の id）                                  // 名所の札を出すか（右下の「名」ボタンで切りかえ）
   MP.setGlow = (list, on) => { glow = list || []; glowOn = !!on; MP.kick(); };
   MP.select = i => { sel = i; MP.kick(); };
   MP.flash = (i, col, ms) => { flash.push({ i, col: col || '#ffe08a', t0: performance.now(), ms: ms || 900 }); MP.kick(); };
