@@ -338,17 +338,23 @@
     const lg = TK.lang(), v = lg === 'ja' || lg === 'zh', f = n => n == null ? '？' : (v ? String(n).replace(/\d/g, d => KD[+d]) : String(n));
     return f(y[0]) + (v ? '〜' : '–') + f(y[1]);
   }
+  // 巻物の中身は武将ごとのファイル（js/scroll/{記号}.js）。開いた武将の分だけ読みこむ
+  function loadSc(L, cb) {
+    if (TK.SC && TK.SC[L]) return cb();
+    loadSc.q = loadSc.q || {}; if (loadSc.q[L]) { loadSc.q[L].push(cb); return; } loadSc.q[L] = [cb];
+    const sc = document.createElement('script'); sc.src = 'js/scroll/' + L + '.js?v=3';
+    const done = () => { const q = loadSc.q[L]; loadSc.q[L] = null; if (TK.SC && TK.SC[L]) q.forEach(f => f()); };
+    sc.onload = done; sc.onerror = () => { loadSc.q[L] = null; sc.remove(); toast(TK.L(['読みこめませんでした。通信を確かめてください', 'Could not load. Check your connection.', '無法載入，請確認網路。', '불러오지 못했습니다. 통신을 확인해 주세요.']), 2000); };
+    document.head.appendChild(sc);
+  }
   function openScroll(L) {
     if (!$('scroll')) return;
-    if (!TK.SCROLL) {   // 中身は大きいので、初めて開いたときだけ読みこむ
-      if (openScroll.ld) return; openScroll.ld = 1;
-      const sc = document.createElement('script'); sc.src = 'js/scroll.js?v=2';
-      sc.onload = () => { openScroll.ld = 0; openScroll(L); }; sc.onerror = () => { openScroll.ld = 0; sc.remove(); };
-      document.head.appendChild(sc); return;
-    }
-    closePanel(); scL = L || (N.me && N.me.f) || scL || 'a';
-    $('scroll').hidden = false; renderScroll(true);
-    if (G.gsap) gsap.fromTo('#scroll .maki', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+    const to = L || (N.me && N.me.f) || scL || 'a';
+    loadSc(to, () => {
+      closePanel(); scL = to;
+      $('scroll').hidden = false; renderScroll(true);
+      if (G.gsap) gsap.fromTo('#scroll .maki', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+    });
   }
   function renderScroll(pickToo) {
     const P = $('scPick');
@@ -360,23 +366,30 @@
         const b = document.createElement('button'); b.dataset.l = f.L; b.title = TK.L(f.nm); b.setAttribute('aria-label', TK.L(f.nm));
         if (f.L === mine) b.classList.add('me');
         const c = document.createElement('canvas'); c.width = 80; c.height = 80; drawCrest(c, f); b.appendChild(c);
-        b.onclick = () => { scL = f.L; renderScroll(false); if (G.gsap) gsap.fromTo('#scroll .kami', { opacity: 0.35 }, { opacity: 1, duration: 0.35 }); };
+        b.onclick = () => loadSc(f.L, () => { scL = f.L; renderScroll(false); if (G.gsap) gsap.fromTo('#scroll .kami', { opacity: 0.35 }, { opacity: 1, duration: 0.35 }); });
         P.appendChild(b);
       }
     }
+    if (!TK.SC || !TK.SC[scL]) return;
     for (const b of P.children) b.classList.toggle('on', b.dataset.l === scL);
     const on = P.querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-    const f = TK.FI[scL], d = TK.SCROLL[scL], lg = TK.lang(), li = TK.langIndex(), B = $('scBody');
+    const f = TK.FI[scL], d = TK.SC[scL], lg = TK.lang(), li = TK.langIndex(), B = $('scBody');
     const V = lg === 'ja' || lg === 'zh'; B.className = V ? 'v' : '';
     // 縦書きのときは、2〜3けたの数字は縦中横に、4けた以上は漢数字にする
     const vt = x => V ? String(x).split(/(\d+)/).map((p, i) => i % 2 ? (p.length >= 4 ? p.replace(/\d/g, c => KD[+c]) : `<span class="tcy">${p}</span>`) : esc(p)).join('') : esc(x);
+    const secs = [];   // 目次：[見出しの言葉, id]
+    if (d.bio) ['sc_c1', 'sc_c2', 'sc_c3', 'sc_c4'].forEach((k, i) => secs.push([t(k), 'scS' + i]));
+    secs.push([t('sc_s'), 'scS4']); if (d.ep && d.ep.length) secs.push([t('sc_ep'), 'scS5']);
     let h = `<div class="maki"><i class="jiku"></i><div class="kami"><div class="mkHd"><canvas width="128" height="128"></canvas><div><div class="ttl">${esc(t('sc_title', { name: TK.L(f.nm) }))}</div><small>${esc(t('sc_home'))}：${esc(TK.L(f.home))}・${esc(TK.L(f.castle))}<br>${esc(scLife(d.y))}</small>${N.me && N.me.f === f.L ? `<span class="mine">${esc(t('sc_mine'))}</span>` : ''}</div></div>`;
     h += `<div class="mkTag">${vt(d.tag[li] || d.tag[0])}</div>`;
-    h += `<div class="mkSec">${esc(t('sc_s'))}</div>`;
+    h += `<div class="mkToc"><span>${esc(t('sc_toc'))}</span>${secs.map(([w, id], i) => `<button data-to="${id}"><i>${V ? KD[i + 1] : i + 1}</i>${esc(w)}</button>`).join('')}</div>`;
+    if (d.bio) d.bio.forEach((c, i) => { h += `<div class="mkSec" id="scS${i}">${esc(t('sc_c' + (i + 1)))}</div>`; for (const para of String(c[li] || c[0]).split(/\n\n+/)) h += `<p class="bio">${vt(para)}</p>`; });
+    h += `<div class="mkSec" id="scS4">${esc(t('sc_s'))}</div>`;
     for (const r of d.s) { const y = scYear(r[0]); h += `<div class="ev">${y ? `<b>${esc(y)}</b>` : '<b>◇</b>'}${vt(r[1 + li] || r[1])}</div>`; }
-    if (d.ep && d.ep.length) { h += `<div class="mkSec">${esc(t('sc_ep'))}</div>`; for (const r of d.ep) h += `<div class="ev ep"><b>◆</b>${vt(r[li] || r[0])}</div>`; }
+    if (d.ep && d.ep.length) { h += `<div class="mkSec" id="scS5">${esc(t('sc_ep'))}</div>`; for (const r of d.ep) h += `<div class="ev ep"><b>◆</b>${vt(r[li] || r[0])}</div>`; }
     h += '</div><i class="jiku"></i></div>';
     B.innerHTML = h; drawCrest(B.querySelector('.mkHd canvas'), f);
+    B.querySelectorAll('.mkToc button').forEach(b => b.onclick = () => { const el = document.getElementById(b.dataset.to); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' }); });
     B.scrollTop = 0; B.scrollLeft = 0;
   }
   // ---------- ボタン ----------

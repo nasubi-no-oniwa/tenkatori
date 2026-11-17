@@ -64,7 +64,7 @@
     hud_ready: ['出陣できます', 'Ready to march', '可以出陣', '출진 가능'], hud_wait: ['次の一手まで', 'Next move in', '距離下一手', '다음 수까지'],
     cells: ['{n}マス', '{n} tiles', '{n}格', '{n}칸'], rank: ['{n}位', '#{n}', '第{n}名', '{n}위'],
     nav_power: ['勢力', 'Powers', '勢力', '세력'], nav_board: ['軍議', 'Council', '軍議', '군의'], nav_log: ['戦況', 'Reports', '戰況', '전황'], nav_defect: ['寝返り', 'Defect', '倒戈', '배신'], nav_more: ['その他', 'More', '其他', '기타'], nav_scroll: ['巻物', 'Scroll', '卷軸', '두루마리'],
-    sc_title: ['{name}の巻', 'The Scroll of {name}', '{name}之卷', '{name}의 두루마리'], sc_home: ['本拠', 'Home', '根據地', '본거지'], sc_mine: ['あなたが仕える殿', 'The lord you serve', '你效忠的主公', '당신이 섬기는 주군'], sc_s: ['生涯', 'Life', '生平', '생애'], sc_ep: ['逸話', 'Anecdotes', '軼事', '일화'],
+    sc_title: ['{name}の巻', 'The Scroll of {name}', '{name}之卷', '{name}의 두루마리'], sc_home: ['本拠', 'Home', '根據地', '본거지'], sc_mine: ['あなたが仕える殿', 'The lord you serve', '你效忠的主公', '당신이 섬기는 주군'], sc_s: ['年表', 'Timeline', '年表', '연표'], sc_toc: ['目次', 'Contents', '目錄', '목차'], sc_c1: ['生い立ち', 'Early Years', '早年', '어린 시절'], sc_c2: ['台頭', 'Rise', '崛起', '부상'], sc_c3: ['全盛', 'Height of Power', '全盛', '전성기'], sc_c4: ['最期', 'Last Days', '最期', '최후'], sc_ep: ['逸話', 'Anecdotes', '軼事', '일화'],
     kuni: ['{p}国', '{p} Province', '{p}國', '{p}국'],
     cs_white: ['だれのものでもない土地', 'Unclaimed land', '無主之地', '주인 없는 땅'],
     cs_castle: ['{name}の天守閣', '{name}\'s castle', '{name}的天守閣', '{name}의 천수각'],

@@ -161,6 +161,15 @@ canvas{display:block}
 .mkSec{font-family:var(--ft);font-size:19px;color:var(--shu);letter-spacing:.4em;padding-block:14px 6px;margin-block-start:6px;border-block-start:3px double rgba(200,50,31,.55)}
 .mkTag+.mkSec{margin-block-start:0}
 .ev.ep b{font-size:.8em}
+.mkToc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-block:10px 12px;margin-block-end:4px;border-block-start:1px solid rgba(110,91,69,.35)}
+.mkToc span{font-family:var(--ft);color:var(--sub);font-size:14px;letter-spacing:.2em;margin-inline-end:4px}
+.mkToc button{font:inherit;font-size:14px;line-height:1.3;color:var(--ink);background:rgba(255,255,255,.35);border:1px solid rgba(200,50,31,.5);border-radius:4px;padding:5px 8px;cursor:pointer}
+.mkToc button i{font-style:normal;color:var(--shu);font-family:var(--ft);margin-inline-end:.35em}
+.mkToc button:active{background:rgba(200,50,31,.15)}
+#scBody.v .mkToc button{padding:8px 5px}
+p.bio{margin:0;font-size:15.5px;line-height:1.95;text-indent:1em;padding-block:6px}
+#scBody.v p.bio{line-height:2;letter-spacing:.06em}
+html[lang="en"] p.bio,html[lang="ko"] p.bio{text-indent:0;line-height:1.75}
 html[lang="en"] .mkSec,html[lang="ko"] .mkSec{font-family:var(--fb);font-weight:800;letter-spacing:.12em;font-size:16px}
 html[lang="ko"] .maki{word-break:keep-all}
 html[lang="en"] .mkHd .ttl,html[lang="ko"] .mkHd .ttl{font-family:var(--fb);font-weight:800;font-size:21px;letter-spacing:0}
