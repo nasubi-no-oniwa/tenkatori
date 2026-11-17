@@ -158,6 +158,10 @@ canvas{display:block}
 #scBody.v{writing-mode:vertical-rl;overflow-y:hidden;overflow-x:auto;padding:14px 12px calc(var(--sb) + 14px)}
 .maki{display:flex;flex-direction:column;align-items:stretch;padding-block-end:16px}
 .tcy{text-combine-upright:all;-webkit-text-combine:horizontal}
+.mkSec{font-family:var(--ft);font-size:19px;color:var(--shu);letter-spacing:.4em;padding-block:14px 6px;margin-block-start:6px;border-block-start:3px double rgba(200,50,31,.55)}
+.mkTag+.mkSec{margin-block-start:0}
+.ev.ep b{font-size:.8em}
+html[lang="en"] .mkSec,html[lang="ko"] .mkSec{font-family:var(--fb);font-weight:800;letter-spacing:.12em;font-size:16px}
 html[lang="ko"] .maki{word-break:keep-all}
 html[lang="en"] .mkHd .ttl,html[lang="ko"] .mkHd .ttl{font-family:var(--fb);font-weight:800;font-size:21px;letter-spacing:0}
 html[lang="en"] .mkTag,html[lang="ko"] .mkTag{font-family:var(--fb);font-weight:700;font-size:15.5px;letter-spacing:0}
@@ -408,7 +412,6 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
 <script src="js/config.js"></script>
 <script src="js/mapdata.js"></script>
 <script src="js/data.js"></script>
-<script src="js/scroll.js"></script>
 <script src="js/kamon.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/net.js"></script>

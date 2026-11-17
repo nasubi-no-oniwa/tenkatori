@@ -1,0 +1,547 @@
+{
+ "p": {
+  "y": [
+   1547,
+   1612
+  ],
+  "tag": [
+   "「鬼義重」「坂東太郎」。北の伊達と南の北条という二つの大勢力にはさまれながら、常陸を守り抜いた関東の猛将。",
+   "“Demon Yoshishige,” “Tarō of the Bandō.” Wedged between two giants — the Date to the north and the Hōjō to the south — this fierce Kantō warlord held Hitachi.",
+   "「鬼義重」「坂東太郎」。夾在北方伊達與南方北條兩大勢力之間，仍守住常陸的關東猛將。",
+   "'귀신 요시시게', '반도 타로'. 북쪽의 다테와 남쪽의 호조라는 두 큰 세력 사이에 끼어서도 히타치를 지켜 낸 간토의 맹장."
+  ],
+  "s": [
+   [
+    1547,
+    "常陸の太田城で、佐竹義昭の長男として生まれる。",
+    "Born at Ōta Castle in Hitachi, eldest son of Satake Yoshiaki.",
+    "生於常陸太田城，為佐竹義昭的長子。",
+    "히타치 오타성에서 사타케 요시아키의 장남으로 태어나다."
+   ],
+   [
+    1562,
+    "病気になった父から家を譲られ、16歳で佐竹家を継ぐ。3年後に父は亡くなった。",
+    "His ailing father handed him the clan at 16; his father died three years later.",
+    "因父親生病而受讓家業，十六歲繼承佐竹家。三年後父親去世。",
+    "병든 아버지에게서 가문을 물려받아 16세에 사타케 가문을 잇다. 3년 뒤 아버지가 세상을 떠났다."
+   ],
+   [
+    null,
+    "伊達晴宗の娘を妻に迎える。伊達政宗から見ると、義重はおばの夫にあたる。",
+    "He married a daughter of Date Harumune, which made him the uncle by marriage of Date Masamune.",
+    "迎娶伊達晴宗之女為妻，從伊達政宗的角度看，義重是他的姑丈。",
+    "다테 하루무네의 딸을 아내로 맞다. 다테 마사무네에게 요시시게는 고모부가 된다."
+   ],
+   [
+    1569,
+    "常陸の小田氏治を破り、小田城を手に入れる。",
+    "He defeated Oda Ujiharu of Hitachi and took Oda Castle.",
+    "擊敗常陸的小田氏治，奪得小田城。",
+    "히타치의 오다 우지하루를 무찌르고 오다성을 손에 넣다."
+   ],
+   [
+    null,
+    "上杉謙信と手を結び、関東へ攻めこむ北条氏と長い年月にわたって戦い続ける。早くから鉄砲をたくさんそろえ、関東でも指折りの軍勢をもった。",
+    "Allied with Uesugi Kenshin, he fought the expanding Hōjō for decades. He gathered muskets early and in large numbers, building one of the strongest armies in the Kantō.",
+    "與上杉謙信聯手，長年對抗進攻關東的北條氏。他很早就大量裝備火槍，擁有關東數一數二的強大軍隊。",
+    "우에스기 겐신과 손잡고 간토로 쳐들어오는 호조 가문과 오랜 세월 싸우다. 일찍부터 조총을 많이 갖춰 간토에서도 손꼽히는 군대를 가졌다."
+   ],
+   [
+    1584,
+    "下野の沼尻で北条氏直の大軍と、長いあいだにらみ合う（沼尻の合戦）。",
+    "At Numajiri in Shimotsuke he faced Hōjō Ujinao's great army in a long standoff.",
+    "在下野沼尻與北條氏直大軍長期對峙（沼尻合戰）。",
+    "시모쓰케의 누마지리에서 호조 우지나오의 대군과 오랫동안 대치하다(누마지리 전투)."
+   ],
+   [
+    1585,
+    "伊達政宗に攻められた二本松の畠山氏を助けるため、蘆名らと連合軍を組み、人取橋の戦いで政宗を追いつめる。しかし国元で不穏な動きがあり、兵を引いた。",
+    "Leading a coalition with the Ashina to relieve the Hatakeyama of Nihonmatsu from Date Masamune, he drove Masamune to the brink at Hitotoribashi — but trouble at home forced him to withdraw.",
+    "為救援遭伊達政宗進攻的二本松畠山氏，他與蘆名等組成聯軍，在人取橋之戰將政宗逼入絕境，但因領地內出現動盪而撤兵。",
+    "다테 마사무네에게 공격당한 니혼마쓰의 하타케야마 가문을 돕기 위해 아시나 등과 연합군을 꾸려 히토토리바시 전투에서 마사무네를 궁지로 몰다. 그러나 본국에 불온한 움직임이 있어 군을 물렸다."
+   ],
+   [
+    1589,
+    "家督を長男の義宣に譲る。その後も、義宣を支えて家を守った。",
+    "He handed the headship to his eldest son Yoshinobu, and continued to support him in guarding the clan.",
+    "將家督讓給長子義宣，之後仍輔佐義宣守護家族。",
+    "장남 요시노부에게 가독을 물려주다. 그 뒤에도 요시노부를 받치며 가문을 지켰다."
+   ],
+   [
+    1590,
+    "義宣とともに豊臣秀吉の小田原攻めに加わり、常陸を治めることを認められる。その後、常陸の大半をまとめ、50万石をこえる大大名になった。",
+    "He and Yoshinobu joined Hideyoshi at Odawara and were confirmed as rulers of Hitachi; they then united most of the province, becoming lords of over 500,000 koku.",
+    "與義宣一同參加豐臣秀吉的小田原之役，獲准統治常陸。之後統一常陸大半，成為五十萬石以上的大大名。",
+    "요시노부와 함께 도요토미 히데요시의 오다와라 공격에 가담해 히타치 통치를 인정받다. 그 뒤 히타치 대부분을 통합해 50만 석이 넘는 대영주가 되었다."
+   ],
+   [
+    1602,
+    "関ヶ原の戦いではっきり徳川方につかなかったため、出羽の秋田へ移され、領地を大きく減らされる。",
+    "Because the clan had not clearly sided with the Tokugawa at Sekigahara, it was moved to Akita in Dewa with greatly reduced lands.",
+    "因在關原之戰中未明確支持德川，被轉封到出羽秋田，領地大幅削減。",
+    "세키가하라 전투에서 도쿠가와 편에 분명히 서지 않았기 때문에 데와의 아키타로 옮겨지고 영지가 크게 줄다."
+   ],
+   [
+    1612,
+    "出羽の六郷で亡くなる。佐竹家は江戸時代を通じて秋田を治めた。",
+    "He died at Rokugō in Dewa. The Satake ruled Akita throughout the Edo period.",
+    "在出羽六鄉去世。佐竹家在整個江戶時代持續統治秋田。",
+    "데와 로쿠고에서 세상을 떠나다. 사타케 가문은 에도 시대 내내 아키타를 다스렸다."
+   ]
+  ],
+  "ep": [
+   [
+    "戦場での勇ましさから「鬼義重」と恐れられた。関東一の大河・利根川の呼び名と同じ「坂東太郎」とも呼ばれた。",
+    "His ferocity in battle made him feared as “Demon Yoshishige,” and he was also called “Tarō of the Bandō” — the same nickname given to the Tone, the greatest river of the Kantō.",
+    "因在戰場上的勇猛而被畏稱為「鬼義重」，又被稱為「坂東太郎」——與關東第一大河利根川的別名相同。",
+    "전장에서의 용맹함으로 '귀신 요시시게'라 두려움을 샀다. 간토 제일의 큰 강 도네강의 별명과 같은 '반도 타로'라고도 불렸다."
+   ],
+   [
+    "上杉謙信からその武勇を認められ、名刀を贈られたと伝わる。",
+    "Legend says Uesugi Kenshin, impressed by his valor, presented him with a famous sword.",
+    "相傳上杉謙信賞識他的武勇，贈予他一把名刀。",
+    "우에스기 겐신에게 무용을 인정받아 명검을 받았다고 전한다."
+   ]
+  ]
+ },
+ "q": {
+  "y": [
+   1458,
+   1541
+  ],
+  "tag": [
+   "城を追われた浪人の身から、知略で山陰・山陽の11か国に勢力を広げた「謀聖」。毛利元就も若いころは、その下にいた。",
+   "From a castle-less exile he schemed his way to power over eleven provinces of western Honshu — the “Sage of Stratagems.” Even the young Mōri Motonari once served under him.",
+   "從被逐出城的浪人之身，憑智謀將勢力擴展到山陰、山陽十一國的「謀聖」。連毛利元就年輕時都曾在他麾下。",
+   "성에서 쫓겨난 낭인의 몸에서 지략으로 산인·산요 11개국으로 세력을 넓힌 '모략의 성인'. 모리 모토나리도 젊은 시절에는 그의 아래에 있었다."
+  ],
+  "s": [
+   [
+    1458,
+    "出雲で、守護・京極氏の守護代だった尼子清定の子として生まれる。",
+    "Born in Izumo, son of Amago Kiyosada, deputy to the Kyōgoku governors.",
+    "生於出雲，為守護京極氏的守護代尼子清定之子。",
+    "이즈모에서 슈고 교고쿠 가문의 슈고다이였던 아마고 기요사다의 아들로 태어나다."
+   ],
+   [
+    null,
+    "若いころ、主の京極氏のもとで京に暮らし、都の文化や政治を学ぶ。",
+    "As a young man he lived in Kyoto under his Kyōgoku overlords, learning the capital's culture and politics.",
+    "年輕時在主家京極氏身邊住在京都，學習京城的文化與政治。",
+    "젊은 시절 주군 교고쿠 가문 밑에서 교토에 살며 도읍의 문화와 정치를 배우다."
+   ],
+   [
+    "~1478",
+    "父のあとを継ぎ、出雲の守護代となる。",
+    "He succeeded his father as deputy governor of Izumo.",
+    "繼承父親成為出雲守護代。",
+    "아버지의 뒤를 이어 이즈모의 슈고다이가 되다."
+   ],
+   [
+    1484,
+    "寺社の領地を勝手に取るなど主の命に従わず、守護代の役を解かれ、月山富田城を追い出される。",
+    "Defying his lords — seizing temple and shrine lands among other things — he was stripped of his post and driven out of Gassan-Toda Castle.",
+    "擅自奪取寺社領地等，不聽從主家命令，被解除守護代職務並逐出月山富田城。",
+    "절과 신사의 영지를 멋대로 빼앗는 등 주군의 명을 따르지 않아 슈고다이 직에서 해임되고 갓산토다성에서 쫓겨나다."
+   ],
+   [
+    1486,
+    "正月、城に入る芸人の一行にまぎれこみ、月山富田城を取り戻したと伝わる。",
+    "On New Year's, legend says, he slipped into the castle among a troupe of performers and retook Gassan-Toda.",
+    "相傳他在正月混入進城表演的藝人隊伍中，奪回了月山富田城。",
+    "정월에 성으로 들어가는 예능인 무리에 섞여 들어가 갓산토다성을 되찾았다고 전한다."
+   ],
+   [
+    null,
+    "出雲の豪族たちを次々に従え、守護の京極氏に代わって出雲の主となる。",
+    "He brought Izumo's local lords under his sway one by one and replaced the Kyōgoku as master of the province.",
+    "陸續收服出雲的豪族，取代守護京極氏成為出雲之主。",
+    "이즈모의 호족들을 차례차례 복종시켜 슈고 교고쿠 가문을 대신해 이즈모의 주인이 되다."
+   ],
+   [
+    1523,
+    "安芸の鏡山城を攻め落とす。このとき尼子の側で働いたのが、若き日の毛利元就だった。",
+    "He took Kagamiyama Castle in Aki; fighting on the Amago side was the young Mōri Motonari.",
+    "攻陷安藝的鏡山城，當時在尼子一方效力的正是年輕的毛利元就。",
+    "아키의 가가미야마성을 함락하다. 이때 아마고 쪽에서 활약한 사람이 젊은 날의 모리 모토나리였다."
+   ],
+   [
+    null,
+    "石見・伯耆・備後などへ勢力を広げ、山陰・山陽の11か国におよぶ大勢力を築いたと言われる。",
+    "Expanding into Iwami, Hōki, Bingo and beyond, he is said to have built a power reaching across eleven provinces.",
+    "勢力擴展至石見、伯耆、備後等地，據說建立了橫跨山陰、山陽十一國的龐大勢力。",
+    "이와미·호키·빈고 등으로 세력을 넓혀 산인·산요의 11개국에 이르는 큰 세력을 쌓았다고 한다."
+   ],
+   [
+    1537,
+    "家督を孫の詮久（のちの晴久）に譲る。",
+    "He handed the headship to his grandson Akihisa (later Haruhisa).",
+    "將家督讓給孫子詮久（後來的晴久）。",
+    "손자 아키히사(훗날의 하루히사)에게 가독을 물려주다."
+   ],
+   [
+    1540,
+    "孫の晴久が大軍で毛利元就の吉田郡山城を攻めるが、翌年、敗れて退く。",
+    "His grandson Haruhisa besieged Mōri Motonari at Yoshida-Kōriyama with a huge army, but was beaten back the following year.",
+    "孫子晴久率大軍進攻毛利元就的吉田郡山城，翌年戰敗撤退。",
+    "손자 하루히사가 대군으로 모리 모토나리의 요시다고리야마성을 공격했으나 이듬해 패해 물러나다."
+   ],
+   [
+    1541,
+    "月山富田城で、84歳で亡くなる。",
+    "He died at Gassan-Toda Castle at 84.",
+    "在月山富田城去世，享年八十四歲。",
+    "갓산토다성에서 84세로 세상을 떠나다."
+   ]
+  ],
+  "ep": [
+   [
+    "気前のよさでも知られ、家来に持ち物をほめられると、すぐにそれを与えてしまった。困った家来たちは、うかつにほめないよう気をつけたという話が残る。",
+    "He was famously generous: if a retainer admired something he owned, he gave it away on the spot — so his men learned to be careful with their praise.",
+    "他以慷慨聞名，家臣只要稱讚他的東西，他便立刻送人。傷腦筋的家臣們從此不敢隨便稱讚，這個故事流傳至今。",
+    "후한 인심으로도 유명해서 가신이 그의 물건을 칭찬하면 곧바로 줘 버렸다. 곤란해진 가신들은 함부로 칭찬하지 않도록 조심했다는 이야기가 남아 있다."
+   ],
+   [
+    "はかりごとの名人として、のちに毛利元就・宇喜多直家とともに「三大謀将」に数えられた。",
+    "A master of intrigue, he was later counted with Mōri Motonari and Ukita Naoie among the “three great schemers” of the age.",
+    "作為謀略高手，後世將他與毛利元就、宇喜多直家並列為「三大謀將」。",
+    "모략의 명인으로서 훗날 모리 모토나리, 우키타 나오이에와 함께 '3대 모장'으로 꼽혔다."
+   ]
+  ]
+ },
+ "r": {
+  "y": [
+   1539,
+   1599
+  ],
+  "tag": [
+   "「姫若子」と笑われた少年が、初陣で「鬼若子」と呼ばれるほど化け、土佐の小さな勢力から四国のほとんどを手にした。",
+   "The boy mocked as “the Little Princess” became “the Little Demon” in his first battle, and grew from a minor Tosa clan into master of nearly all Shikoku.",
+   "曾被嘲笑為「姬若子」的少年，在初陣中搖身一變成「鬼若子」，從土佐的小勢力發展到掌控幾乎整個四國。",
+   "'공주 도련님'이라 비웃음 받던 소년이 첫 출전에서 '귀신 도련님'이라 불릴 만큼 달라져, 도사의 작은 세력에서 시코쿠 거의 전부를 손에 넣었다."
+  ],
+  "s": [
+   [
+    1539,
+    "土佐の岡豊城で、長宗我部国親の長男として生まれる。",
+    "Born at Okō Castle in Tosa, eldest son of Chōsokabe Kunichika.",
+    "生於土佐岡豐城，為長宗我部國親的長子。",
+    "도사 오코성에서 조소카베 구니치카의 장남으로 태어나다."
+   ],
+   [
+    null,
+    "色白でおとなしく、人と話すのも苦手だったため、「姫若子」とからかわれた。",
+    "Pale, quiet and shy, he was teased as “the Little Princess.”",
+    "膚色白皙、個性文靜又不善言辭，因而被戲稱為「姬若子」。",
+    "피부가 희고 얌전하며 사람과 이야기하는 것도 서툴러 '공주 도련님'이라 놀림받았다."
+   ],
+   [
+    1560,
+    "22歳の初陣、長浜の戦いで自ら槍を持って敵陣に突っこみ、大活躍する。「鬼若子」と呼ばれるようになり、同じ年、父の死で家を継いだ。",
+    "In his first battle at 22, at Nagahama, he charged the enemy spear in hand and fought brilliantly, earning the name “the Little Demon.” That year his father died and he became clan head.",
+    "二十二歲初陣長濱之戰，親持長槍衝入敵陣大顯身手，從此被稱為「鬼若子」。同年父親去世，由他繼承家業。",
+    "22세의 첫 출전인 나가하마 전투에서 직접 창을 들고 적진에 뛰어들어 크게 활약하다. '귀신 도련님'이라 불리게 되었고, 같은 해 아버지의 죽음으로 가문을 이었다."
+   ],
+   [
+    1569,
+    "土佐東部の安芸国虎をほろぼす。",
+    "He destroyed Aki Kunitora of eastern Tosa.",
+    "消滅土佐東部的安藝國虎。",
+    "도사 동부의 아키 구니토라를 멸하다."
+   ],
+   [
+    1575,
+    "四万十川の戦いで一条氏の軍を破り、土佐をひとつにまとめる。",
+    "At the Shimanto River he defeated the Ichijō and unified Tosa.",
+    "在四萬十川之戰擊敗一條氏，統一土佐。",
+    "시만토강 전투에서 이치조 가문의 군을 무찌르고 도사를 하나로 통합하다."
+   ],
+   [
+    null,
+    "ふだんは田畑を耕し、知らせがあれば槍と鎧を持って駆けつける「一領具足」と呼ばれる兵を使って、すばやく大きな軍を動かした。",
+    "He mobilized armies quickly through the ichiryō gusoku — farmer-soldiers who worked their fields but kept spear and armor ready to answer the call.",
+    "利用平時耕田、一有召集就帶著長槍與鎧甲趕來的「一領具足」士兵，迅速調動大軍。",
+    "평소에는 논밭을 갈다가 연락이 오면 창과 갑옷을 들고 달려오는 '이치료구소쿠'라 불리는 병사를 활용해 빠르게 큰 군대를 움직였다."
+   ],
+   [
+    1582,
+    "阿波の中富川の戦いで十河存保を破り、阿波を手に入れる。讃岐・伊予へも攻めこんだ。",
+    "At the Nakatomi River in Awa he defeated Sogō Masayasu and took Awa, then pressed into Sanuki and Iyo.",
+    "在阿波中富川之戰擊敗十河存保，奪得阿波，並攻入讚岐與伊予。",
+    "아와의 나카토미강 전투에서 소고 마사야스를 무찌르고 아와를 손에 넣다. 사누키와 이요로도 쳐들어갔다."
+   ],
+   [
+    1585,
+    "四国のほぼ全体に勢力を広げるが、豊臣秀吉が送った10万をこえる大軍に攻められて降伏し、土佐一国だけを残される。",
+    "He came to dominate nearly all Shikoku, but surrendered to an invasion force of over 100,000 sent by Hideyoshi and was left with Tosa alone.",
+    "勢力擴及幾乎整個四國，卻遭豐臣秀吉派出的十萬以上大軍進攻而投降，只保留土佐一國。",
+    "시코쿠 거의 전체로 세력을 넓혔으나 도요토미 히데요시가 보낸 10만이 넘는 대군에게 공격당해 항복하고 도사 한 지역만 남겨지다."
+   ],
+   [
+    1586,
+    "豊臣方として九州へ出陣した戸次川の戦いで、跡継ぎの長男・信親を失う。元親は深く悲しんだ。",
+    "Fighting for Hideyoshi in Kyushu, he lost his beloved heir Nobuchika at the Hetsugi River, a blow from which he never fully recovered.",
+    "作為豐臣方出征九州，在戶次川之戰失去繼承人長子信親，元親悲痛萬分。",
+    "도요토미 측으로 규슈에 출진한 헤쓰기강 전투에서 후계자인 장남 노부치카를 잃다. 모토치카는 깊이 슬퍼했다."
+   ],
+   [
+    1597,
+    "国の決まり「長宗我部元親百箇条」を定める。",
+    "He issued his house code, the Hundred Articles of Chōsokabe Motochika.",
+    "制定領國法典「長宗我部元親百箇條」。",
+    "영국법 '조소카베 모토치카 백개조'를 정하다."
+   ],
+   [
+    1599,
+    "京の伏見で亡くなる。跡を継いだ盛親は、翌年の関ヶ原で西軍につき、長宗我部家は土佐を失った。",
+    "He died at Fushimi in Kyoto. His heir Morichika joined the West at Sekigahara the next year, and the Chōsokabe lost Tosa.",
+    "在京都伏見去世。繼承人盛親在翌年的關原之戰加入西軍，長宗我部家因此失去土佐。",
+    "교토 후시미에서 세상을 떠나다. 뒤를 이은 모리치카는 이듬해 세키가하라에서 서군에 서서 조소카베 가문은 도사를 잃었다."
+   ]
+  ],
+  "ep": [
+   [
+    "初陣の前、家来に「槍はどう使うのか」とたずね、「敵の目を突くのです」と教わったという話が伝わる。それほど戦に慣れていなかった若者が、その日のうちに大手柄を立てた。",
+    "Before his first battle, the story goes, he asked a retainer how to use a spear and was told, “Thrust at the enemy's eyes.” That same day the green young man won great renown.",
+    "相傳初陣前他問家臣「槍要怎麼用？」，家臣答道「刺向敵人的眼睛」。這個不諳作戰的年輕人，當天就立下大功。",
+    "첫 출전 전에 가신에게 '창은 어떻게 쓰는가' 하고 물었더니 '적의 눈을 찌르는 것입니다'라고 배웠다는 이야기가 전한다. 그토록 전쟁에 서툴던 젊은이가 그날 바로 큰 공을 세웠다."
+   ],
+   [
+    "織田信長は元親のことを「鳥なき島の蝙蝠」（強い鳥がいない島で威張っているコウモリ）と言ったと伝わる。四国には信長に並ぶ相手がいない、という皮肉だった。",
+    "Nobunaga reportedly dismissed him as “a bat on an island without birds” — a big shot only because Shikoku had no real rivals.",
+    "相傳織田信長稱元親是「無鳥之島的蝙蝠」（在沒有猛禽的島上稱王的蝙蝠），諷刺四國沒有能與他匹敵的對手。",
+    "오다 노부나가는 모토치카를 '새 없는 섬의 박쥐'(강한 새가 없는 섬에서 으스대는 박쥐)라고 했다고 전한다. 시코쿠에는 맞설 상대가 없다는 비꼼이었다."
+   ]
+  ]
+ },
+ "s": {
+  "y": [
+   1530,
+   1587
+  ],
+  "tag": [
+   "南蛮の文化をいち早く取り入れ、キリスト教の洗礼も受けた九州の大大名。北九州6か国を治めたが、耳川の大敗から運命が傾いた。",
+   "The great Kyushu lord who embraced European culture early and was baptized a Christian. He ruled six provinces of northern Kyushu, but his fortunes turned after the disaster at Mimikawa.",
+   "率先引進南蠻文化並受洗成為基督徒的九州大大名。曾統治北九州六國，但自耳川大敗後命運開始走下坡。",
+   "남만 문화를 일찍 받아들이고 기독교 세례까지 받은 규슈의 대영주. 북부 규슈 6개국을 다스렸으나 미미카와의 대패 이후 운명이 기울었다."
+  ],
+  "s": [
+   [
+    1530,
+    "豊後の府内で、大友義鑑の長男として生まれる。名は義鎮。",
+    "Born in Funai, Bungo, eldest son of Ōtomo Yoshiaki; his name was Yoshishige.",
+    "生於豐後府內，為大友義鑑的長子，名義鎮。",
+    "분고 후나이에서 오토모 요시아키의 장남으로 태어나다. 이름은 요시시게."
+   ],
+   [
+    1550,
+    "父が弟に家を継がせようとしたことから家臣が争い、父が討たれる（二階崩れの変）。この事件のあと、義鎮が家を継いだ。",
+    "When his father tried to make a younger son heir, retainers fought and his father was killed (the Nikai-kuzure Incident). In its aftermath Yoshishige became clan head.",
+    "父親想讓弟弟繼承家業，引發家臣內鬥，父親遇害（二階崩之變）。事件之後由義鎮繼承家業。",
+    "아버지가 동생에게 가문을 물려주려 하자 가신들이 다투어 아버지가 살해되다(니카이쿠즈레의 변). 이 사건 뒤 요시시게가 가문을 이었다."
+   ],
+   [
+    1551,
+    "フランシスコ・ザビエルを府内に招き、キリスト教の布教を許す。南蛮貿易で国を豊かにしていった。",
+    "He invited Francis Xavier to Funai and allowed Christian preaching, enriching his domain through trade with the Europeans.",
+    "邀請方濟·沙勿略至府內，准許基督教傳教，並透過南蠻貿易使領國富足。",
+    "프란치스코 하비에르를 후나이로 초청해 기독교 포교를 허락하다. 남만 무역으로 나라를 부유하게 해 갔다."
+   ],
+   [
+    1552,
+    "弟の晴英を、周防の大内家の当主として送りこむ。",
+    "He sent his younger brother Haruhide to Suō to become head of the Ōuchi clan.",
+    "將弟弟晴英送到周防，成為大內家的當主。",
+    "동생 하루히데를 스오의 오우치 가문 당주로 들여보내다."
+   ],
+   [
+    1559,
+    "将軍から九州探題に任じられ、豊後・豊前・筑前・筑後・肥前・肥後の6か国を治める。",
+    "The shogun named him Kyushu Tandai, and he governed six provinces: Bungo, Buzen, Chikuzen, Chikugo, Hizen and Higo.",
+    "獲將軍任命為九州探題，統治豐後、豐前、筑前、筑後、肥前、肥後六國。",
+    "쇼군에게 규슈 탄다이로 임명되어 분고·부젠·지쿠젠·지쿠고·히젠·히고의 6개국을 다스리다."
+   ],
+   [
+    1562,
+    "出家して「宗麟」と名乗る。",
+    "He took Buddhist vows and the name Sōrin.",
+    "出家，改號「宗麟」。",
+    "출가하여 '소린'이라 칭하다."
+   ],
+   [
+    1569,
+    "北九州へ攻めこんできた毛利の軍と戦い、九州から退かせる。",
+    "He fought off the Mōri, who had invaded northern Kyushu, and drove them from the island.",
+    "與攻入北九州的毛利軍交戰，迫使其撤出九州。",
+    "북부 규슈로 쳐들어온 모리 군과 싸워 규슈에서 물러나게 하다."
+   ],
+   [
+    1576,
+    "家督を長男の義統に譲る。",
+    "He handed the headship to his eldest son Yoshimune.",
+    "將家督讓給長子義統。",
+    "장남 요시무네에게 가독을 물려주다."
+   ],
+   [
+    1578,
+    "キリスト教の洗礼を受け、「ドン・フランシスコ」という名をもらう。同じ年、日向へ大軍を送るが、耳川の戦いで島津に大敗し、多くの重臣を失う。",
+    "He was baptized as Dom Francisco. That same year he sent a great army into Hyūga, only to be crushed by the Shimazu at Mimikawa, losing many senior retainers.",
+    "受洗成為基督徒，教名「唐·方濟各」。同年派大軍進攻日向，卻在耳川之戰慘敗於島津，失去許多重臣。",
+    "기독교 세례를 받아 '돈 프란시스코'라는 이름을 받다. 같은 해 휴가로 대군을 보냈으나 미미카와 전투에서 시마즈에게 크게 패해 많은 중신을 잃다."
+   ],
+   [
+    1582,
+    "九州のキリシタン大名とともに、4人の少年をローマへ送る（天正遣欧少年使節）。少年たちはローマ教皇に会い、8年後に帰国した。",
+    "With other Christian lords of Kyushu he sent four boys to Rome (the Tenshō Embassy). They met the Pope and returned eight years later.",
+    "與九州的天主教大名共同派遣四名少年前往羅馬（天正遣歐少年使節）。少年們晉見了羅馬教宗，八年後歸國。",
+    "규슈의 기리시탄 다이묘들과 함께 네 소년을 로마로 보내다(덴쇼 견구 소년사절). 소년들은 로마 교황을 만나고 8년 뒤 귀국했다."
+   ],
+   [
+    1586,
+    "島津に押されて領地が危うくなり、大坂城へ出向いて豊臣秀吉に助けを求める。",
+    "With the Shimazu overrunning his lands, he traveled to Osaka Castle to beg Hideyoshi for help.",
+    "被島津步步進逼、領地岌岌可危，親自前往大坂城向豐臣秀吉求援。",
+    "시마즈에게 밀려 영지가 위태로워지자 오사카성으로 가서 도요토미 히데요시에게 도움을 청하다."
+   ],
+   [
+    1587,
+    "秀吉の大軍が九州へ攻めこむさなか、豊後の津久見で病のため亡くなる。",
+    "As Hideyoshi's great army swept into Kyushu, he died of illness at Tsukumi in Bungo.",
+    "就在秀吉大軍攻入九州之際，在豐後津久見病逝。",
+    "히데요시의 대군이 규슈로 쳐들어오는 가운데 분고 쓰쿠미에서 병으로 세상을 떠나다."
+   ]
+  ],
+  "ep": [
+   [
+    "府内には、宣教師アルメイダが西洋式の病院を開いた。日本で最も早い西洋式の病院の一つとされ、宗麟はこうした活動を支えた。",
+    "In Funai the missionary Luís de Almeida opened a Western-style hospital — counted among the very first in Japan — with Sōrin's support.",
+    "傳教士阿爾梅達在府內開設了西式醫院，被認為是日本最早的西式醫院之一，宗麟支持了這些活動。",
+    "후나이에는 선교사 알메이다가 서양식 병원을 열었다. 일본에서 가장 이른 서양식 병원 중 하나로 여겨지며, 소린은 이런 활동을 지원했다."
+   ],
+   [
+    "ポルトガルから手に入れた大砲を「国崩し」と名づけ、島津に攻められた臼杵城の守りで使ったと伝わる。",
+    "He named a cannon acquired from the Portuguese “Kunikuzushi” — “Destroyer of Nations” — and is said to have used it to defend Usuki Castle against the Shimazu.",
+    "他把從葡萄牙得到的大砲命名為「國崩」，相傳在遭島津進攻時用於守衛臼杵城。",
+    "포르투갈에서 얻은 대포에 '구니쿠즈시(나라를 무너뜨리는 것)'라는 이름을 붙여 시마즈에게 공격받은 우스키성 방어에 썼다고 전한다."
+   ],
+   [
+    "立花道雪や高橋紹運といった名将が家臣として大友家を支え、宗麟が傾いた後も最後まで戦い抜いた。",
+    "Great generals such as Tachibana Dōsetsu and Takahashi Jōun served the Ōtomo and fought on to the bitter end even as Sōrin's fortunes waned.",
+    "立花道雪、高橋紹運等名將作為家臣支撐著大友家，即使宗麟勢衰，仍奮戰到最後。",
+    "다치바나 도세쓰와 다카하시 조운 같은 명장이 가신으로서 오토모 가문을 받쳤고, 소린이 기운 뒤에도 끝까지 싸웠다."
+   ]
+  ]
+ },
+ "t": {
+  "y": [
+   1529,
+   1584
+  ],
+  "tag": [
+   "「肥前の熊」。一族の多くを殺された寺の小僧から武将に戻り、大友・島津と並ぶ「九州三強」にのしあがった。",
+   "“The Bear of Hizen.” A temple boy whose family was slaughtered, he returned to the warrior's life and rose to stand with the Ōtomo and Shimazu as one of Kyushu's three great powers.",
+   "「肥前之熊」。家族多人遇害的寺院小沙彌重返武門，一路崛起，與大友、島津並列「九州三強」。",
+   "'히젠의 곰'. 일족 다수를 잃은 절의 동자승에서 무장으로 돌아와 오토모·시마즈와 나란히 '규슈 3강'으로 올라섰다."
+  ],
+  "s": [
+   [
+    1529,
+    "肥前の佐賀・水ヶ江城で、龍造寺周家の子として生まれる。",
+    "Born at Mizugae Castle in Saga, Hizen, son of Ryūzōji Chikaie.",
+    "生於肥前佐賀水之江城，為龍造寺周家之子。",
+    "히젠 사가의 미즈가에성에서 류조지 지카이에의 아들로 태어나다."
+   ],
+   [
+    null,
+    "幼いころに寺に入り、「円月」という名の僧として育つ。",
+    "As a child he entered a temple and was raised as a monk named En'getsu.",
+    "幼年入寺，以法名「圓月」的僧侶身分長大。",
+    "어린 시절 절에 들어가 '엔게쓰'라는 이름의 승려로 자라다."
+   ],
+   [
+    1545,
+    "主家だった少弐氏の家臣のはかりごとで、祖父や父など一族の多くが殺される。",
+    "Through a plot by retainers of their overlords the Shōni, his grandfather, father and many other kin were murdered.",
+    "因主家少貳氏家臣的陰謀，祖父、父親等多名族人被殺。",
+    "주군 가문이던 쇼니 가문 가신의 계략으로 할아버지와 아버지 등 일족 다수가 살해되다."
+   ],
+   [
+    1546,
+    "生き残った曾祖父・家兼とともに仇を討つ。家兼の死後、寺を出て還俗し、家を継いだ。",
+    "With his surviving great-grandfather Iekane he avenged the killings. After Iekane died he left the temple, returned to lay life, and took over the family.",
+    "與倖存的曾祖父家兼一同報仇。家兼死後，他還俗繼承家業。",
+    "살아남은 증조할아버지 이에카네와 함께 원수를 갚다. 이에카네가 죽은 뒤 절을 나와 환속해 가문을 이었다."
+   ],
+   [
+    1548,
+    "龍造寺の本家も継ぎ、一族をひとつにまとめる。",
+    "He also inherited the main Ryūzōji line, uniting the clan.",
+    "也繼承了龍造寺本家，統合整個家族。",
+    "류조지 본가도 이어 일족을 하나로 통합하다."
+   ],
+   [
+    1551,
+    "家臣の裏切りで佐賀を追われ、筑後へ逃れる。2年後に兵を集めて戻り、佐賀を取り返した。",
+    "Betrayed by retainers, he was driven from Saga and fled to Chikugo; two years later he raised troops, returned, and retook Saga.",
+    "因家臣背叛被逐出佐賀，逃往筑後。兩年後召集兵馬殺回，奪回佐賀。",
+    "가신의 배신으로 사가에서 쫓겨나 지쿠고로 달아나다. 2년 뒤 군사를 모아 돌아와 사가를 되찾았다."
+   ],
+   [
+    1559,
+    "一族の仇でもあった主家の少弐氏をほろぼす。",
+    "He destroyed the Shōni, his former overlords and the authors of his family's murder.",
+    "消滅了也是家族仇人的主家少貳氏。",
+    "일족의 원수이기도 한 주군 가문 쇼니 가문을 멸하다."
+   ],
+   [
+    1570,
+    "大友宗麟が送った大軍に佐賀城を囲まれるが、義弟の鍋島直茂の策で夜討ちをかけ、今山の戦いで大将を討ち取って大勝する。",
+    "When a great army sent by Ōtomo Sōrin besieged Saga Castle, he launched a night raid planned by his brother-in-law Nabeshima Naoshige and won a crushing victory at Imayama, killing the enemy commander.",
+    "大友宗麟派出的大軍包圍佐賀城，他採用義弟鍋島直茂的計策發動夜襲，在今山之戰討取敵軍大將，大獲全勝。",
+    "오토모 소린이 보낸 대군에게 사가성을 포위당했으나 의제 나베시마 나오시게의 계책으로 야습을 걸어 이마야마 전투에서 적장을 쓰러뜨리고 크게 이기다."
+   ],
+   [
+    1578,
+    "耳川で大友が島津に大敗したのを機に、筑前・筑後・肥後などへ一気に勢力を広げ、「五州二島の太守」と呼ばれる。",
+    "Seizing on the Ōtomo disaster at Mimikawa, he swept into Chikuzen, Chikugo, Higo and beyond, until he was called “lord of five provinces and two islands.”",
+    "趁大友在耳川慘敗於島津之機，勢力一舉擴展至筑前、筑後、肥後等地，被稱為「五州二島之太守」。",
+    "미미카와에서 오토모가 시마즈에게 크게 패한 틈을 타 지쿠젠·지쿠고·히고 등으로 단숨에 세력을 넓혀 '5주 2도의 태수'라 불리다."
+   ],
+   [
+    1580,
+    "家督を息子の政家に譲るが、実権は持ち続けた。",
+    "He handed the headship to his son Masaie but kept real power.",
+    "將家督讓給兒子政家，但仍掌握實權。",
+    "아들 마사이에에게 가독을 물려주었지만 실권은 계속 쥐었다."
+   ],
+   [
+    1584,
+    "島原の有馬晴信が島津と組んで背いたため、大軍で攻めこむ。しかし沖田畷の戦いで島津家久の策にはまり、討ち取られる。",
+    "When Arima Harunobu of Shimabara rebelled in league with the Shimazu, he invaded with a large army — but at Okitanawate he fell into Shimazu Iehisa's trap and was killed.",
+    "島原的有馬晴信與島津聯手反叛，他率大軍進攻，卻在沖田畷之戰中了島津家久的計策而被討取。",
+    "시마바라의 아리마 하루노부가 시마즈와 손잡고 배반하자 대군으로 쳐들어가다. 그러나 오키타나와테 전투에서 시마즈 이에히사의 계략에 걸려 목숨을 잃다."
+   ],
+   [
+    null,
+    "隆信の死後、義弟の鍋島直茂が龍造寺家を支えて力を持ち、江戸時代には鍋島家が佐賀藩を治めた。",
+    "After his death his brother-in-law Nabeshima Naoshige held the Ryūzōji house together and rose to power; in the Edo period the Nabeshima ruled Saga domain.",
+    "隆信死後，義弟鍋島直茂支撐龍造寺家並掌握實權，江戶時代由鍋島家統治佐賀藩。",
+    "다카노부가 죽은 뒤 의제 나베시마 나오시게가 류조지 가문을 받치며 실권을 쥐었고, 에도 시대에는 나베시마 가문이 사가 번을 다스렸다."
+   ]
+  ],
+  "ep": [
+   [
+    "母の慶誾尼は、家臣の鍋島清房のもとへ自分から押しかけて再婚したと伝わる。こうして清房の子・直茂は隆信の義理の弟となり、生涯の右腕になった。",
+    "Legend says his mother Keigin-ni marched to the house of the retainer Nabeshima Kiyofusa and married him on her own initiative — making Kiyofusa's son Naoshige Takanobu's stepbrother and lifelong right hand.",
+    "相傳他的母親慶誾尼主動找上家臣鍋島清房再婚，清房之子直茂因此成為隆信的義弟，也成為他一生的左右手。",
+    "어머니 게이긴니는 가신 나베시마 기요후사에게 스스로 찾아가 재혼했다고 전한다. 이렇게 기요후사의 아들 나오시게는 다카노부의 의붓동생이 되어 평생의 오른팔이 되었다."
+   ],
+   [
+    "晩年はひどく太っていて馬に乗れず、6人で担ぐ輿に乗って戦場に出たと伝わる。沖田畷でもその輿の上で討たれたという。",
+    "In his later years he was said to be so heavy he could not ride, and went to war in a palanquin carried by six men — and it was on that palanquin that he was cut down at Okitanawate.",
+    "相傳他晚年過於肥胖無法騎馬，只能乘坐六人抬的轎子上戰場，在沖田畷也是在轎上被討取的。",
+    "말년에는 몹시 살쪄서 말을 탈 수 없어 여섯 명이 메는 가마를 타고 전장에 나갔다고 전한다. 오키타나와테에서도 그 가마 위에서 쓰러졌다고 한다."
+   ]
+  ]
+ }
+}

@@ -1,0 +1,121 @@
+{
+"f": {
+ "y": [1537, 1598],
+ "tag": ["身分の低い生まれから、知恵と人なつこさで出世を重ね、ついに天下統一をなしとげた戦国一の出世頭。", "Born of humble stock, he rose on wit and charm to become the greatest self-made man of the age — and unifier of Japan.", "出身卑微，憑智慧與親和力不斷晉升，最終完成天下統一的戰國第一出人頭地者。", "낮은 신분에서 지혜와 붙임성으로 출세를 거듭해 마침내 천하통일을 이룬 전국 제일의 출세인."],
+ "s": [
+  [1537, "尾張の中村で、身分の低い家に生まれる。", "Born to a humble family in Nakamura, Owari.", "生於尾張中村的貧寒人家。", "오와리 나카무라의 신분 낮은 집안에서 태어나다."],
+  [null, "若いころは各地を渡り歩き、遠江の松下之綱に仕えたあと、織田信長に仕える。「木下藤吉郎」として少しずつ出世していく。", "As a young man he drifted from place to place, served Matsushita Yukitsuna of Tōtōmi, then entered Oda Nobunaga's service, rising step by step as Kinoshita Tōkichirō.", "年輕時四處漂泊，先侍奉遠江的松下之綱，後轉投織田信長，以「木下藤吉郎」之名逐步晉升。", "젊은 시절 여러 곳을 떠돌다 도토미의 마쓰시타 유키쓰나를 섬긴 뒤 오다 노부나가를 섬기다. '기노시타 도키치로'로서 조금씩 출세해 갔다."],
+  [1561, "ねね（のちの北政所）と結婚する。ねねは生涯、秀吉を支え続けた。", "He married Nene, later known as Kita-no-Mandokoro, who supported him all his life.", "與寧寧（後來的北政所）結婚，寧寧一生都在支持秀吉。", "네네(훗날의 기타노만도코로)와 결혼하다. 네네는 평생 히데요시를 받쳐 주었다."],
+  [1566, "美濃攻めのため、敵地の墨俣にわずかな日数で砦を築いたと伝わる（墨俣一夜城）。", "During the Mino campaign he is said to have raised a fort at Sunomata, deep in enemy land, in just days — the legendary “one-night castle.”", "相傳為了攻打美濃，他在敵境墨俁以極短時間築起要塞（墨俁一夜城）。", "미노 공략을 위해 적지 스노마타에 며칠 만에 요새를 쌓았다고 전한다(스노마타 하룻밤 성)."],
+  [1570, "金ヶ崎で浅井に背かれた信長を逃がすため、最も危ない最後尾（しんがり）をつとめ、生きて戻る。", "When Azai's betrayal trapped Nobunaga at Kanegasaki, he took the deadly rearguard to cover the retreat — and survived.", "淺井背叛使信長在金崎陷入危機，他擔任最危險的殿後部隊掩護撤退，並平安歸來。", "가네가사키에서 아자이에게 배신당한 노부나가를 탈출시키기 위해 가장 위험한 후위를 맡아 살아 돌아오다."],
+  [1573, "浅井氏のもとの領地をもらって長浜城主になり、初めて城持ちの大名となる。このころ「羽柴」と名乗る。", "Granted the former Azai lands, he became lord of Nagahama — his first castle — and took the name Hashiba.", "獲賜淺井氏舊領成為長濱城主，首次擁有自己的城池。此時改姓「羽柴」。", "아자이 가문의 옛 영지를 받아 나가하마 성주가 되며 처음으로 성을 가진 다이묘가 되다. 이 무렵 '하시바'라 칭하다."],
+  [1577, "中国地方の毛利氏を攻める大将をまかされる。三木城や鳥取城では、城を囲んで食料を断つ長い兵糧攻めで落とした。", "Put in command of the campaign against the Mōri in western Honshu, he took Miki and Tottori castles through long sieges that starved out the defenders.", "受命擔任進攻中國地方毛利氏的大將，在三木城、鳥取城以長期圍城斷糧的兵糧攻勢攻下城池。", "주고쿠 지방의 모리 가문을 공격하는 대장을 맡다. 미키성과 돗토리성은 성을 포위해 식량을 끊는 긴 병량 공격으로 함락했다."],
+  [1582, "備中高松城のまわりに堤を築いて水で囲む「水攻め」の最中、本能寺の変を知る。すぐに毛利と和睦し、大急ぎで引き返して（中国大返し）、山崎の戦いで明智光秀を討つ。", "He was flooding Takamatsu Castle in Bitchū with a ring of dikes when news of Honnō-ji arrived. He made peace with the Mōri at once, raced back east (the “Great Return”), and defeated Akechi Mitsuhide at Yamazaki.", "正在備中高松城周圍築堤引水圍城的「水攻」之際，得知本能寺之變。他立即與毛利議和，火速回師（中國大返還），在山崎之戰討伐明智光秀。", "빗추 다카마쓰성 둘레에 둑을 쌓아 물로 에워싸는 '수공' 도중 혼노지의 변을 알다. 즉시 모리와 화해하고 급히 돌아와(주고쿠 대회군) 야마자키 전투에서 아케치 미쓰히데를 쓰러뜨리다."],
+  [1583, "賤ヶ岳の戦いで、織田家の重臣・柴田勝家を破り、信長の後継者の座を固める。大坂城を築き始めた。", "Defeating Shibata Katsuie, Nobunaga's senior general, at Shizugatake, he secured his place as Nobunaga's successor and began building Osaka Castle.", "在賤岳之戰擊敗織田家重臣柴田勝家，鞏固信長繼承者的地位，並開始興建大坂城。", "시즈가타케 전투에서 오다 가문의 중신 시바타 가쓰이에를 무찔러 노부나가 후계자의 자리를 굳히다. 오사카성을 짓기 시작했다."],
+  [1585, "関白になる。同じ年、四国の長宗我部元親を降伏させる。", "He became kampaku (imperial regent) and forced Chōsokabe Motochika of Shikoku to surrender.", "就任關白，同年迫使四國的長宗我部元親投降。", "간파쿠가 되다. 같은 해 시코쿠의 조소카베 모토치카를 항복시키다."],
+  [1586, "朝廷から「豊臣」の姓を受け、太政大臣になる。", "The court granted him the surname Toyotomi, and he became Grand Minister of State.", "獲朝廷賜姓「豐臣」，並就任太政大臣。", "조정으로부터 '도요토미' 성을 받고 태정대신이 되다."],
+  [1587, "九州の島津氏を降す。京の北野で、身分を問わずだれでも参加できる大茶会を開いた。", "He subdued the Shimazu of Kyushu, and in Kyoto held the Grand Kitano Tea Gathering, open to anyone regardless of rank.", "降服九州的島津氏。在京都北野舉辦不問身分、人人皆可參加的大茶會。", "규슈의 시마즈 가문을 항복시키다. 교토 기타노에서 신분을 가리지 않고 누구나 참가할 수 있는 큰 다회를 열었다."],
+  [1588, "刀狩令を出し、百姓から刀や鉄砲を取り上げる。武士と百姓の身分をはっきり分けるもとになった。", "He issued the Sword Hunt edict, disarming the peasantry and laying the groundwork for a strict divide between samurai and farmers.", "頒布刀狩令，沒收百姓的刀劍與火槍，成為明確區分武士與農民身分的基礎。", "가타나가리령을 내려 백성에게서 칼과 조총을 거두다. 무사와 농민의 신분을 뚜렷이 나누는 바탕이 되었다."],
+  [1590, "小田原の北条氏を降し、東北の大名たちも従えて、天下統一をなしとげる。", "He forced the Hōjō of Odawara to surrender, brought the northern lords to heel, and completed the unification of Japan.", "迫使小田原北條氏投降，並收服東北各大名，完成天下統一。", "오다와라의 호조 가문을 항복시키고 도호쿠의 다이묘들도 복종시켜 천하통일을 이루다."],
+  [1592, "明（中国）の征服をめざして朝鮮へ攻めこむ（文禄の役）。1597年にもふたたび兵を送った（慶長の役）。", "Aiming to conquer Ming China, he invaded Korea (1592), and sent armies again in 1597.", "以征服明朝為目標出兵侵略朝鮮（文祿之役），1597年再度出兵（慶長之役）。", "명나라 정복을 목표로 조선을 침략하다(임진왜란). 1597년에도 다시 군사를 보냈다(정유재란)."],
+  [1598, "春に醍醐寺で盛大な花見を開く。その夏、伏見城で亡くなる。幼い息子・秀頼の将来を、家康ら五大老に託した。", "In spring he hosted a lavish cherry-blossom party at Daigo-ji; that summer he died at Fushimi Castle, entrusting his young son Hideyori to Ieyasu and the other Five Elders.", "春天在醍醐寺舉辦盛大的賞花會；同年夏天在伏見城去世，將年幼的兒子秀賴託付給家康等五大老。", "봄에 다이고지에서 성대한 꽃놀이를 열다. 그해 여름 후시미성에서 세상을 떠나다. 어린 아들 히데요리의 앞날을 이에야스 등 다섯 원로에게 맡겼다."]
+ ],
+ "ep": [
+  ["信長の草履取りだったころ、冬の寒い日に草履を懐に入れて温めておいたという話が伝わる。信長は手紙の中で秀吉を「はげねずみ」と呼んだこともある。", "Legend says that as Nobunaga's sandal-bearer he warmed his master's sandals inside his robe on cold winter days. In one letter Nobunaga even called him a “bald rat.”", "相傳他還是信長的提鞋僕役時，冬日把草鞋揣在懷裡焐熱。信長在信中還曾稱秀吉為「禿鼠」。", "노부나가의 짚신 시중을 들던 시절, 추운 겨울날 짚신을 품에 넣어 데워 두었다는 이야기가 전한다. 노부나가는 편지에서 히데요시를 '대머리 쥐'라고 부른 적도 있다."],
+  ["壁も天井も金箔で覆った、持ち運びのできる「黄金の茶室」を作らせ、宮中にまで運んで茶会を開いた。派手好きの一方で、千利休のわび茶も重んじた。", "He had a portable “Golden Tea Room,” walls and ceiling covered in gold leaf, and even carried it into the imperial palace for a tea ceremony — yet he also prized Sen no Rikyū's austere wabi tea.", "他命人打造牆壁與天花板都貼滿金箔、可搬運的「黃金茶室」，甚至搬進宮中舉辦茶會。喜好奢華的同時，也重視千利休的侘茶。", "벽도 천장도 금박으로 덮은, 들고 다닐 수 있는 '황금 다실'을 만들게 해 궁중에까지 옮겨 다회를 열었다. 화려함을 좋아하는 한편 센노 리큐의 와비차도 중히 여겼다."],
+  ["辞世の歌は「露と落ち露と消えにし我が身かな浪速のことも夢のまた夢」。露のように生まれ露のように消えるわが身よ、大坂で過ごした栄華も夢の中の夢だった、という意味。", "His death poem: “Like dew I fell, like dew I vanish — even all I did in Naniwa was a dream within a dream.”", "辭世詩為「露と落ち露と消えにし我が身かな浪速のことも夢のまた夢」，意思是：如露而生、如露而逝的我啊，在浪速（大坂）的榮華也不過是夢中之夢。", "사세가는 '이슬처럼 떨어져 이슬처럼 사라지는 이 몸이여, 나니와(오사카)의 영화도 꿈속의 꿈이로다'라는 뜻의 노래다."]
+ ]
+},
+"g": {
+ "y": [1497, 1571],
+ "tag": ["安芸の小さな領主から、知恵と粘り強さで大内・尼子という二つの大国をのみこみ、中国地方の覇者となった。", "From a minor lord in Aki, he outwitted and outlasted two great houses, the Ōuchi and the Amago, to become master of western Honshu.", "從安藝的小領主出發，憑智慧與毅力吞併大內、尼子兩大強國，成為中國地方的霸主。", "아키의 작은 영주에서 지혜와 끈기로 오우치·아마고라는 두 대국을 삼키고 주고쿠 지방의 패자가 되었다."],
+ "s": [
+  [1497, "安芸の毛利弘元の次男として生まれる。", "Born in Aki, second son of Mōri Hiromoto.", "生於安藝，為毛利弘元的次子。", "아키에서 모리 히로모토의 차남으로 태어나다."],
+  [null, "幼くして父を亡くし、家臣に城を奪われて、まわりから「乞食若殿」と呼ばれるほど苦しい子ども時代を送ったと伝わる。", "Orphaned young and robbed of his castle by a retainer, he is said to have had such a hard childhood that people called him “the beggar lord.”", "相傳他幼年喪父，城池遭家臣奪走，童年困苦到被人稱作「乞丐少主」。", "어려서 아버지를 잃고 가신에게 성을 빼앗겨, 주변에서 '거지 도련님'이라 부를 만큼 힘든 어린 시절을 보냈다고 전한다."],
+  [1517, "初陣の有田中井手の戦いで、安芸武田氏の大軍を破り、当主の武田元繁を討つ。のちに「西の桶狭間」と呼ばれる勝利だった。", "In his first battle, at Arita-Nakaide, he routed the much larger army of the Aki Takeda and killed their lord Takeda Motoshige — a victory later called “the Okehazama of the West.”", "在初陣有田中井手之戰中擊破安藝武田氏大軍，討取當主武田元繁，後被譽為「西方的桶狹間」。", "첫 출전인 아리타 나카이데 전투에서 아키 다케다 가문의 대군을 무찌르고 당주 다케다 모토시게를 쓰러뜨리다. 훗날 '서쪽의 오케하자마'라 불린 승리였다."],
+  [1523, "幼い甥の当主が亡くなり、27歳で毛利家を継ぐ。", "When his young nephew, the clan head, died, he inherited the Mōri at 27.", "年幼的姪子當主去世，他以二十七歲之齡繼承毛利家。", "어린 조카 당주가 세상을 떠나 27세에 모리 가문을 잇다."],
+  [1540, "尼子の3万ともいわれる大軍に吉田郡山城を囲まれるが、大内の援軍と力を合わせ、翌年までの籠城の末に退ける。", "Besieged at Yoshida-Kōriyama by an Amago army said to number 30,000, he held out into the next year and, with Ōuchi reinforcements, drove them off.", "吉田郡山城遭號稱三萬的尼子大軍包圍，他與大內援軍合力，堅守至翌年終於擊退敵軍。", "3만이라고도 하는 아마고의 대군에게 요시다고리야마성을 포위당했으나, 오우치의 원군과 힘을 합쳐 이듬해까지 버틴 끝에 물리치다."],
+  ["~1547", "三男の隆景を小早川家に、次男の元春を吉川家に養子に出し、両家を毛利の味方にする。のちに「毛利両川」と呼ばれる強い支えとなった。", "He placed his third son Takakage in the Kobayakawa family and his second son Motoharu in the Kikkawa family, binding both clans to the Mōri — the “Two Rivers” that became the house's great pillars.", "讓三子隆景過繼小早川家、次子元春過繼吉川家，使兩家成為毛利的盟友，日後稱為「毛利兩川」，成為堅實支柱。", "셋째 아들 다카카게를 고바야카와 가문에, 둘째 아들 모토하루를 깃카와 가문에 양자로 보내 두 가문을 모리의 편으로 만들다. 훗날 '모리 료센'이라 불리는 든든한 버팀목이 되었다."],
+  [1555, "厳島の戦いで、主君・大内家を乗っ取った陶晴賢の大軍を、厳島へおびき寄せて奇襲で破る。", "At Itsukushima he lured Sue Harukata — who had usurped the Ōuchi — onto the island with his great army and destroyed him in a surprise attack.", "在嚴島之戰中，將篡奪主家大內家的陶晴賢大軍誘至嚴島，以奇襲擊破。", "이쓰쿠시마 전투에서 주군 오우치 가문을 가로챈 스에 하루카타의 대군을 이쓰쿠시마로 꾀어내 기습으로 무찌르다."],
+  [1557, "大内氏をほろぼし、周防・長門を手に入れる。息子たちに、兄弟が力を合わせるよう説いた長い手紙（三子教訓状）を書いた。", "He destroyed the Ōuchi and took Suō and Nagato, and wrote his sons a long letter urging the brothers to stand together (the “Three Sons Admonition”).", "消滅大內氏，奪得周防與長門。寫下長信告誡兒子們兄弟同心（三子教訓狀）。", "오우치 가문을 멸하고 스오·나가토를 손에 넣다. 아들들에게 형제가 힘을 합치라고 당부한 긴 편지(삼자교훈장)를 썼다."],
+  [1563, "跡継ぎの長男・隆元が急に亡くなる。元就は孫の輝元を支えながら、なお家を率いた。", "His eldest son and heir Takamoto died suddenly; Motonari carried on leading the clan while supporting his grandson Terumoto.", "繼承人長子隆元驟逝，元就一邊扶持孫子輝元，一邊繼續率領家族。", "후계자인 장남 다카모토가 갑자기 세상을 떠나다. 모토나리는 손자 데루모토를 받치며 여전히 가문을 이끌었다."],
+  [1566, "長い戦いの末、尼子氏の月山富田城を落とす。中国地方の大半を治める大大名となった。", "After a long struggle he took the Amago fortress of Gassan-Toda, becoming lord of most of the Chūgoku region.", "經過長期作戰，攻下尼子氏的月山富田城，成為統治中國地方大半的大大名。", "긴 싸움 끝에 아마고 가문의 갓산토다성을 함락하다. 주고쿠 지방 대부분을 다스리는 대영주가 되었다."],
+  [1571, "吉田郡山城で亡くなる。", "He died at Yoshida-Kōriyama Castle.", "在吉田郡山城去世。", "요시다고리야마성에서 세상을 떠나다."]
+ ],
+ "ep": [
+  ["1本の矢はすぐ折れるが、3本束ねると折れない――と息子たちに兄弟の結束を説いた「三本の矢」の話は、三子教訓状をもとに後の世に作られたものとされる。", "The famous tale of the “three arrows” — one breaks easily, three bound together do not — is thought to be a later story based on his letter to his sons.", "「一支箭容易折斷，三支綁在一起就折不斷」的「三支箭」故事，被認為是後世根據三子教訓狀創作的。", "'화살 한 대는 쉽게 부러지지만 세 대를 묶으면 부러지지 않는다'며 형제의 단결을 가르친 '세 개의 화살' 이야기는 삼자교훈장을 바탕으로 후대에 만들어진 것으로 여겨진다."],
+  ["祖父や父、兄が酒のせいで早死にしたと考え、自分は酒をつつしみ、子や孫にも飲みすぎないよう手紙で何度も注意した。", "Believing drink had killed his grandfather, father and brother young, he kept away from sake himself and repeatedly warned his sons and grandsons in letters not to overindulge.", "他認為祖父、父親和兄長都是因酒早逝，因此自己節制飲酒，並在信中多次叮囑子孫不要貪杯。", "할아버지와 아버지, 형이 술 때문에 일찍 죽었다고 여겨 스스로 술을 삼가고, 자식과 손자에게도 과음하지 말라고 편지로 여러 번 당부했다."],
+  ["若いころから毎朝、朝日を拝んで念仏を唱えることを欠かさなかったと、自分の手紙に書き残している。", "He wrote in his own letters that ever since his youth he had never missed bowing to the morning sun and chanting the nembutsu each day.", "他在自己的書信中寫道，年輕時起每天早上都必定朝拜朝陽、念誦佛號。", "젊은 시절부터 매일 아침 해를 향해 절하고 염불을 외는 것을 빠뜨리지 않았다고 자신의 편지에 적어 남겼다."]
+ ]
+},
+"h": {
+ "y": [1533, 1611],
+ "tag": ["勇猛な3人の弟を束ね、九州のほとんどを島津の旗で染めた薩摩の大将。", "The Satsuma commander who led three fearsome brothers and nearly painted all of Kyushu in Shimazu colors.", "統率三位勇猛的弟弟，幾乎讓整個九州插滿島津旗幟的薩摩大將。", "용맹한 세 아우를 이끌고 규슈 거의 전부를 시마즈의 깃발로 물들인 사쓰마의 대장."],
+ "s": [
+  [1533, "薩摩の伊作城で、島津貴久の長男として生まれる。", "Born at Izaku Castle in Satsuma, eldest son of Shimazu Takahisa.", "生於薩摩伊作城，為島津貴久的長子。", "사쓰마 이자쿠성에서 시마즈 다카히사의 장남으로 태어나다."],
+  [1566, "島津家を継ぐ。弟の義弘・歳久・家久とともに、三州（薩摩・大隅・日向）をまとめる戦いに乗り出す。", "He became head of the Shimazu and, with his brothers Yoshihiro, Toshihisa and Iehisa, set out to unite the three provinces of Satsuma, Ōsumi and Hyūga.", "繼承島津家，與弟弟義弘、歲久、家久一同展開統一三州（薩摩、大隅、日向）的戰爭。", "시마즈 가문을 잇다. 아우 요시히로·도시히사·이에히사와 함께 세 지역(사쓰마·오스미·휴가)을 통합하는 싸움에 나서다."],
+  ["~1570", "薩摩の国内で逆らっていた一族や豪族を従え、薩摩をまとめる。", "He brought rebellious kin and local lords to heel and unified Satsuma.", "收服在薩摩國內反抗的族人與豪族，統一薩摩。", "사쓰마 안에서 거역하던 일족과 호족을 복종시켜 사쓰마를 통합하다."],
+  [1572, "弟の義弘が、木崎原の戦いで日向の伊東氏の大軍を、わずかな兵で破る。", "His brother Yoshihiro routed a large Itō army from Hyūga with a handful of men at Kizakibaru.", "弟弟義弘在木崎原之戰以少量兵力擊破日向伊東氏大軍。", "아우 요시히로가 기자키바루 전투에서 휴가 이토 가문의 대군을 적은 병력으로 무찌르다."],
+  [1574, "大隅の肝付氏を従え、大隅をまとめる。", "He subdued the Kimotsuki and unified Ōsumi.", "收服大隅的肝付氏，統一大隅。", "오스미의 기모쓰키 가문을 복종시켜 오스미를 통합하다."],
+  [1577, "伊東義祐を日向から追い出し、三州をすべて治める。", "He drove Itō Yoshisuke out of Hyūga and ruled all three provinces.", "將伊東義祐逐出日向，完全統治三州。", "이토 요시스케를 휴가에서 몰아내고 세 지역을 모두 다스리다."],
+  [1578, "伊東氏を助けに来た大友宗麟の大軍を、耳川の戦いで打ち破る。九州の力関係が大きく変わった。", "At Mimikawa he shattered the great army Ōtomo Sōrin sent to aid the Itō, upending the balance of power in Kyushu.", "在耳川之戰擊潰前來援助伊東氏的大友宗麟大軍，九州的勢力版圖因此大變。", "이토 가문을 도우러 온 오토모 소린의 대군을 미미카와 전투에서 쳐부수다. 규슈의 세력 판도가 크게 바뀌었다."],
+  [1581, "肥後の相良氏を従え、肥後へ勢力を広げる。", "He subdued the Sagara of Higo and pushed into Higo.", "收服肥後的相良氏，勢力擴展至肥後。", "히고의 사가라 가문을 복종시켜 히고로 세력을 넓히다."],
+  [1584, "弟の家久が、沖田畷の戦いで龍造寺隆信を討つ。島津に並ぶ九州の勢力は大友だけになった。", "His brother Iehisa killed Ryūzōji Takanobu at Okitanawate, leaving only the Ōtomo as a rival in Kyushu.", "弟弟家久在沖田畷之戰討取龍造寺隆信，九州能與島津匹敵的只剩大友。", "아우 이에히사가 오키타나와테 전투에서 류조지 다카노부를 쓰러뜨리다. 규슈에서 시마즈와 겨룰 세력은 오토모뿐이 되었다."],
+  [1586, "大友の豊後へ攻めこみ、戸次川の戦いで豊臣秀吉が送った先発の軍を破る。", "He invaded the Ōtomo's Bungo and, at the Hetsugi River, defeated the advance force Toyotomi Hideyoshi had sent.", "進攻大友的豐後，在戶次川之戰擊敗豐臣秀吉派來的先遣部隊。", "오토모의 분고로 쳐들어가 헤쓰기강 전투에서 도요토미 히데요시가 보낸 선발대를 무찌르다."],
+  [1587, "九州のほとんどを押さえたが、秀吉みずから率いる大軍に攻められて降伏する。頭を丸めて「龍伯」と名乗り、薩摩・大隅は守った。", "Master of nearly all Kyushu, he surrendered when Hideyoshi himself arrived with a vast army. He shaved his head, took the name Ryūhaku, and kept Satsuma and Ōsumi.", "雖已掌控九州大半，但遭秀吉親率大軍進攻而投降。他剃髮改號「龍伯」，保住了薩摩與大隅。", "규슈 거의 전부를 손에 넣었으나 히데요시가 직접 이끄는 대군에 항복하다. 머리를 깎고 '류하쿠'라 칭하며 사쓰마와 오스미는 지켰다."],
+  [1600, "関ヶ原の戦いで弟の義弘が西軍につき、敵の真ん中を突き抜けて薩摩へ戻る（島津の退き口）。義久は戦後の交渉で領地を守りぬいた。", "At Sekigahara his brother Yoshihiro fought for the West and escaped by charging straight through the enemy lines (the “Shimazu retreat”). Yoshihisa then negotiated skillfully to keep the clan's lands.", "關原之戰中弟弟義弘加入西軍，從敵陣正中央殺出一條血路返回薩摩（島津撤退）。義久則在戰後交涉中保住了領地。", "세키가하라 전투에서 아우 요시히로가 서군에 서서 적진 한가운데를 뚫고 사쓰마로 돌아오다(시마즈의 퇴각). 요시히사는 전후 교섭으로 영지를 지켜 냈다."],
+  [1611, "大隅の国分で亡くなる。島津家は江戸時代も薩摩を治め続け、幕末には時代を動かす藩となった。", "He died at Kokubu in Ōsumi. The Shimazu ruled Satsuma throughout the Edo period and helped bring down the shogunate at its end.", "在大隅國分去世。島津家在江戶時代持續統治薩摩，幕末時成為推動時代變革的強藩。", "오스미 고쿠부에서 세상을 떠나다. 시마즈 가문은 에도 시대에도 사쓰마를 다스렸고, 막부 말기에는 시대를 움직이는 번이 되었다."]
+ ],
+ "ep": [
+  ["祖父の島津忠良は4兄弟を、義久は総大将の器、義弘は武勇、歳久は先を読む知恵、家久は戦術に優れる――と評したと伝わる。", "Their grandfather Shimazu Tadayoshi is said to have judged the four brothers thus: Yoshihisa had the makings of a supreme commander, Yoshihiro valor, Toshihisa foresight, and Iehisa tactical genius.", "相傳祖父島津忠良這樣評價四兄弟：義久有總大將之器，義弘勇武，歲久善於洞察，家久長於戰術。", "할아버지 시마즈 다다요시는 네 형제를 두고 요시히사는 총대장의 그릇, 요시히로는 무용, 도시히사는 앞을 내다보는 지혜, 이에히사는 전술에 뛰어나다고 평했다고 전한다."],
+  ["島津軍は、わざと逃げて敵を誘いこみ、待ち伏せた兵で囲む「釣り野伏せ」という戦法を得意とした。耳川や沖田畷の勝利もこの戦い方によるとされる。", "The Shimazu were masters of tsuri-nobuse: feign a retreat, draw the enemy in, then spring an ambush on three sides. Their victories at Mimikawa and Okitanawate are credited to it.", "島津軍擅長「釣野伏」戰法：故意佯敗誘敵深入，再以埋伏的士兵三面包圍。耳川與沖田畷的勝利據說都靠這種戰法。", "시마즈 군은 일부러 달아나 적을 꾀어들인 뒤 매복한 병사로 에워싸는 '쓰리노부세' 전법이 특기였다. 미미카와와 오키타나와테의 승리도 이 전법 덕분이라고 한다."],
+  ["戦だけでなく、和歌や茶の湯などの文化にも通じた武将だったと伝わる。", "He is said to have been as accomplished in poetry and the tea ceremony as in war.", "相傳他不只精通作戰，對和歌與茶道等文化也頗有造詣。", "전쟁뿐 아니라 와카와 다도 같은 문화에도 밝은 무장이었다고 전한다."]
+ ]
+},
+"i": {
+ "y": [1515, 1571],
+ "tag": ["「相模の獅子」。戦では一度も敵に背を向けず、国の中では民の暮らしを重んじて、関東に北条の時代を築いた。", "“The Lion of Sagami.” Never turning his back on an enemy in battle and caring for his people at home, he built the Hōjō age in the Kantō.", "「相模之獅」。戰場上從不背對敵人，治國時重視百姓生活，在關東開創了北條的時代。", "'사가미의 사자'. 전쟁에서는 한 번도 적에게 등을 보이지 않고, 나라 안에서는 백성의 삶을 중히 여겨 간토에 호조의 시대를 쌓았다."],
+ "s": [
+  [1515, "相模の小田原で、北条氏綱の長男として生まれる。北条早雲（伊勢宗瑞）の孫にあたる。", "Born at Odawara in Sagami, eldest son of Hōjō Ujitsuna and grandson of Hōjō Sōun (Ise Sōzui).", "生於相模小田原，為北條氏綱的長子，是北條早雲（伊勢宗瑞）的孫子。", "사가미 오다와라에서 호조 우지쓰나의 장남으로 태어나다. 호조 소운(이세 소즈이)의 손자다."],
+  [1530, "16歳の初陣、小沢原の戦いで扇谷上杉氏の軍を破る。", "In his first battle, at 16, he defeated the Ōgigayatsu Uesugi at Ozawahara.", "十六歲初陣，在小澤原之戰擊敗扇谷上杉氏軍隊。", "16세의 첫 출전인 오자와하라 전투에서 오기가야쓰 우에스기 군을 무찌르다."],
+  [1541, "父の死で北条家の3代目を継ぐ。", "On his father's death he became the third head of the Hōjō.", "父親去世後成為北條家第三代家主。", "아버지의 죽음으로 호조 가문의 3대째를 잇다."],
+  [1546, "8万ともいわれる上杉・足利の連合軍に囲まれた河越城を救うため、わずか8千ほどの兵で夜討ちをかけ、大勝する（河越夜戦）。", "To relieve Kawagoe Castle, besieged by an Uesugi–Ashikaga coalition said to number 80,000, he launched a night attack with perhaps 8,000 men and won a crushing victory.", "為解救被號稱八萬的上杉、足利聯軍包圍的河越城，僅率約八千兵發動夜襲並大獲全勝（河越夜戰）。", "8만이라고도 하는 우에스기·아시카가 연합군에 포위된 가와고에성을 구하려고 겨우 8천 정도의 병사로 야습을 걸어 크게 이기다(가와고에 야전)."],
+  [1550, "年貢や税のしくみを改め、苦しむ百姓の負担を軽くする。", "He reformed taxes and dues, easing the burden on struggling farmers.", "改革年貢與稅制，減輕困苦百姓的負擔。", "연공과 세금 제도를 고쳐 괴로워하는 백성의 부담을 덜다."],
+  [1552, "関東管領の上杉憲政を越後へ追いやり、関東での力を広げる。", "He drove the Kantō Kanrei Uesugi Norimasa into Echigo and expanded his power across the Kantō.", "將關東管領上杉憲政逐往越後，擴大在關東的勢力。", "간토 간레이 우에스기 노리마사를 에치고로 몰아내고 간토에서 세력을 넓히다."],
+  [1554, "武田・今川と、たがいに娘を嫁がせ合って同盟を結ぶ（甲相駿三国同盟）。", "He sealed the triple alliance with the Takeda and Imagawa through marriages.", "與武田、今川互嫁女兒結成同盟（甲相駿三國同盟）。", "다케다·이마가와와 서로 딸을 시집보내 동맹을 맺다(갑상준 삼국동맹)."],
+  [1559, "家臣の領地と役目をまとめた帳面を作り、家の治め方を整える。同じころ、家督を息子の氏政に譲るが、その後も実権を握り続けた。", "He compiled a register of his retainers' lands and duties to put the clan in order, and around this time handed the headship to his son Ujimasa while keeping real power.", "編製記錄家臣領地與職責的帳冊，整頓家政。同時將家督讓給兒子氏政，但之後仍掌握實權。", "가신의 영지와 역할을 정리한 장부를 만들어 가문 다스리는 법을 정비하다. 같은 무렵 아들 우지마사에게 가독을 물려주었지만 그 뒤에도 실권을 쥐었다."],
+  [1561, "上杉謙信が率いる10万ともいわれる大軍に小田原城を囲まれるが、城にこもって守り抜き、謙信を引き上げさせる。", "When Uesugi Kenshin besieged Odawara with a host said to number 100,000, he held out behind the walls until Kenshin withdrew.", "小田原城遭上杉謙信率領號稱十萬的大軍包圍，他閉城固守，迫使謙信撤兵。", "우에스기 겐신이 이끄는 10만이라고도 하는 대군에게 오다와라성을 포위당했으나, 성에 틀어박혀 지켜 내 겐신을 물러가게 하다."],
+  [1564, "第二次国府台の戦いで、房総の里見氏を破る。", "At the second Battle of Kōnodai he defeated the Satomi of the Bōsō Peninsula.", "在第二次國府台之戰擊敗房總的里見氏。", "제2차 고노다이 전투에서 보소의 사토미 가문을 무찌르다."],
+  [1569, "武田信玄にも小田原城を囲まれるが、これも守り抜く。武田と手を切り、長年の敵だった上杉と同盟を結んだ。", "Takeda Shingen besieged Odawara too, and again the castle held. Breaking with the Takeda, he allied with his old foes the Uesugi.", "小田原城又遭武田信玄包圍，同樣守住。他與武田決裂，轉而與長年宿敵上杉結盟。", "다케다 신겐에게도 오다와라성을 포위당했지만 이 또한 지켜 내다. 다케다와 손을 끊고 오랜 적이던 우에스기와 동맹을 맺었다."],
+  [1571, "小田原城で亡くなる。武田との同盟に戻すよう言い残したと伝わり、その年のうちに北条と武田はふたたび手を結んだ。", "He died at Odawara Castle, reportedly urging a return to the Takeda alliance — and before the year was out the Hōjō and Takeda were allies again.", "在小田原城去世，相傳遺言要恢復與武田的同盟，同年北條與武田便再度結盟。", "오다와라성에서 세상을 떠나다. 다케다와의 동맹으로 돌아가라고 남겼다고 전하며, 그해 안에 호조와 다케다는 다시 손을 잡았다."]
+ ],
+ "ep": [
+  ["顔に二つの刀傷があり、どれも体の正面についた「向こう傷」だった。敵に背を向けたことがない証として「氏康傷」と呼ばれたと伝わる。", "He bore two sword scars on his face, both from the front — proof, it was said, that he never turned his back on an enemy. They were called “Ujiyasu scars.”", "他臉上有兩道刀疤，都是正面所受的傷，被視為從未背對敵人的證明，相傳稱為「氏康傷」。", "얼굴에 두 개의 칼자국이 있었는데 모두 몸 앞쪽에 난 상처였다. 적에게 등을 보인 적이 없다는 증거로 '우지야스 상처'라 불렸다고 전한다."],
+  ["息子の氏政が、ご飯に汁を2度に分けてかけたのを見て、「毎日食べる飯にかける汁の量もわからぬ者に、国や家臣を治められるものか」と嘆いたという話が残る。", "Seeing his son Ujimasa pour soup over his rice twice, he reportedly lamented: “If he can't judge the soup for a meal he eats every day, how will he judge a country and its men?”", "看到兒子氏政把湯分兩次澆在飯上，他嘆道：「連每天吃的飯要澆多少湯都拿捏不準，怎能治理國家與家臣？」這個故事流傳至今。", "아들 우지마사가 밥에 국을 두 번 나눠 붓는 것을 보고 '매일 먹는 밥에 부을 국의 양도 모르는 자가 어찌 나라와 가신을 다스리겠는가' 하고 한탄했다는 이야기가 남아 있다."],
+  ["北条家は「禄寿応穏」（領民の財産と命を守る）と刻んだ印を使い、民を大切にする国づくりを看板にした。", "The Hōjō sealed their documents with the motto “Rokuju Ōon” — may the people's property and lives be safe — making care for the populace their banner.", "北條家使用刻有「祿壽應穩」（守護領民的財產與性命）的印章，以重視百姓的治國作為招牌。", "호조 가문은 '녹수응온'(영민의 재산과 목숨을 지킨다)이라 새긴 도장을 써서 백성을 소중히 여기는 나라 만들기를 내세웠다."]
+ ]
+},
+"j": {
+ "y": [1519, 1560],
+ "tag": ["「海道一の弓取り」。駿河・遠江・三河を治め、国の決まりを整えた東海の大大名。桶狭間の敗北だけで語られがちだが、実力者だった。", "“The finest warrior of the Tōkaidō.” He ruled Suruga, Tōtōmi and Mikawa and codified their laws. Often remembered only for Okehazama, he was in fact a formidable lord.", "「東海道第一弓手」。統治駿河、遠江、三河，整頓領國法度的東海大大名。常因桶狹間之敗被輕視，其實是位實力派。", "'도카이도 제일의 무사'. 스루가·도토미·미카와를 다스리고 나라의 법도를 정비한 도카이의 대영주. 오케하자마의 패배로만 이야기되기 쉽지만 실력자였다."],
+ "s": [
+  [1519, "駿河の今川氏親の子として生まれる。", "Born in Suruga, son of Imagawa Ujichika.", "生於駿河，為今川氏親之子。", "스루가에서 이마가와 우지치카의 아들로 태어나다."],
+  [null, "跡継ぎではなかったため、幼くして寺に入り「承芳」という僧になる。師の太原雪斎とともに京で学んだ。", "As a younger son he entered a temple as a child and became the monk Shōhō, studying in Kyoto alongside his mentor Taigen Sessai.", "因非繼承人，幼年便入寺成為法名「承芳」的僧侶，與老師太原雪齋一同在京都學習。", "후계자가 아니었기에 어려서 절에 들어가 '쇼호'라는 승려가 되다. 스승 다이겐 셋사이와 함께 교토에서 공부했다."],
+  [1536, "当主だった兄が急死し、もう一人の兄との跡継ぎ争い（花倉の乱）に勝って当主となる。寺を出て「義元」と名乗った。", "When his elder brother, the clan head, died suddenly, he won the succession war against another brother (the Hanakura Rebellion), left the temple, and became lord as Yoshimoto.", "身為當主的兄長驟逝，他在與另一位兄長的繼承之爭（花倉之亂）中勝出成為家主，還俗改名「義元」。", "당주이던 형이 갑자기 죽자 다른 형과의 후계 다툼(하나쿠라의 난)에서 이겨 당주가 되다. 절을 나와 '요시모토'라 칭했다."],
+  [1537, "甲斐の武田信虎の娘を妻に迎えて武田と結ぶ。これに怒った北条氏綱に、駿河の東部（河東）を奪われる。", "He married a daughter of Takeda Nobutora of Kai, allying with the Takeda — which so angered Hōjō Ujitsuna that he seized eastern Suruga (Kawahigashi).", "迎娶甲斐武田信虎之女與武田結盟，激怒北條氏綱，被奪走駿河東部（河東）。", "가이 다케다 노부토라의 딸을 아내로 맞아 다케다와 손잡다. 이에 화난 호조 우지쓰나에게 스루가 동부(가토)를 빼앗기다."],
+  [1545, "武田の力も借りて北条と戦い、河東を取り戻す。", "With Takeda help he fought the Hōjō and won back Kawahigashi.", "借助武田之力與北條作戰，奪回河東。", "다케다의 힘도 빌려 호조와 싸워 가토를 되찾다."],
+  [1548, "小豆坂の戦いで尾張の織田信秀を破り、三河への支配を強める。", "At Azukizaka he defeated Oda Nobuhide of Owari and tightened his hold on Mikawa.", "在小豆坂之戰擊敗尾張的織田信秀，加強對三河的控制。", "아즈키자카 전투에서 오와리의 오다 노부히데를 무찌르고 미카와 지배를 강화하다."],
+  [1549, "織田家の人質になっていた松平竹千代（のちの徳川家康）を人質交換で取り戻し、駿府で育てる。", "Through a hostage exchange he recovered young Matsudaira Takechiyo — the future Tokugawa Ieyasu — from the Oda and raised him in Sunpu.", "透過人質交換，從織田家手中要回作為人質的松平竹千代（後來的德川家康），在駿府撫養。", "오다 가문의 인질이던 마쓰다이라 다케치요(훗날의 도쿠가와 이에야스)를 인질 교환으로 되찾아 슨푸에서 기르다."],
+  [1553, "父が作った国の決まり「今川仮名目録」に21か条を書き足す。幕府に頼らず、自分の力で国を治めると宣言した。", "He added 21 articles to his father's house code, the Imagawa Kana Mokuroku, declaring that he would rule his lands by his own power, not by the shogunate's leave.", "在父親制定的領國法典「今川假名目錄」中增補二十一條，宣告不依賴幕府，而以自己的力量治理領國。", "아버지가 만든 영국법 '이마가와 가나모쿠로쿠'에 21개 조를 덧붙이다. 막부에 기대지 않고 자기 힘으로 나라를 다스리겠다고 선언했다."],
+  [1554, "師の太原雪斎の仲立ちで、武田・北条と同盟を結ぶ（甲相駿三国同盟）。", "Through his mentor Sessai's mediation he joined the triple alliance with the Takeda and Hōjō.", "在老師太原雪齋的斡旋下，與武田、北條結盟（甲相駿三國同盟）。", "스승 다이겐 셋사이의 중재로 다케다·호조와 동맹을 맺다(갑상준 삼국동맹)."],
+  [1555, "政治と戦の両方で支えてくれた太原雪斎が亡くなる。", "Taigen Sessai, his right hand in both government and war, died.", "在政治與軍事上都輔佐他的太原雪齋去世。", "정치와 전쟁 양쪽에서 그를 받쳐 준 다이겐 셋사이가 세상을 떠나다."],
+  ["~1558", "家督を息子の氏真に譲り、自分は三河など西への備えに力を注ぐ。", "He handed the headship to his son Ujizane and focused his own energy on Mikawa and the western front.", "將家督讓給兒子氏真，自己則全力經營三河等西方防線。", "아들 우지자네에게 가독을 물려주고 자신은 미카와 등 서쪽 대비에 힘을 쏟다."],
+  [1560, "2万を超える大軍で尾張へ攻めこむ。桶狭間で休んでいたところを、織田信長の奇襲にあい、討ち取られる。", "He invaded Owari with over 20,000 men. While resting at Okehazama he was caught in Oda Nobunaga's surprise attack and killed.", "率兩萬餘大軍進攻尾張，在桶狹間休息時遭織田信長奇襲而被討取。", "2만이 넘는 대군으로 오와리를 공격하다. 오케하자마에서 쉬던 중 오다 노부나가의 기습을 받아 쓰러지다."]
+ ],
+ "ep": [
+  ["お歯黒や化粧をした公家風の姿で描かれることが多く、後の世では「軟弱な大名」とされがちだった。しかし実際は「海道一の弓取り」と呼ばれた実力者だった。", "He is often shown with blackened teeth and courtly makeup, and later ages painted him as soft. In truth he was called “the finest warrior of the Tōkaidō.”", "他常被描繪成塗黑齒、化妝的公卿模樣，後世常認為他是「軟弱的大名」，但實際上他被稱為「東海道第一弓手」，是位實力派。", "검게 물들인 이와 화장을 한 귀족풍 모습으로 그려질 때가 많아 후세에는 '나약한 다이묘'로 여겨지기 쉬웠다. 그러나 실제로는 '도카이도 제일의 무사'라 불린 실력자였다."],
+  ["師の太原雪斎は、僧でありながら軍を率い、外交もこなす「黒衣の宰相」だった。義元の全盛期は、雪斎とともにあった。", "His mentor Taigen Sessai was a monk who led armies and handled diplomacy — a “prime minister in black robes.” Yoshimoto's golden years were the years with Sessai.", "老師太原雪齋雖為僧侶，卻能領兵打仗、處理外交，被稱為「黑衣宰相」。義元的全盛期正是與雪齋共度的歲月。", "스승 다이겐 셋사이는 승려이면서 군을 이끌고 외교도 해내는 '검은 옷의 재상'이었다. 요시모토의 전성기는 셋사이와 함께였다."],
+  ["人質として預かった竹千代（家康）に教育をほどこしたとされ、家康はのちに駿府を愛し、晩年をそこで過ごした。", "He is said to have seen to the education of his hostage Takechiyo — and Ieyasu later loved Sunpu so much that he spent his final years there.", "據說他讓作為人質的竹千代（家康）接受教育，而家康日後也深愛駿府，在那裡度過晚年。", "인질로 맡은 다케치요(이에야스)에게 교육을 시켰다고 하며, 이에야스는 훗날 슨푸를 사랑해 말년을 그곳에서 보냈다."]
+ ]
+}
+}

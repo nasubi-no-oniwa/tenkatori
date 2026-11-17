@@ -339,7 +339,14 @@
     return f(y[0]) + (v ? '〜' : '–') + f(y[1]);
   }
   function openScroll(L) {
-    if (!$('scroll') || !TK.SCROLL) return; closePanel(); scL = L || (N.me && N.me.f) || scL || 'a';
+    if (!$('scroll')) return;
+    if (!TK.SCROLL) {   // 中身は大きいので、初めて開いたときだけ読みこむ
+      if (openScroll.ld) return; openScroll.ld = 1;
+      const sc = document.createElement('script'); sc.src = 'js/scroll.js?v=2';
+      sc.onload = () => { openScroll.ld = 0; openScroll(L); }; sc.onerror = () => { openScroll.ld = 0; sc.remove(); };
+      document.head.appendChild(sc); return;
+    }
+    closePanel(); scL = L || (N.me && N.me.f) || scL || 'a';
     $('scroll').hidden = false; renderScroll(true);
     if (G.gsap) gsap.fromTo('#scroll .maki', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
   }
@@ -365,7 +372,9 @@
     const vt = x => V ? String(x).split(/(\d+)/).map((p, i) => i % 2 ? (p.length >= 4 ? p.replace(/\d/g, c => KD[+c]) : `<span class="tcy">${p}</span>`) : esc(p)).join('') : esc(x);
     let h = `<div class="maki"><i class="jiku"></i><div class="kami"><div class="mkHd"><canvas width="128" height="128"></canvas><div><div class="ttl">${esc(t('sc_title', { name: TK.L(f.nm) }))}</div><small>${esc(t('sc_home'))}：${esc(TK.L(f.home))}・${esc(TK.L(f.castle))}<br>${esc(scLife(d.y))}</small>${N.me && N.me.f === f.L ? `<span class="mine">${esc(t('sc_mine'))}</span>` : ''}</div></div>`;
     h += `<div class="mkTag">${vt(d.tag[li] || d.tag[0])}</div>`;
+    h += `<div class="mkSec">${esc(t('sc_s'))}</div>`;
     for (const r of d.s) { const y = scYear(r[0]); h += `<div class="ev">${y ? `<b>${esc(y)}</b>` : '<b>◇</b>'}${vt(r[1 + li] || r[1])}</div>`; }
+    if (d.ep && d.ep.length) { h += `<div class="mkSec">${esc(t('sc_ep'))}</div>`; for (const r of d.ep) h += `<div class="ev ep"><b>◆</b>${vt(r[li] || r[0])}</div>`; }
     h += '</div><i class="jiku"></i></div>';
     B.innerHTML = h; drawCrest(B.querySelector('.mkHd canvas'), f);
     B.scrollTop = 0; B.scrollLeft = 0;
