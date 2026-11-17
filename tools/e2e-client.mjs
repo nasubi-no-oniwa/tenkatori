@@ -32,7 +32,7 @@ try {
   await A.ping(); ok(Math.abs(A.offset) < 120000, '時計合わせができる（ずれ ' + A.offset + 'ms）');
   await A.loadMe(); ok(A.wait() > 1 * 3600 * 1000 - 120000 && A.canTake(ta[1]).why === 'wait', '取ったあとは1時間待ち（あと ' + Math.round(A.wait() / 60000) + '分）');
   ok(await fails(A.update({ ['c/' + ta[1]]: 'a' })), '待っている間は、じかに書いてもはじかれる');
-  await B.token(); await B.join('k', '太郎'); await B.loadState(); ev = await B.loadCells(); ok(B.cells[ta[0]] === 'a' && B.s.n.a === 14 && B.s.n[prev] === (prev === 'w' ? 3869 : B.s.n[prev]), 'Bから見ても、織田のマスが増えている');
+  await B.token(); await B.join('k', '太郎'); await api('PATCH', '/tkt/u/' + B.uid() + '.json', { j: 1 }, tok); await B.loadMe(); await B.loadState(); ev = await B.loadCells(); ok(B.cells[ta[0]] === 'a' && B.s.n.a === 14 && B.s.n[prev] === (prev === 'w' ? 3869 : B.s.n[prev]), 'Bから見ても、織田のマスが増えている');
   const tb = B.takeable().find(i => B.cells[i] === 'a' && i !== ta[0]); // 斎藤のとなりの織田のマス（Aが取ったばかりのマスは「同時」になるので外す）
   if (tb !== undefined) { await B.take(tb); ok(B.cells[tb] === 'k', 'Bが織田のマスを奪う'); const l = await A.poll(); ok(l.some(e => +e.c === tb && e.f === 'k') && A.cells[tb] === 'k' && A.s.n.a === 13, 'Aの読みなおしで、奪われたことがわかる'); }
   else { const w = B.takeable()[0]; await B.take(w); const l = await A.poll(); ok(l.some(e => +e.c === w) && A.cells[w] === 'k', 'Aの読みなおしで、Bの動きがわかる'); }
