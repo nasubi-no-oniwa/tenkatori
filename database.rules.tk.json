@@ -93,7 +93,7 @@
    },
    "t": {
     ".write": "auth != null && auth.uid === $uid && (!root.child('tk/s/end').exists() && !root.child('tk/s/stop').exists() && now <= 1796050799999)",
-    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 10800000) && newData.parent().child('f').exists()"
+    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 3600000) && newData.parent().child('f').exists()"
    },
    "c": {
     ".write": "auth != null && auth.uid === $uid",

@@ -49,15 +49,15 @@ export async function run(drv, log = console.log) {
   await yes(take(A, 2, 1, 'a', 'w', '与作'), 'Aが白いマス2を取る');
   ok((await drv.read('c/2', B)).val === 'a', 'マス2が織田のものになった');
   ok((await drv.read('s/n/a', B)).val === 3 && (await drv.read('s/n/w', B)).val === 2, '織田3マス・白2マス');
-  await no(take(A, 3, 2, 'a', 'w', '与作'), '3時間たつまで次は取れない');
+  await no(take(A, 3, 2, 'a', 'w', '与作'), '1時間たつまで次は取れない');
   await yes(take(B, 4, 5, 'b', 'w', '太郎'), 'Bが白いマス4を取る');
   await no(take(C, 7, 6, 'b', 'c', '次郎'), '天守閣は取れない');
   await yes(take(C, 3, 4, 'b', 'w', '次郎'), 'Cが白いマス3を取る（Bが取ったばかりのマスを足場に）');
   if (drv.advance) {
-    await drv.advance(3 * 3600 * 1000 - 5000); await no(take(A, 3, 2, 'a', 'b', '与作'), '3時間の5秒前はまだ取れない');
-    await drv.advance(6000); await yes(take(A, 3, 2, 'a', 'b', '与作'), '3時間たつと、武田のマス3を奪える');
+    await drv.advance(1 * 3600 * 1000 - 5000); await no(take(A, 3, 2, 'a', 'b', '与作'), '1時間の5秒前はまだ取れない');
+    await drv.advance(6000); await yes(take(A, 3, 2, 'a', 'b', '与作'), '1時間たつと、武田のマス3を奪える');
     ok((await drv.read('s/n/a', B)).val === 4 && (await drv.read('s/n/b', B)).val === 3, '織田4マス・武田3マス');
-    await drv.advance(3 * 3600 * 1000 + 1000); await yes(take(B, 3, 4, 'b', 'a', '太郎'), '武田がマス3を取り返す');
+    await drv.advance(1 * 3600 * 1000 + 1000); await yes(take(B, 3, 4, 'b', 'a', '太郎'), '武田がマス3を取り返す');
   }
   const lg = (await drv.read('log', E)).val || {};
   ok(Object.keys(lg).length >= 3, '取った記録がだれでも読める（' + Object.keys(lg).length + '件）');
@@ -117,7 +117,7 @@ export async function run(drv, log = console.log) {
     await yes(take(P, 2, 1, 'a', 'w', '八郎'), '織田（5マス）が白いマス2を取る');
     await no(take(Q1, 2, 3, 'b', 'a', '九郎'), 'すぐあとに来た武田（9マス）は、マスが多いので取れない');
     { const id = pid(); await yes(drv.update({ ['u/' + Q1 + '/t']: SV, ['u/' + Q1 + '/c']: '2', ['u/' + Q1 + '/l']: id, ['log/' + id]: { t: SV, y: 'f', c: '2', f: 'b', p: 'a', n: '九郎', h: 'b', u: Q1 } }, Q1), '負けた武田の人は「同時に攻めこんで敗れた」と記録して、一手を失う'); }
-    await no(take(Q1, 4, 3, 'b', 'b', '九郎'), '敗れた人は、3時間たつまで取れない');
+    await no(take(Q1, 4, 3, 'b', 'b', '九郎'), '敗れた人は、1時間たつまで取れない');
     await drv.admin({ 's/n/b': 3 });
     await yes(take(Q2, 2, 3, 'b', 'a', '十郎'), '武田のほうが少ない（3マス）なら、同時でも武田のものになる');
     ok((await drv.read('c/2', P)).val === 'b', 'マス2は武田のもの');

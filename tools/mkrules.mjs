@@ -16,7 +16,7 @@
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
 import fs from 'fs';
 const END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);          // 2026-11-30 23:59:59（日本時間）
-const WAIT = 3 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
+const WAIT = 1 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
 const OPEN = `(!root.child('tk/s/end').exists() && !root.child('tk/s/stop').exists() && now <= ${END})`;

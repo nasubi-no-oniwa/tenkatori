@@ -27,7 +27,7 @@ try {
   ok(A.wait() === 0 && A.canTake(ta[0]).ok, '仕えた直後は、すぐ取れる');
   const prev = A.cells[ta[0]], r = await A.take(ta[0]); ok(A.cells[ta[0]] === 'a' && r.n === 14, 'Aがマスを取る（織田14マス）');
   await A.ping(); ok(Math.abs(A.offset) < 120000, '時計合わせができる（ずれ ' + A.offset + 'ms）');
-  await A.loadMe(); ok(A.wait() > 3 * 3600 * 1000 - 120000 && A.canTake(ta[1]).why === 'wait', '取ったあとは3時間待ち（あと ' + Math.round(A.wait() / 60000) + '分）');
+  await A.loadMe(); ok(A.wait() > 1 * 3600 * 1000 - 120000 && A.canTake(ta[1]).why === 'wait', '取ったあとは1時間待ち（あと ' + Math.round(A.wait() / 60000) + '分）');
   ok(await fails(A.update({ ['c/' + ta[1]]: 'a' })), '待っている間は、じかに書いてもはじかれる');
   await B.token(); await B.join('k', '太郎'); await B.loadState(); ev = await B.loadCells(); ok(B.cells[ta[0]] === 'a' && B.s.n.a === 14 && B.s.n[prev] === (prev === 'w' ? 3869 : B.s.n[prev]), 'Bから見ても、織田のマスが増えている');
   const tb = B.takeable().find(i => B.cells[i] === 'a' && i !== ta[0]); // 斎藤のとなりの織田のマス（Aが取ったばかりのマスは「同時」になるので外す）

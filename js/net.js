@@ -172,7 +172,7 @@
   };
   // そのマスが「同時」の取り合い中か（取られてから10秒以内か）
   N.clashing = async function (i) { if (N.fake) return false; try { const ct = await rest('ct/' + i); return typeof ct === 'number' && N.now() - ct < 12000; } catch (e) { return false; } };
-  // 同時に攻めこんで敗れた：マスは取れないが、一手は使う（3時間待ち）
+  // 同時に攻めこんで敗れた：マスは取れないが、一手は使う（1時間待ち）
   N.lose = async function (i) {
     const me = N.me, u = N.uid(), id = pid(); if (N.fake) return;
     await update({ ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/l']: id, ['log/' + id]: Object.assign({ t: SV, y: 'f', c: String(i), f: me.f, p: N.cells[i], n: me.n, h: me.h, u }, me.r ? { r: true } : {}) });
