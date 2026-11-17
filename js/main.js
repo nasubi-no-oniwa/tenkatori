@@ -342,7 +342,7 @@
   function loadSc(L, cb) {
     if (TK.SC && TK.SC[L]) return cb();
     loadSc.q = loadSc.q || {}; if (loadSc.q[L]) { loadSc.q[L].push(cb); return; } loadSc.q[L] = [cb];
-    const sc = document.createElement('script'); sc.src = 'js/scroll/' + L + '.js?v=3';
+    const sc = document.createElement('script'); sc.src = 'js/scroll/' + L + '.js?v=4';
     const done = () => { const q = loadSc.q[L]; loadSc.q[L] = null; if (TK.SC && TK.SC[L]) q.forEach(f => f()); };
     sc.onload = done; sc.onerror = () => { loadSc.q[L] = null; sc.remove(); toast(TK.L(['読みこめませんでした。通信を確かめてください', 'Could not load. Check your connection.', '無法載入，請確認網路。', '불러오지 못했습니다. 통신을 확인해 주세요.']), 2000); };
     document.head.appendChild(sc);
