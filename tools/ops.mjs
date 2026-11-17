@@ -7,6 +7,9 @@ import fs from 'fs';
 import { token, api } from './fb.mjs';
 import { build } from './mapseed.mjs';
 const op = process.argv[2], tok = await token();
+// 地図（名所・天守閣）と武将の名前
+globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
+const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
 else if (op === 'launch' || op === 'reset') {
@@ -95,28 +98,48 @@ else if (op === 'launch' || op === 'reset') {
     await revertIds(all, u, ban, logo, await get('/tk/c.json'));
   }
 } else if (op === 'sched') {
-  // 早取りの時間割を、今日から 11/30 まで作る（まだない日だけ。すでに見えている日は変えない）。q に redo と入れると、まだ来ていない日だけ作りなおす
-  const redo = (process.argv[3] || '').trim() === 'redo';
-  const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
-  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
-  const have = await get('/tk/schd.json?shallow=true'), now = Date.now();
-  const d0 = Math.floor((now + JST) / DAY) * DAY - JST, FAST = [0, 6, 12, 18];
-  const slots = [...Array(24).keys()].filter(i => !FAST.includes(i));
-  let prev = null; { const y = await get('/tk/schd/' + (d0 - DAY) + '.json'); if (y && y.h) prev = y.h; }
-  const w = {}, made = [];
-  for (let d = d0; d <= END; d += DAY) {
-    let h;
-    if (have[d] && !(redo && d > now)) { h = (await get('/tk/schd/' + d + '.json')).h; prev = h; continue; }
-    for (let tries = 0; tries < 5000; tries++) {   // くじ。前の日と同じ時間に同じ陣営が来ないようにする
-      const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
-      const a = Array(24).fill('*'); slots.forEach((i, k) => a[i] = L[k]);
-      if (!prev || a.every((x, i) => x === '*' || prev[i] !== x)) { h = a.join(''); break; }
+  await ensureSched((process.argv[3] || '').trim() === 'redo');
+} else if (op === 'daily') {
+  // 毎日0時すぎに自動で動く（.github/workflows/daily.yml）。何回流しても同じ結果になる
+  //  ①これからの日の時間割・米俵・決戦地がそろっているか ②きのうの決戦地の結果（勝った陣営は今日の早取りの番が2時間）③きのうの一番槍の発表
+  await ensureSched(false);
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
+  const FN = globalThis.TK_FNAME, w = {};
+  const [ys, ts, kz, s, ban] = await Promise.all([get('/tk/schd/' + y + '.json'), get('/tk/schd/' + d + '.json'), get('/tk/kz/' + y + '.json'), get('/tk/s.json'), get('/tk/ban.json')]);
+  const H = i => i + '時';
+  let logo = null; const getLog = async () => logo || (logo = (await get('/tk/log.json?orderBy="t"&startAt=' + (y - 7 * DAY))) || {});
+  // ② 決戦地
+  if (ys && ys.k && !kz) {
+    const lm = MAP.lm.find(l => l.id === ys.k), lg = Object.values(await getLog()).filter(e => e && e.y === 't'), c = (await get('/tk/c.json')) || {};
+    const own = {}; for (const i of lm.c) {
+      const es = lg.filter(e => +e.c === i).sort((a, b) => a.t - b.t), before = es.filter(e => e.t < d), after = es.filter(e => e.t >= d);
+      own[i] = before.length ? before[before.length - 1].f : after.length ? after[0].p : c[i];
     }
-    w['schd/' + d] = { r: d, h }; for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = { a: d + i * HR, f: h[i] };
-    made.push(new Date(d + JST).toISOString().slice(5, 10) + ' ' + h); prev = h;
-  }
-  if (made.length) await api('PATCH', '/tk.json', w, tok);
-  console.log('作った日：' + made.length + '日'); for (const m of made) console.log('  ' + m);
+    const vals = lm.c.map(i => own[i]), L = vals.every(v => v === vals[0]) && vals[0] !== 'w' ? vals[0] : '';
+    let e = -1;
+    if (L && ts && ts.h) { const i = ts.h.indexOf(L); for (const k of [i + 1, i - 1]) if (k >= 0 && k < 24 && d + (k + 1) * HR > now) { e = k; break; } }
+    if (e >= 0) { w['sch/' + (d + e * HR) + '/f2'] = L; w['schd/' + d + '/x'] = { [e]: L }; }
+    w['kz/' + y] = { L, e, t: now };
+    const nm = lm.n[0];
+    const m = L ? `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${FN(L)}の早取りの番は2時間（${H(Math.min(ts.h.indexOf(L), e))}〜${H(Math.max(ts.h.indexOf(L), e) + 1)}）。` : `お知らせ：きのうの決戦地「${nm}」は、24時にどの陣営も押さえきれなかった。`;
+    if (e >= 0 || !L) w['b/all/' + pid()] = { t: now, u: 'gm', n: 'なすP', m, g: true };
+    else w['b/all/' + pid()] = { t: now, u: 'gm', n: 'なすP', m: `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！`, g: true };
+    console.log('決戦地 ' + nm + '：' + (L ? FN(L) + '（2時間目：' + e + '時）' : 'だれも押さえていない'));
+  } else console.log('決戦地：' + (kz ? 'もう出しています' : 'きのうの決戦地がありません'));
+  // ③ 一番槍
+  if (!(s && s.ich && s.ich.d === d)) {
+    const cnt = {}, last = {}; for (const e of Object.values(await getLog())) if (e && e.y === 't' && e.u && e.t >= y && e.t < d && !(ban && ban[e.u])) { cnt[e.u] = (cnt[e.u] || 0) + 1; last[e.u] = e; }
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+    if (top) {
+      const e = last[top[0]], u = (await get('/tk/u/' + top[0] + '.json')) || {};
+      w['s/ich'] = { d, u: top[0], n: u.n || e.n, h: u.h || e.h, f: u.f || e.f, c: top[1] };
+      w['b/all/' + pid() + 'i'] = { t: now + 1, u: 'gm', n: 'なすP', m: `お知らせ：きのうの一番槍は「${u.n || e.n}」（${FN(u.f || e.f)}軍）！ 1日で${top[1]}マスを取った。本日一日、名前に「一番槍」がつく。`, g: true };
+      console.log('一番槍：' + (u.n || e.n) + ' ' + top[1] + 'マス');
+    } else { w['s/ich'] = { d, u: '', c: 0 }; console.log('一番槍：きのうはだれも取っていません'); }
+  } else console.log('一番槍：もう出しています');
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
 } else if (op === 'bots') {
   // Bot らしい人を探す（11/18）。q：何点以上を対象にするか（ふだん 3）。h に go と入れたときだけ、止めて取ったマスも戻す
   //  見るところ：①決まりの最短の間隔ぴったりで取りつづける ②眠らない（24時間のうち20時間以上で取っている） ③間隔のばらつきが小さすぎる（機械のように一定）
@@ -176,7 +199,43 @@ else if (op === 'launch' || op === 'reset') {
   const nm = {}; for (const [id, x] of mem) nm[x.n] = (nm[x.n] || 0) + 1;
   console.log('名前（多い順）：' + JSON.stringify(Object.entries(nm).sort((a, b) => b[1] - a[1]).slice(0, 40)));
   for (const [id, x] of mem.sort((a, b) => (a[1].j || 0) - (b[1].j || 0))) console.log('  ' + jst(x.j) + '　' + id + '　' + x.n + '　本拠' + x.h + '　取った' + (takes[id] || 0) + '回　最後に取った' + jst(x.t) + (x.r ? '　寝返り' : '') + (ban[id] ? '　止め済み' : '') + (on[id] ? '　いま開いている' : ''));
-} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac のどれかにしてください'); process.exit(1); }
+} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac / daily のどれかにしてください'); process.exit(1); }
+
+// 時間割・米俵・決戦地を、今日から 11/30 まで作る（まだない日・足りない日だけ。すでに見えている日の時間割は変えない）
+async function ensureSched(redo) {
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999), RICE = 40;
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const have = await get('/tk/schd.json'), now = Date.now();
+  const d0 = Math.floor((now + JST) / DAY) * DAY - JST, FAST = [0, 6, 12, 18];
+  const slots = [...Array(24).keys()].filter(i => !FAST.includes(i));
+  const castle = new Set(Object.values(MAP.castle)), LMS = MAP.lm.filter(l => l.id !== 'azuchi').map(l => l.id);
+  let prev = have[d0 - DAY] ? have[d0 - DAY].h : null, prevK = have[d0 - DAY] ? have[d0 - DAY].k : null;
+  const w = {}, made = [];
+  for (let d = d0; d <= END; d += DAY) {
+    const old = have[d]; let h = old && old.h;
+    const keep = old && !(redo && d > now);
+    if (!keep) {
+      for (let tries = 0; tries < 5000; tries++) {   // くじ。前の日と同じ時間に同じ陣営が来ないようにする
+        const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
+        const a = Array(24).fill('*'); slots.forEach((i, k) => a[i] = L[k]);
+        if (!prev || a.every((x, i) => x === '*' || prev[i] !== x)) { h = a.join(''); break; }
+      }
+      w['schd/' + d + '/r'] = d; w['schd/' + d + '/h'] = h; for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = { a: d + i * HR, f: h[i] };
+    }
+    if (!(old && old.k && old.rc)) {   // 米俵と決戦地（11/18 から）
+      let k; do { k = LMS[Math.floor(Math.random() * LMS.length)]; } while (k === prevK && LMS.length > 1);
+      const rc = new Set(); while (rc.size < RICE) { const i = Math.floor(Math.random() * MAP.n); if (!castle.has(i)) rc.add(i); }
+      w['schd/' + d + '/k'] = k; w['schd/' + d + '/rc'] = [...rc].join(',');
+      w['rc/' + d] = Object.fromEntries([...rc].map(i => [i, true]));
+      w['rice/' + d] = Object.fromEntries('abcdefghijklmnopqrst'.split('').map(L => [L, 0]));
+      made.push(new Date(d + JST).toISOString().slice(5, 10) + ' ' + h + ' 決戦地 ' + k + (keep ? '（時間割はそのまま）' : ''));
+      prevK = k;
+    } else prevK = old.k;
+    prev = h;
+  }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+  console.log('作った・足した日：' + made.length + '日'); for (const m of made) console.log('  ' + m);
+}
 
 async function revertIds(ids, u, ban, logo, c0) {
   const c = Array.isArray(c0) ? c0.slice() : Object.assign([], c0);

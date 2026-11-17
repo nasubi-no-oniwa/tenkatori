@@ -12,7 +12,7 @@
 //   ct/{マス番号}       : そのマスが最後に取られた時刻（10秒以内に別の陣営が取りにきたら「同時」。マスの少ない陣営が勝ち、同じ数ならくじ）
 //   log/{番号}          : { t, y：'t' 取った／'d' 寝返った／'f' 同時に攻めこんで敗れた, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID, k：この一手で占領した名所, x：この一手で占領をくずした名所 }
 //   b/{板}/{番号}       : 掲示板 { t, u, n, h, r, f, m, g：管理人 }   板は all（全体）と a〜t（陣営ごと。その陣営の人だけ読み書きできる）
-//   sch/schd           : 早取りの時間割（下を見る）
+//   sch/schd           : 早取りの時間割（下を見る）　rc/rg/rice：兵糧集め（下を見る）
 //   ask/{番号}          : なすPへの質問・要望（管理人だけ読める）   on/{匿名ID}：いま開いている人   ban/{匿名ID}：書きこめなくした人
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
 import fs from 'fs';
@@ -103,7 +103,11 @@ tk.k = { '.read': false, '.write': false };
   // 早取り（11/17）：sch/{1時間の始まり} = { a：始まりの時刻, f：番の武将（* は全陣営） }。番の陣営は2分、全陣営の時間は5分で1マス
   const Q = "newData.parent().child('q').val()", S = `root.child('tk/sch/' + ${Q})`;
   const FAST = `(newData.parent().child('q').isString() && ${S}.child('a').isNumber() && now >= ${S}.child('a').val() && now < ${S}.child('a').val() + 3600000`
-    + ` && ((${S}.child('f').val() === newData.parent().child('f').val() && now - data.val() >= ${FASTT}) || (${S}.child('f').val() === '*' && now - data.val() >= ${ALLT})))`;
+    + ` && (((${S}.child('f').val() === newData.parent().child('f').val() || ${S}.child('f2').val() === newData.parent().child('f').val()) && now - data.val() >= ${FASTT}) || (${S}.child('f').val() === '*' && now - data.val() >= ${ALLT})))`;
+  // 兵糧（11/18）：qd＝今日の0時（schd のかぎ）。その日にその陣営が集めた米俵が3・7・12俵で、待ちが50・40・30分になる
+  const QD = "newData.parent().child('qd').val()", SD = `root.child('tk/schd/' + ${QD} + '/r')`, RC = `root.child('tk/rice/' + ${QD} + '/' + newData.parent().child('f').val()).val()`;
+  const MORALE = `(newData.parent().child('qd').isString() && ${SD}.isNumber() && ${SD}.val() <= now && now < ${SD}.val() + 86400000`
+    + ` && ((${RC} >= 3 && now - data.val() >= 3000000) || (${RC} >= 7 && now - data.val() >= 2400000) || (${RC} >= 12 && now - data.val() >= 1800000)))`;
   const least = LET.map(h => `root.child('tk/s/n/' + newData.val()).val() <= root.child('tk/s/n/${h}').val()`).join(' && ');
   tk.u = {
     $uid: {
@@ -124,9 +128,10 @@ tk.k = { '.read': false, '.write': false };
       h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val() === newData.parent().child('f').val()" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
-      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
+      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
+      qd: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       q: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       w: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
@@ -142,6 +147,24 @@ tk.k = { '.read': false, '.write': false };
 // ---------- ピン止め（管理人が掲示板の書きこみを一番上に固定する。中身は書きこみの写し） ----------
 //   bp/{板}/{番号}      : { t, n, m, g, f, h, r }   読めるのは掲示板と同じ人。書けるのは管理人だけ
 tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${ME}.child('f').val() === $room)`, '.write': ADMIN } };
+// ---------- 兵糧集め（11/18） ----------
+//   rc/{その日の0時}/{マス}   : true    その日の米俵のマス（ルールで使う。読めない。見せるのは schd の rc）
+//   rg/{その日の0時}/{マス}   : { f, t } 取られた米俵（最初に取った陣営のもの）
+//   rice/{その日の0時}/{武将} : その日に集めた米俵の数（管理人が0を入れておく。米俵のマスを取ったときだけ1増える）
+{
+  const T = up(3), U = `${T}.child('u/' + auth.uid)`;
+  const DAYOK = "root.child('tk/schd/' + $d + '/r').isNumber() && root.child('tk/schd/' + $d + '/r').val() <= now && now < root.child('tk/schd/' + $d + '/r').val() + 86400000";
+  tk.rc = { '.read': false, '.write': ADMIN };
+  tk.rg = { '.read': true, '.write': ADMIN, $d: { $c: {
+    '.write': `${ADMIN} || (auth != null && ${OPEN} && ${NOBAN} && !data.exists() && newData.exists() && root.child('tk/rc/' + $d + '/' + $c).exists() && ${DAYOK}`
+      + ` && ${U}.child('t').val() === now && ${U}.child('c').val() === $c && newData.child('f').val() === ${U}.child('f').val() && ${T}.child('c/' + $c).val() === ${U}.child('f').val() && root.child('tk/c/' + $c).val() !== ${U}.child('f').val()`
+      + ` && ${T}.child('rice/' + $d + '/' + ${U}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${U}.child('f').val()).val() + 1)`,
+    '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
+  tk.rice = { '.read': true, '.write': ADMIN, $d: { $L: {
+    '.write': `${ADMIN} || (auth != null && data.isNumber() && newData.val() === data.val() + 1 && ${U}.child('t').val() === now`
+      + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('c').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('c').val()).exists())`,
+    '.validate': 'newData.isNumber()' } } };
+}
 // ---------- 早取りの時間割（管理人が先に書いておく。その日の0時になるまでだれも読めない） ----------
 //   sch/{1時間の始まり}  : { a：始まり, f：番の武将 a〜t か *（全陣営） }   ルールで使う（読めない）
 //   schd/{その日の0時}   : { r：見えるようになる時刻（＝その日の0時）, h：24文字（0時から1時間ごとの番。* は全陣営） }

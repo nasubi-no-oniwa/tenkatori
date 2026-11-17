@@ -174,6 +174,51 @@ export async function run(drv, log = console.log) {
     await no(drv.update({ 'bp/all/PINtest0001': null }, P1), 'ふつうの人はピン止めを外せない');
     await drv.admin({ 'bp/all/PINtest0001': null, 'bp/a/PINtest0002': null });
   }
+  log('6f) 兵糧集め（米俵を取ると陣営の兵糧が1増える。3・7・12俵で待ちが50・40・30分）と決戦地のほうび（f2）');
+  {
+    const R1 = await drv.user('R6f'), R2 = await drv.user('S6f');
+    await yes(join(R1, 'b', '米取り'), 'R1が武田に仕える'); await yes(join(R2, 'b', '米二'), 'R2も武田に仕える'); await age(R1, R2);
+    const D = '16' + String(Date.now()).slice(-11), D2 = '15' + String(Date.now()).slice(-11);
+    const rice0 = {}; for (const L of 'abcdefghijklmnopqrst') rice0[L] = 0;
+    await drv.admin({ ['schd/' + D]: { r: SV, h: '*'.repeat(24) }, ['rc/' + D]: { 2: true, 3: true, 4: true }, ['rice/' + D]: rice0, ['schd/' + D2]: { r: 1000, h: '*'.repeat(24) }, ['rice/' + D2]: rice0 });
+    // 米俵だけ書く（マスを取らずに）はできない
+    await no(drv.update({ ['rg/' + D + '/3']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(1) }, R1), '米俵だけを取ったことにはできない');
+    // マス3（いま武田のもの）を取りなおして米俵、はできない（自分の陣営のマス）。マス2（織田のもの）を取って米俵
+    const cur2 = (await drv.read('c/2', R1)).val, cur4 = (await drv.read('c/4', R1)).val;
+    log('    （マス2の持ち主：' + cur2 + '　マス4の持ち主：' + cur4 + '）');
+    const tr = (u, c, v, p, nm, rice, more) => { const x = { more: Object.assign({}, more || {}) }; if (rice) Object.assign(x.more, { ['rg/' + D + '/' + c]: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(1) }); return take(u, c, v, 'b', p, nm, x); };
+    await no(drv.update({ ['rice/' + D + '/b']: INC(1) }, R1), '兵糧の数だけを増やせない');
+    await no(drv.update({ ['rice/' + D + '/b']: INC(5), ['rg/' + D + '/2']: { f: 'b', t: SV } }, R1), '一度に5俵は増やせない');
+    await no(drv.update({ ['rice/' + D2 + '/b']: INC(1) }, R1), 'ほかの日の兵糧も増やせない');
+    await drv.admin({ 'c/2': 'a', 'c/3': 'b', 'c/4': 'b', 'ct/2': 1 });
+    { await no(tr(R1, 2, 3, 'a', '米取り', false, { ['rg/' + D + '/2']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(2) }), '米俵1つで兵糧を2増やすことはできない'); }
+    if (true) { await yes(tr(R1, 2, 3, 'a', '米取り', true), 'R1が米俵のマス2を取って、兵糧が1増える'); ok((await drv.read('rice/' + D + '/b', R1)).val === 1, '武田の兵糧が1俵'); ok((await drv.read('rg/' + D + '/2', R2)).val.f === 'b', '米俵2は武田が取った'); }
+    await no(drv.update({ ['rg/' + D + '/2']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(1), ['u/' + R2 + '/t']: SV, ['u/' + R2 + '/c']: '2' }, R2), '取られた米俵は二度は数えない');
+    // 士気：兵糧を3俵にして、50分で取れるか
+    await drv.admin({ ['rice/' + D + '/b']: 3 });
+    const tq = (u, x) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, x || {}), u);
+    await yes(tq(R2), 'R2が1マス取る（最初）');
+    if (drv.advance) {
+      await drv.advance(50 * 60 * 1000);
+      await no(tq(R2), '日付（qd）を書かないと、士気の短縮は使えない');
+      await no(tq(R2, { ['u/' + R2 + '/qd']: D2 }), 'ほかの日の兵糧では短縮できない');
+      await yes(tq(R2, { ['u/' + R2 + '/qd']: D }), '兵糧3俵なら50分で次が取れる');
+      await drv.advance(40 * 60 * 1000);
+      await no(tq(R2, { ['u/' + R2 + '/qd']: D }), '3俵のときは40分では取れない');
+      await drv.admin({ ['rice/' + D + '/b']: 7 });
+      await yes(tq(R2, { ['u/' + R2 + '/qd']: D }), '7俵なら40分で取れる');
+      await drv.admin({ ['rice/' + D + '/b']: 12 });
+      await drv.advance(30 * 60 * 1000);
+      await yes(tq(R2, { ['u/' + R2 + '/qd']: D }), '12俵なら30分で取れる');
+      // 決戦地のほうび：f2 の陣営も2分で取れる
+      const K = '14' + String(Date.now()).slice(-11);
+      await drv.admin({ ['sch/' + K]: { a: SV, f: 'a', f2: 'b' } });
+      await drv.advance(2 * 60 * 1000);
+      await yes(tq(R2, { ['u/' + R2 + '/q']: K }), '決戦地のほうびの陣営（f2）も、その時間は2分で取れる');
+      await drv.admin({ ['sch/' + K]: null });
+    }
+    await drv.admin({ ['schd/' + D]: null, ['rc/' + D]: null, ['rice/' + D]: null, ['rg/' + D]: null, ['schd/' + D2]: null, ['rice/' + D2]: null });
+  }
   log('7) 天下統一（半分の2500マス）');
   await yes(join(D, 'b', '三郎'), 'Dが武田に仕える'); await age(D);
   const nb = (await drv.read('s/n/b', D)).val;

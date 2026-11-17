@@ -1,0 +1,37 @@
+# 毎日0時すぎ（日本時間）に自動で動く：時間割・米俵・決戦地をそろえる／きのうの決戦地の結果／きのうの一番槍の発表
+#  GitHub の時刻どおりの動きは数分〜数十分おくれることがあるので、0:03 と 0:23 の2回動かす（2回目は、すでに済んでいれば何もしない）
+name: 毎日の処理
+on:
+  schedule:
+    - cron: '3 15 * * *'
+    - cron: '23 15 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tk-rules
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 道具を入れる
+        run: mkdir -p "$RUNNER_TEMP/x" && cd "$RUNNER_TEMP/x" && npm init -y >/dev/null && npm i google-auth-library@9 --silent
+      - name: 鍵を一時ファイルに書く
+        env:
+          SA: ${{ secrets.FT_BLUE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then echo "FT_BLUE_SERVICE_ACCOUNT が登録されていません"; exit 1; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+      - name: 毎日の処理
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: node tools/ops.mjs daily
+      - name: 鍵を消す
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
