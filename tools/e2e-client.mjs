@@ -24,7 +24,10 @@ try {
   await A.join('a', '与作'); ok(A.me && A.me.f === 'a' && A.me.n === '与作', 'Aが織田に仕える');
   let ev = await A.loadCells(); ok(A.cells.length === 5000 && ev.length === 0, '地図を読む（5000マス）');
   const ta = A.takeable(); ok(ta.length > 5, '取れるマスがある（' + ta.length + '）');
-  ok(A.wait() === 0 && A.canTake(ta[0]).ok, '仕えた直後は、すぐ取れる');
+  ok(A.wait() > 0 && A.canTake(ta[0]).why === 'wait', '仕えた直後は、1時間たつまで最初の1マスを取れない（あと ' + Math.round(A.wait() / 60000) + '分）');
+  ok(await fails(A.take(ta[0])), '仕えた直後に取ろうとしても、はじかれる');
+  await api('PATCH', '/tkt/u/' + A.uid() + '.json', { j: 1 }, tok); await A.loadMe();   // 仕官の時刻を昔にして続ける
+  ok(A.wait() === 0 && A.canTake(ta[0]).ok, '仕官して時間がたてば、すぐ取れる');
   const prev = A.cells[ta[0]], r = await A.take(ta[0]); ok(A.cells[ta[0]] === 'a' && r.n === 14, 'Aがマスを取る（織田14マス）');
   await A.ping(); ok(Math.abs(A.offset) < 120000, '時計合わせができる（ずれ ' + A.offset + 'ms）');
   await A.loadMe(); ok(A.wait() > 1 * 3600 * 1000 - 120000 && A.canTake(ta[1]).why === 'wait', '取ったあとは1時間待ち（あと ' + Math.round(A.wait() / 60000) + '分）');
