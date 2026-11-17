@@ -80,7 +80,7 @@ export async function run(drv, log = console.log) {
 
   log('4) 寝返り');
   const defect = (u, from, to, nm, h) => { const id = pid(); return drv.update({ ['u/' + u + '/f']: to, ['u/' + u + '/d']: SV, ['u/' + u + '/r']: true, ['u/' + u + '/l']: id, ['s/m/' + to]: INC(1), ['s/m/' + from]: INC(-1), ['log/' + id]: { t: SV, y: 'd', f: to, p: from, n: nm, h, r: true } }, u); };
-  { const N1 = await drv.user('N1'); await yes(join(N1, 'a', '新入り'), '新入りが織田に仕える'); await no(defect(N1, 'a', 'd', '新入り', 'a'), '仕官して1日たつまで寝返れない'); }
+  { const N1 = await drv.user('N1'); await yes(join(N1, 'a', '新入り'), '新入りが織田に仕える'); await no(defect(N1, 'a', 'd', '新入り', 'a'), '仕官して3日たつまで寝返れない'); }
   await no(defect(A, 'a', 'b', '与作', 'a'), 'マスがいちばん少なくない武将へは寝返れない');
   await yes(defect(A, 'a', 'd', '与作', 'a'), 'Aが、いちばん少ない武将（同じ数のうちの1人）へ寝返る');
   ok((await drv.read('u/' + A, A)).val.h === 'a', '名前の国は、最初に仕えた武将のまま');
