@@ -93,11 +93,15 @@
    },
    "t": {
     ".write": "auth != null && auth.uid === $uid && (!root.child('tk/s/end').exists() && !root.child('tk/s/stop').exists() && now <= 1796050799999)",
-    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 3600000) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= 3600000"
+    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 3600000 || (newData.parent().child('q').isString() && root.child('tk/sch/' + newData.parent().child('q').val()).child('a').isNumber() && now >= root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() && now < root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() + 3600000 && ((root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === newData.parent().child('f').val() && now - data.val() >= 120000) || (root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === '*' && now - data.val() >= 300000)))) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= 3600000"
    },
    "c": {
     ".write": "auth != null && auth.uid === $uid",
     ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now"
+   },
+   "q": {
+    ".write": "auth != null && auth.uid === $uid",
+    ".validate": "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now"
    },
    "v": {
     ".write": "auth != null && auth.uid === $uid",
@@ -130,6 +134,16 @@
    "$other": {
     ".validate": false
    }
+  }
+ },
+ "sch": {
+  ".read": false,
+  ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"
+ },
+ "schd": {
+  ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
+  "$d": {
+   ".read": "data.child('r').val() <= now"
   }
  },
  "log": {

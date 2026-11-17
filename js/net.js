@@ -97,7 +97,30 @@
   };
   const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
   N.takeable = function () { const me = N.me, out = []; if (!me || !N.cells) return out; for (let i = 0; i < NC; i++) if (N.cells[i] !== me.f && !CASTLE.has(i) && ADJ[i].some(j => N.cells[j] === me.f && alive(j, me.f))) out.push(i); return out; };
-  N.wait = () => { const me = N.me; if (!me) return 0; const a = me.t ? me.t + TK.WAIT : 0, b = me.j ? me.j + (TK.JOINT || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };
+  // ---------- 早取りの時間割（11/17）：陣営ごとに1日1時間「2分で1マス」。0・6・12・18時の1時間は全陣営「5分で1マス」 ----------
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR;
+  N.dayStart = t => Math.floor(((t == null ? N.now() : t) + JST) / DAY) * DAY - JST;   // 日本時間のその日の0時
+  N.sched = {};
+  N.loadSched = async function () {
+    const d = N.dayStart(); if (N.sched[d]) return N.sched[d];
+    if (N.loadSched.at && Date.now() - N.loadSched.at < 60000) return null; N.loadSched.at = Date.now();
+    if (N.fake) { N.sched[d] = FK.sched(d); return N.sched[d]; }
+    try { const v = await rest('schd/' + d); if (v && typeof v.h === 'string' && v.h.length === 24) N.sched[d] = v.h; } catch (e) { }
+    return N.sched[d] || null;
+  };
+  N.slotAt = t => { const d = N.dayStart(t), h = N.sched[d]; if (!h) return null; const i = Math.floor((t - d) / HR); return { a: d + i * HR, e: d + (i + 1) * HR, f: h[i], i }; };
+  N.fastFor = (sl, f) => !sl || !f ? 0 : sl.f === f ? TK.FASTT : sl.f === '*' ? TK.ALLT : 0;
+  N.fastNow = () => { const me = N.me, sl = N.slotAt(N.now()); return me && N.fastFor(sl, me.f) ? sl : null; };
+  // 今日の自分の陣営の番（なければ null）
+  N.mySlot = f => { const d = N.dayStart(), h = N.sched[d]; if (!h || !f) return null; const i = h.indexOf(f); return i < 0 ? null : { a: d + i * HR, e: d + (i + 1) * HR, f, i }; };
+  N.wait = () => {
+    const me = N.me; if (!me) return 0; const now = N.now(), b = me.j ? me.j + (TK.JOINT || 0) : 0;
+    let best = me.t ? me.t + TK.WAIT : 0;
+    if (me.t && best > now) {   // 早取りの時間が先に来るなら、そちらで取れる時刻
+      for (let hs = Math.floor(now / HR) * HR; hs < best; hs += HR) { const iv = N.fastFor(N.slotAt(hs + 1), me.f); if (!iv) continue; const c = Math.max(hs, me.t + iv); if (c < hs + HR) { best = Math.min(best, c); break; } }
+    }
+    return Math.max(0, Math.max(best, b) - now);
+  };
   N.ended = () => !!(N.s && N.s.end) || N.now() > TK.END;
   // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
   // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
@@ -133,6 +156,7 @@
   };
   // 読みなおし（30秒ごと）：増えた記録だけ。戻り値：新しい記録
   N.poll = async function () {
+    if (!N.sched[N.dayStart()]) N.loadSched().catch(() => { });
     if (N.fake) return FK.poll();
     const ver = N.s.ver || 0;
     const list = sorted(await rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 }));
@@ -160,6 +184,7 @@
     const u = N.uid(), id = pid(), prev = N.cells[i];
     const w = { ['c/' + i]: me.f, ['ct/' + i]: SV, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
+    { const sl = N.fastNow(); if (sl) w['u/' + u + '/q'] = String(sl.a); }   // 早取りの時間なら、その時間の始まりの時刻もいっしょに書く
     // この一手で名所を占領した・相手の占領をくずしたときは、記録に入れる（戦況に出す）
     const lm = N.LM.find(l => l.c.includes(i));
     if (lm) { const was = N.holder(lm); if (was && was !== me.f) w['log/' + id].x = lm.id; if (lm.c.every(c => c === i || N.cells[c] === me.f)) w['log/' + id].k = lm.id; }
@@ -241,5 +266,6 @@
     board(room) { FK.init(); if (!FK.b[room]) FK.b[room] = [{ id: 'x1', t: Date.now() - 3600000, n: '権兵衛', h: room, f: room, m: '北から攻めるのがよさそうです' }, { id: 'x2', t: Date.now() - 600000, n: 'なすP', m: '開戦しました。ご武運を。', g: true }]; return FK.b[room].slice(); },
     post(room, m) { FK.board(room); FK.b[room].push({ id: pid(), t: Date.now(), n: FK.u.n, h: FK.u.h, f: FK.u.f, m, r: FK.u.r }); },
   };
+  FK.sched = d => { const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; } let h = ''; for (let i = 0; i < 24; i++) h += i % 6 === 0 ? '*' : L.shift(); return h; };
   N.FK = FK;
 })(window);

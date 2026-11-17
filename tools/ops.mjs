@@ -94,7 +94,30 @@ else if (op === 'launch' || op === 'reset') {
     const all = new Set(Object.keys(ban).filter(k => ban[k]));   // 前に止めた人のマスと続いていても、まとめて戻せるように
     await revertIds(all, u, ban, logo, await get('/tk/c.json'));
   }
-} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick のどれかにしてください'); process.exit(1); }
+} else if (op === 'sched') {
+  // 早取りの時間割を、今日から 11/30 まで作る（まだない日だけ。すでに見えている日は変えない）。q に redo と入れると、まだ来ていない日だけ作りなおす
+  const redo = (process.argv[3] || '').trim() === 'redo';
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const have = await get('/tk/schd.json?shallow=true'), now = Date.now();
+  const d0 = Math.floor((now + JST) / DAY) * DAY - JST, FAST = [0, 6, 12, 18];
+  const slots = [...Array(24).keys()].filter(i => !FAST.includes(i));
+  let prev = null; { const y = await get('/tk/schd/' + (d0 - DAY) + '.json'); if (y && y.h) prev = y.h; }
+  const w = {}, made = [];
+  for (let d = d0; d <= END; d += DAY) {
+    let h;
+    if (have[d] && !(redo && d > now)) { h = (await get('/tk/schd/' + d + '.json')).h; prev = h; continue; }
+    for (let tries = 0; tries < 5000; tries++) {   // くじ。前の日と同じ時間に同じ陣営が来ないようにする
+      const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
+      const a = Array(24).fill('*'); slots.forEach((i, k) => a[i] = L[k]);
+      if (!prev || a.every((x, i) => x === '*' || prev[i] !== x)) { h = a.join(''); break; }
+    }
+    w['schd/' + d] = { r: d, h }; for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = { a: d + i * HR, f: h[i] };
+    made.push(new Date(d + JST).toISOString().slice(5, 10) + ' ' + h); prev = h;
+  }
+  if (made.length) await api('PATCH', '/tk.json', w, tok);
+  console.log('作った日：' + made.length + '日'); for (const m of made) console.log('  ' + m);
+} else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched のどれかにしてください'); process.exit(1); }
 
 async function revertIds(ids, u, ban, logo, c0) {
   const c = Array.isArray(c0) ? c0.slice() : Object.assign([], c0);

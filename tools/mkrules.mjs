@@ -12,11 +12,13 @@
 //   ct/{マス番号}       : そのマスが最後に取られた時刻（10秒以内に別の陣営が取りにきたら「同時」。マスの少ない陣営が勝ち、同じ数ならくじ）
 //   log/{番号}          : { t, y：'t' 取った／'d' 寝返った／'f' 同時に攻めこんで敗れた, c：マス, f：新しい持ち主, p：前の持ち主, n：名前, h, r, u：匿名ID, k：この一手で占領した名所, x：この一手で占領をくずした名所 }
 //   b/{板}/{番号}       : 掲示板 { t, u, n, h, r, f, m, g：管理人 }   板は all（全体）と a〜t（陣営ごと。その陣営の人だけ読み書きできる）
+//   sch/schd           : 早取りの時間割（下を見る）
 //   ask/{番号}          : なすPへの質問・要望（管理人だけ読める）   on/{匿名ID}：いま開いている人   ban/{匿名ID}：書きこめなくした人
 //  管理のかぎは Fairies' Tower・エンピツライフと同じ（ft_admin/key・ft_admins）
 import fs from 'fs';
 const END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);          // 2026-11-30 23:59:59（日本時間）
 const JOINT = 1 * 3600 * 1000, JOIND = 72 * 3600 * 1000;   // 作り直し対策（11/17）：仕官してから最初の1マスまで1時間・最初の寝返りまで3日
+const FASTT = 2 * 60 * 1000, ALLT = 5 * 60 * 1000;   // 早取り：番の陣営は2分・全陣営の時間は5分で1マス
 const WAIT = 1 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
@@ -98,6 +100,10 @@ tk.k = { '.read': false, '.write': false };
 // ---------- 人 ----------
 {
   const T = up(3), SELF = "auth != null && auth.uid === $uid";
+  // 早取り（11/17）：sch/{1時間の始まり} = { a：始まりの時刻, f：番の武将（* は全陣営） }。番の陣営は2分、全陣営の時間は5分で1マス
+  const Q = "newData.parent().child('q').val()", S = `root.child('tk/sch/' + ${Q})`;
+  const FAST = `(newData.parent().child('q').isString() && ${S}.child('a').isNumber() && now >= ${S}.child('a').val() && now < ${S}.child('a').val() + 3600000`
+    + ` && ((${S}.child('f').val() === newData.parent().child('f').val() && now - data.val() >= ${FASTT}) || (${S}.child('f').val() === '*' && now - data.val() >= ${ALLT})))`;
   const least = LET.map(h => `root.child('tk/s/n/' + newData.val()).val() <= root.child('tk/s/n/${h}').val()`).join(' && ');
   tk.u = {
     $uid: {
@@ -118,8 +124,10 @@ tk.k = { '.read': false, '.write': false };
       h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val() === newData.parent().child('f').val()" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
-      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
+      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
+      // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
+      q: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       w: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       l: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{8,30}$/)" },
@@ -131,6 +139,11 @@ tk.k = { '.read': false, '.write': false };
     },
   };
 }
+// ---------- 早取りの時間割（管理人が先に書いておく。その日の0時になるまでだれも読めない） ----------
+//   sch/{1時間の始まり}  : { a：始まり, f：番の武将 a〜t か *（全陣営） }   ルールで使う（読めない）
+//   schd/{その日の0時}   : { r：見えるようになる時刻（＝その日の0時）, h：24文字（0時から1時間ごとの番。* は全陣営） }
+tk.sch = { '.read': false, '.write': ADMIN };
+tk.schd = { '.write': ADMIN, $d: { '.read': "data.child('r').val() <= now" } };
 // ---------- 記録（だれがどこを取ったか・だれが寝返ったか） ----------
 {
   const T = up(2), U = `${T}.child('u/' + auth.uid)`;

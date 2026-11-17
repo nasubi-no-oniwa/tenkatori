@@ -130,6 +130,40 @@ export async function run(drv, log = console.log) {
     if (drv.advance) { await drv.admin({ 'c/2': 'a', 's/n/a': 5, 's/n/b': 9, 'ct/2': SV }); const Q5 = await drv.user('Q5'); await yes(join(Q5, 'b', '十三'), '十三が武田に仕える'); await age(Q5); await no(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒以内は、マスの多い武田は取れない'); await drv.advance(11000); await yes(take(Q5, 2, 3, 'b', 'a', '十三'), '10秒をすぎれば、いつもどおり奪える'); }
     await drv.admin({ 'c/1': 'a', 'c/2': 'b', 'c/3': 'b', 'c/4': 'b', 'ct/1': null, 'ct/2': null }); }
 
+  log('6d) 早取りの時間（番の陣営は2分・全陣営の時間は5分で1マス）');
+  {
+    const X = await drv.user('X6d'), Y = await drv.user('Y6d');
+    await yes(join(X, 'a', '早取り'), 'Xが織田に仕える'); await yes(join(Y, 'b', '待ち人'), 'Yが武田に仕える'); await age(X, Y);
+    const K1 = '17' + String(Date.now()).slice(-11), K2 = '18' + String(Date.now()).slice(-11), K3 = '19' + String(Date.now()).slice(-11);
+    await drv.admin({ ['sch/' + K1]: { a: SV, f: 'a' }, ['sch/' + K2]: { a: SV, f: '*' }, ['sch/' + K3]: { a: 1000, f: 'a' } });
+    const tq = (u, q) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, q ? { ['u/' + u + '/q']: q } : {}), u);
+    await yes(tq(X), 'Xが1マス取る（最初の1マスは待ちなし）'); await yes(tq(Y), 'Yも1マス取る');
+    await no(tq(X, K1), '番の時間でも、2分たつまでは取れない');
+    await no(drv.update({ ['u/' + X + '/q']: K1 }, X), '番の時刻だけを書くことはできない');
+    await no(drv.read('sch/' + K1, X).then(r => r.ok), '時間割の中身（ルール用）は読めない');
+    if (drv.advance) {
+      await drv.advance(2 * 60 * 1000);
+      await yes(tq(X, K1), '番の陣営（織田）は2分で次が取れる');
+      await no(tq(Y, K1), 'ほかの陣営（武田）は織田の番の時刻を使えない');
+      await no(tq(Y, K2), '全陣営の時間でも、5分たつまでは取れない');
+      await drv.advance(3 * 60 * 1000);
+      await yes(tq(Y, K2), '全陣営の時間は、どの陣営も5分で次が取れる');
+      await drv.advance(2 * 60 * 1000);
+      await no(tq(X, K3), '終わった時間の番は使えない');
+      await no(tq(X, '1234567890123'), 'ない時間の番は使えない');
+      await yes(tq(X, K1), 'まだ1時間の中なら、番の時刻で取れる');
+      await drv.advance(54 * 60 * 1000);
+      await no(tq(X, K1), '番の1時間を過ぎたら、その番の時刻ではもう取れない');
+      await no(tq(X), '番が終わったら、いつもどおり1時間待ち');
+      await drv.advance(6 * 60 * 1000);
+      await yes(tq(X), '1時間待てば、いつもどおり取れる');
+    }
+    await drv.admin({ ['schd/D1']: { r: 1000, h: 'a'.repeat(24) }, ['schd/D2']: { r: 9999999999999, h: 'b'.repeat(24) } });
+    ok((await drv.read('schd/D1', X)).ok, 'その日になった時間割は読める');
+    ok(!(await drv.read('schd/D2', X)).ok, 'まだ来ていない日の時間割は読めない');
+    await no(drv.update({ ['schd/D3']: { r: 1000, h: 'c'.repeat(24) } }, X), '時間割は書きかえられない');
+    await drv.admin({ ['sch/' + K1]: null, ['sch/' + K2]: null, ['sch/' + K3]: null, ['schd/D1']: null, ['schd/D2']: null });
+  }
   log('7) 天下統一（半分の2500マス）');
   await yes(join(D, 'b', '三郎'), 'Dが武田に仕える'); await age(D);
   const nb = (await drv.read('s/n/b', D)).val;

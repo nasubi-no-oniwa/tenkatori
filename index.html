@@ -111,6 +111,19 @@ canvas{display:block}
 #hudTimer.ready #hudTL{display:none}
 #hudTimer.ready #hudT{font-family:var(--ft);font-weight:400;font-size:16px;color:#fff3da;background:var(--shu);padding:6px 9px;border-radius:3px;box-shadow:inset 0 0 0 1.5px rgba(255,243,218,.6);animation:rdy 1.6s ease-in-out infinite;text-align:center}
 @keyframes rdy{50%{filter:brightness(1.25)}}
+#fastBar{position:fixed;left:8px;top:calc(var(--st) + 100px);z-index:9;max-width:calc(100% - 16px);font:inherit;font-size:12.5px;font-weight:800;letter-spacing:.03em;line-height:1.4;padding:5px 12px;background:rgba(20,16,13,.88);color:#f3e7c9;border:1px solid rgba(201,164,76,.7);border-radius:15px;text-align:left;cursor:pointer}
+#fastBar.hot{background:linear-gradient(90deg,#b8261a,#e0582a);color:#fff;border-color:#ffd27a;box-shadow:0 0 0 2px rgba(255,210,122,.35),0 4px 14px rgba(224,88,42,.5);animation:fsPulse 1.6s ease-in-out infinite}
+@keyframes fsPulse{50%{box-shadow:0 0 0 5px rgba(255,210,122,.15),0 4px 18px rgba(224,88,42,.7)}}
+#pinBar.low{top:calc(var(--st) + 134px)}
+.fsRow{display:flex;align-items:center;gap:10px;padding:7px 6px;border-bottom:1px solid rgba(110,91,69,.25)}
+.fsRow b{flex:none;width:92px;font-variant-numeric:tabular-nums;font-size:14px}
+.fsRow canvas{flex:none;width:30px;height:30px}
+.fsRow i{flex:none;width:30px;text-align:center;font-style:normal;font-size:18px}
+.fsRow span{flex:1;font-weight:700}
+.fsRow em{flex:none;font-style:normal;font-size:12px;color:var(--sub)}
+.fsRow.past{opacity:.45}
+.fsRow.me{background:rgba(201,164,76,.16)}
+.fsRow.cur{background:rgba(200,50,31,.14);box-shadow:inset 3px 0 0 var(--shu)}
 #pinBar{position:fixed;left:8px;right:8px;top:calc(var(--st) + 100px);z-index:9;font-size:12.5px;line-height:1.5;padding:6px 10px;background:rgba(20,16,13,.86);color:#f3e7c9;border-left:3px solid var(--shu);white-space:pre-wrap;max-height:3.6em;overflow:hidden}
 #telop{position:fixed;left:0;right:0;top:calc(var(--st) + 112px);z-index:44;pointer-events:none;text-align:center;padding:13px 16px;background:linear-gradient(90deg,rgba(20,16,13,0),rgba(20,16,13,.95) 10%,rgba(20,16,13,.95) 90%,rgba(20,16,13,0));border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);font-family:var(--ft);font-size:clamp(19px,5.7vw,27px);color:#fff5dc;line-height:1.4;text-shadow:0 2px 6px #000}
 #telop b{color:var(--gold2);font-weight:400}
@@ -361,6 +374,7 @@ if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
   <div id="hudTimer"><small id="hudTL"></small><b id="hudT"></b></div>
  </div>
  <button id="keyBar" hidden style="pointer-events:auto"><canvas id="keyIc" width="66" height="66"></canvas><span id="keyTx"></span></button>
+ <button id="fastBar" hidden style="pointer-events:auto"></button>
  <div id="pinBar" hidden></div>
  <div id="zoom" style="pointer-events:auto"><button id="zLm">名</button><button id="zIn">＋</button><button id="zOut">－</button><button id="zMe">◎</button></div>
  <nav id="nav" style="pointer-events:auto">

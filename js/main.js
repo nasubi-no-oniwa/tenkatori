@@ -135,17 +135,49 @@
     busy = false; $('rvJoin').disabled = false;
   }
 
+  // ---------- 早取りの時間割 ----------
+  const fsH = i => { const lg = TK.lang(); return lg === 'ja' || lg === 'zh' ? i + '時' : (i < 10 ? '0' : '') + i + ':00'; };
+  function fastBar() {
+    const el = $('fastBar'); if (!el) return; const me = N.me, now = N.now();
+    let txt = '', hot = false;
+    if (me && !N.ended() && !N.s.stop && N.sched[N.dayStart()]) {
+      const sl = N.fastNow();
+      if (sl) { hot = true; txt = t(sl.f === '*' ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) }); }
+      else {   // 今日これから来る早取り（自分の番か全陣営）を1つ
+        const d = N.dayStart(), hs = N.sched[d];
+        for (let i = Math.floor((now - d) / 3600000) + 1; i < 24; i++) { if (hs[i] === me.f || hs[i] === '*') { txt = t(hs[i] === '*' ? 'fs_nall' : 'fs_nmine', { a: fsH(i), b: fsH(i + 1) }); break; } }
+      }
+    }
+    el.hidden = !txt; el.className = hot ? 'hot' : ''; if (txt && el.textContent !== txt) el.textContent = txt;
+    $('pinBar').classList.toggle('low', !!txt);
+  }
+  // 掲示板に出す、なすPからのお知らせ（時間割から作る。だれかが書きこむのではないので、時間どおりに出る）
+  function sysPosts(room) {
+    const d = N.dayStart(), hs = N.sched[d], now = N.now(), out = []; if (!hs) return out;
+    const nm = L => TK.fname(TK.FI[L]);
+    if (room === 'all') {
+      const list = []; for (let i = 0; i < 24; i++) if (hs[i] !== '*') list.push(fsH(i) + ' ' + nm(hs[i]));
+      out.push({ id: 'd' + d, t: d, m: t('sy_day', { list: list.join('、') }) });
+      for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; out.push({ id: 'h' + a, t: a + 1, m: hs[i] === '*' ? t('sy_hall', { b: fsH(i + 1) }) : t('sy_hour', { name: nm(hs[i]), b: fsH(i + 1) }) }); }
+    } else {
+      const i = hs.indexOf(room); if (i < 0) return out; const a = d + i * 3600000;
+      out.push({ id: 'd' + d, t: d, m: t('sy_fday', { a: fsH(i), b: fsH(i + 1) }) });
+      if (a <= now) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) });
+    }
+    return out.filter(e => e.t <= now).map(e => Object.assign(e, { g: true, sys: true }));
+  }
   // ---------- 地図の画面 ----------
   function updateHud() {
     const me = N.me, f = me ? TK.FI[me.f] : null;
     if (f) { drawCrest($('hudCrest'), f); $('hudName').textContent = TK.who(me.n, me.h, me.r); $('hudArmy').textContent = TK.army(f) + '　' + t('cells', { n: N.s.n[f.L] || 0 }) + '・' + t('rank', { n: rankOf(f.L) }); }
     else { const c = $('hudCrest').getContext('2d'); c.clearRect(0, 0, 126, 126); c.drawImage(TK.kamon('rokumon', 100, '#c9a44c'), 13, 13); $('hudName').textContent = t('watch'); $('hudArmy').textContent = N.ended() ? t('t_ended') : N.s.stop ? t('prep') : '▶ ' + t('start'); }
-    tick(); const pin = N.s.pin; $('pinBar').hidden = !pin; if (pin) $('pinBar').textContent = t('notice') + '：' + pin;
+    fastBar(); tick(); const pin = N.s.pin; $('pinBar').hidden = !pin; if (pin) $('pinBar').textContent = t('notice') + '：' + pin;
     const em = $('nav').children[2].querySelector('em'); if (newLog > 0) { if (!em) { const e = document.createElement('em'); e.textContent = newLog > 99 ? '99+' : newLog; $('nav').children[2].appendChild(e); } else em.textContent = newLog > 99 ? '99+' : newLog; } else if (em) em.remove();
   }
   let wasReady = null;
   function tick() {
     if (scr === 'title') { renderTitle(); return; } if (scr !== 'game') return;
+    if (!N.sched[N.dayStart()]) N.loadSched().then(x => { if (x) { fastBar(); refreshGlow(); } }).catch(() => { }); fastBar();
     const tm = $('hudTimer');
     if (N.ended()) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('t_ended'); $('hudT').style.fontSize = '14px'; if (!endShown) checkEnd(); return; }
     if (!N.me) { tm.className = ''; $('hudTL').textContent = t('t_until', { t: '' }).replace(/\s+$/, ''); $('hudT').textContent = TK.dur(TK.END - N.now()); $('hudT').style.fontSize = '15px'; return; }
@@ -235,14 +267,24 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden && scr === 'game') poll(); });
 
   // ---------- 巻物（勢力・軍議・戦況・寝返り・その他） ----------
-  let pKind = '', bdRoom = '', bdT = 0, bdLast = 0;
+  let pKind = '', bdRoom = '', bdT = 0, bdLast = 0, bdSys = new Set();
   function openPanel(kind, arg) {
     pKind = kind; clearInterval(bdT); const T = $('pTitle'), B = $('pBody'), F = $('pFoot'), TB = $('pTabs'); B.innerHTML = ''; F.innerHTML = ''; TB.innerHTML = ''; B.scrollTop = 0;
     const me = N.me;
-    if (kind === 'power' || kind === 'sites') {
-      T.textContent = t('nav_power'); [['power', t('nav_power')], ['sites', t('lm_tab') + '（' + N.LM.length + '）']].forEach(([k, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = k === kind ? 'on' : ''; b.onclick = () => openPanel(k); TB.appendChild(b); });
+    if (kind === 'power' || kind === 'sites' || kind === 'sched') {
+      T.textContent = t('nav_power'); [['power', t('nav_power')], ['sched', t('fs_tab')], ['sites', t('lm_tab') + '（' + N.LM.length + '）']].forEach(([k, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = k === kind ? 'on' : ''; b.onclick = () => openPanel(k); TB.appendChild(b); });
     }
-    if (kind === 'sites') {
+    if (kind === 'sched') {
+      const d = N.dayStart(), hs = N.sched[d], now = N.now();
+      let h = `<p class="note">${esc(t('fs_note'))}</p>`;
+      if (!hs) { h += `<p class="note">${esc(t('fs_none'))}</p>`; N.loadSched().then(x => { if (x && pKind === 'sched') openPanel('sched'); }); }
+      else for (let i = 0; i < 24; i++) {
+        const L = hs[i], a = d + i * 3600000, f = TK.FI[L], cur = now >= a && now < a + 3600000, past = now >= a + 3600000;
+        h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && me.f === L ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b>${f ? `<canvas width="60" height="60" data-c="${L}"></canvas><span>${esc(TK.fname(f))}</span><em>${esc(t('fs_2'))}</em>` : `<i>⚡</i><span>${esc(t('fs_all'))}</span><em>${esc(t('fs_5'))}</em>`}</div>`;
+      }
+      B.innerHTML = h; B.querySelectorAll('canvas[data-c]').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
+      const c = B.querySelector('.fsRow.cur'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center' }), 30);
+    } else if (kind === 'sites') {
       let h = `<p class="note">${esc(t('lm_note'))}</p>`;
       N.LM.forEach((lm, k) => { const hd = N.holder(lm); h += `<div class="lmRow" data-k="${k}"><canvas width="102" height="102" data-b="${k}"></canvas><div class="nm">${esc(TK.L(lm.n))}<small>${esc(TK.kuni(M.prov[lm.c[0]]))}・${esc(t('cells', { n: lm.c.length }))}</small></div><div class="st${hd ? '' : ' no'}">${hd ? `<canvas width="72" height="72" data-c="${hd}"></canvas>` : ''}${esc(hd ? TK.fname(TK.FI[hd]) : lmStatus(lm))}</div></div>`; });
       B.innerHTML = h; B.querySelectorAll('canvas[data-b]').forEach(c => { const lm = N.LM[+c.dataset.b]; c.getContext('2d').drawImage(TK.badge(lm.k, 102, lm.id === 'azuchi'), 0, 0); }); B.querySelectorAll('canvas[data-c]').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
@@ -277,7 +319,7 @@
       T.textContent = t('nav_more'); const items = [['mr_me', () => { closePanel(); if (N.me) MP.focusFaction(N.me.f); }, !!me], ['mr_fit', () => { closePanel(); MP.fit(); }, true], ['how', () => openPanel('how'), true], ['mr_share', shareState, true], ['mr_lang', () => openPanel('lang'), true], ['askbtn', () => openPanel('ask'), true], ['mr_title', () => { closePanel(); show('title'); scene('title'); renderTitle(); }, true], ['mr_home', () => { location.href = 'https://nasubi-no-oniwa.github.io/'; }, true]];
       const d = document.createElement('div'); d.className = 'menu'; for (const [k, fn, on] of items) { if (!on) continue; const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = t(k); b.onclick = fn; d.appendChild(b); } B.appendChild(d); B.insertAdjacentHTML('beforeend', '<p class="note" id="mrMsg" style="margin-top:10px"></p>');
     } else if (kind === 'how') {
-      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 8, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
+      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 9, 8, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t('how' + i)) + '</li>').join('') + '</ol>';
     } else if (kind === 'lang') {
       T.textContent = '言語 / Language'; const d = document.createElement('div'); d.className = 'langs'; [['ja', '日本語'], ['en', 'English'], ['zh', '繁體中文'], ['ko', '한국어']].forEach(([l, nm]) => { const b = document.createElement('button'); b.className = 'btn sm' + (TK.lang() === l ? ' main' : ''); b.textContent = nm; b.onclick = () => { TK.setLang(l); applyLang(); closePanel(); }; d.appendChild(b); }); B.appendChild(d);
     } else if (kind === 'ask') {
@@ -294,9 +336,12 @@
   async function loadBoard(first) {
     if (pKind !== 'board') return; const room = bdRoom;
     try {
-      const list = await N.board(room, first ? 0 : bdLast); if (pKind !== 'board' || room !== bdRoom) return; const box = $('bdList'); if (!box) return;
+      if (first) bdSys = new Set();
+      const raw = await N.board(room, first ? 0 : bdLast); if (pKind !== 'board' || room !== bdRoom) return; const box = $('bdList'); if (!box) return;
+      const sys = sysPosts(room).filter(e => !bdSys.has(e.id)); sys.forEach(e => bdSys.add(e.id));
+      const list = first ? raw.concat(sys).sort((a, b) => a.t - b.t) : raw.filter(e => e.t > bdLast).concat(sys);
       if (first) box.innerHTML = list.length ? '' : `<p class="note">${esc(t('bd_empty'))}</p>`; else if (list.length && box.querySelector('.note')) box.innerHTML = '';
-      const now = N.now(); for (const e of list) { if (e.t <= bdLast && !first) continue; const f = TK.FI[e.f]; const d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : ''); d.innerHTML = `<div class="h">${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; box.appendChild(d); bdLast = Math.max(bdLast, e.t); }
+      const now = N.now(); for (const e of list) { if (e.t <= bdLast && !first && !e.sys) continue; const f = TK.FI[e.f]; const d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : ''); d.innerHTML = `<div class="h">${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; box.appendChild(d); if (!e.sys) bdLast = Math.max(bdLast, e.t); }
       if (first || list.length) $('pBody').scrollTop = 1e6;
     } catch (e) { const box = $('bdList'); if (box && first) box.innerHTML = `<p class="note">${esc(e && e.code === 'PERMISSION_DENIED' ? t('bd_only') : t('net_err'))}</p>`; }
   }
@@ -395,6 +440,7 @@
   // ---------- ボタン ----------
   $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
   $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
+  $('fastBar').onclick = () => openPanel('sched');
   $('bWatch').onclick = () => enterGame(); $('bHow').onclick = () => openPanel('how'); $('bLang').onclick = () => openPanel('lang'); $('bAsk').onclick = () => openPanel('ask');
   $('qBack').onclick = () => { if (qi > 0) { qi--; renderQ(); } else { show('title'); scene('title'); } };
   $('rvJoin').onclick = join; $('rvName').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.target.blur(); join(); } });
