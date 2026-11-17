@@ -342,8 +342,12 @@
       if (pKind !== 'board' || room !== bdRoom) return; const box = $('bdList'), pb = $('bdPin'); if (!box) return;
       const now = N.now();
       if (first) bdSeen = new Set();
-      if (pins !== undefined && pb) { loadBoard.pt = Date.now(); pb.innerHTML = ''; (pins || []).sort((x, y) => y.t - x.t).forEach(e => pb.appendChild(bdMsg(e, room, now, true))); }
-      const sys = sysPosts(room).filter(e => !bdSeen.has(e.id));
+      if (pins !== undefined) loadBoard.pins = pins || [];
+      // ピン止めと、今日の時間割のお知らせ（0時に出るもの）は、一番上に固定する
+      const top = (loadBoard.pins || []).slice().sort((x, y) => y.t - x.t).concat(sysPosts(room).filter(e => e.id[0] === 'd'));
+      const tk = top.map(e => e.id).join();
+      if (pb && (first || tk !== pb.dataset.k)) { loadBoard.pt = pins !== undefined ? Date.now() : loadBoard.pt; pb.dataset.k = tk; pb.innerHTML = ''; top.forEach(e => pb.appendChild(bdMsg(e, room, now, true))); }
+      const sys = sysPosts(room).filter(e => e.id[0] !== 'd' && !bdSeen.has(e.id));
       const list = raw.filter(e => first || e.t > bdLast).concat(sys).sort((x, y) => y.t - x.t);   // 新しい順
       if (first) box.innerHTML = list.length ? '' : `<p class="note">${esc(t('bd_empty'))}</p>`; else if (list.length && box.querySelector('.note')) box.innerHTML = '';
       const frag = document.createDocumentFragment();
