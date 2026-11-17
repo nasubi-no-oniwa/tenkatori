@@ -124,10 +124,25 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
       } else if (tabNow === 'board') {
         const [v, pv] = await Promise.all([get('b/' + room, { orderBy: 't', limitToLast: 80 }).then(list), get('bp/' + room).then(x => x || {})]);
         const pins = Object.entries(pv).map(([id, e]) => Object.assign({ id }, e)).sort((a, b) => b.t - a.t);
+        // 遊ぶ画面に自動で出るお知らせ（時間割から作る。データベースには入っていない）。今日の分を、遊ぶ画面と同じ文で出す
+        const auto = [];
+        { const DAYM = 86400000, JST = 9 * 3600000, now = Date.now(), d = Math.floor((now + JST) / DAYM) * DAYM - JST, x = await get('schd/' + d).catch(() => null), hs = x && x.h;
+          if (hs) { const H = i => i + '時', nm = L => fn(L);
+            if (room === 'all') {
+              const li = []; for (let i = 0; i < 24; i++) if (hs[i] !== '*') li.push(H(i) + ' ' + nm(hs[i]));
+              auto.push({ t: d, top: 1, m: `お知らせ：本日の早取りの時間割です（日本時間）。${li.join('、')}。それぞれの番の1時間は、その陣営だけ2分で1マス取れます。0時・6時・12時・18時からの1時間は、全陣営が5分で1マスです。` });
+              for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000 || hs[i] !== '*') continue; auto.push({ t: a + 1, m: `お知らせ：ただいま全陣営の早取りの時間です（${H(i + 1)}まで）。どの陣営も5分で1マス取れます。` }); }
+            } else {
+              const i = hs.indexOf(room);
+              if (i >= 0) { const a = d + i * 3600000; auto.push({ t: d, top: 1, m: `お知らせ：本日の当家の番は${H(i)}〜${H(i + 1)}。この1時間は2分で1マス取れる。皆の者、備えよ！` });
+                if (a <= now && now < a + 3600000) auto.push({ t: a + 1, m: `お知らせ：ただいま当家の番！ ${H(i + 1)}まで2分で1マス取れる。いざ出陣！` }); }
+            } } }
+        const autoTop = auto.filter(e => e.top), autoFlow = auto.filter(e => !e.top);
+        const vv = v.concat(autoFlow.map(e => Object.assign({ auto: 1, g: true }, e))).sort((a, b) => b.t - a.t);
         V.innerHTML = `<div class="rooms">${[['all', '全体']].concat(TK.F.map(f => [f.L, f.nm[0]])).map(([r, nm]) => `<button data-r="${r}" class="${r === room ? 'on' : ''}">${esc(nm)}</button>`).join('')}</div>
         <div class="box"><h2>なすPとして書く（${esc(room === 'all' ? '全体' : fn(room) + '軍の軍議')}）</h2><textarea id="gmM" maxlength="100" placeholder="100文字まで"></textarea><div class="row"><button class="b go" id="gmS">この板に書く</button><button class="b" id="gmAll">全部の板（全体＋20陣営）に書く</button></div></div>
-        <div class="box"><h2>📌 ピン止め中（遊んでいる人の掲示板の一番上に出ます・${pins.length}件）</h2>${pins.map(e => `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e))}</small><p>${esc(e.m)}</p><button class="b" data-unpin="${e.id}">ピン止めを外す</button></div>`).join('') || 'ありません（下の書きこみの「📌 ピン止め」で固定できます）'}</div>
-        <div class="box"><h2>書きこみ（新しい順・${v.length}件）</h2>${v.map(e => `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e)) + '（' + esc(fn(e.f)) + '軍）'}</small><p>${esc(e.m)}</p>${pv[e.id] ? '<b style="color:#b8902f">📌 ピン止め中</b> ' : `<button class="b" data-pin="${e.id}">📌 ピン止め</button> `}<button class="b red" data-del="${e.id}">消す</button> ${e.g ? '' : `<button class="b red" data-ban="${esc(e.u)}">この人を書きこめなくする</button> <small class="u">${esc(e.u)}</small>`}</div>`).join('') || 'まだありません'}</div>`;
+        <div class="box"><h2>📌 ピン止め中（遊んでいる人の掲示板の一番上に出ます・${pins.length}件）</h2>${autoTop.map(e => `<div class="msg gm"><small>${when(e.t)}　なすP（自動・今日の時間割。0時に入れかわります。外せません）</small><p>${esc(e.m)}</p></div>`).join('')}${pins.map(e => `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e))}</small><p>${esc(e.m)}</p><button class="b" data-unpin="${e.id}">ピン止めを外す</button></div>`).join('') || '自分でピン止めした書きこみはありません（下の書きこみの「📌 ピン止め」で固定できます）'}</div>
+        <div class="box"><h2>書きこみ（新しい順・${v.length}件）</h2>${vv.map(e => e.auto ? `<div class="msg gm"><small>${when(e.t)}　なすP（自動・番の時間の間だけ出ます）</small><p>${esc(e.m)}</p></div>` : `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e)) + '（' + esc(fn(e.f)) + '軍）'}</small><p>${esc(e.m)}</p>${pv[e.id] ? '<b style="color:#b8902f">📌 ピン止め中</b> ' : `<button class="b" data-pin="${e.id}">📌 ピン止め</button> `}<button class="b red" data-del="${e.id}">消す</button> ${e.g ? '' : `<button class="b red" data-ban="${esc(e.u)}">この人を書きこめなくする</button> <small class="u">${esc(e.u)}</small>`}</div>`).join('') || 'まだありません'}</div>`;
         V.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { room = b.dataset.r; render(); });
         const post = async rooms => { const m = $('gmM').value.trim(); if (!m) return; const o = {}; for (const r of rooms) o['b/' + r + '/' + pid()] = { t: SV, u: T.uid, n: 'なすP', m: m.slice(0, 100), g: true }; await patch(o); say('書きました'); render(); };
         $('gmS').onclick = () => post([room]).catch(e => say(e.message)); $('gmAll').onclick = () => { if (confirm('全部の板（21か所）に書きます。よいですか？')) post(['all'].concat(TK.F.map(f => f.L))).catch(e => say(e.message)); };
