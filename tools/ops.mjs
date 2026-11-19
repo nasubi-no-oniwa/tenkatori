@@ -199,6 +199,15 @@ else if (op === 'launch' || op === 'reset') {
   const nm = {}; for (const [id, x] of mem) nm[x.n] = (nm[x.n] || 0) + 1;
   console.log('名前（多い順）：' + JSON.stringify(Object.entries(nm).sort((a, b) => b[1] - a[1]).slice(0, 40)));
   for (const [id, x] of mem.sort((a, b) => (a[1].j || 0) - (b[1].j || 0))) console.log('  ' + jst(x.j) + '　' + id + '　' + x.n + '　本拠' + x.h + '　取った' + (takes[id] || 0) + '回　最後に取った' + jst(x.t) + (x.r ? '　寝返り' : '') + (ban[id] ? '　止め済み' : '') + (on[id] ? '　いま開いている' : ''));
+} else if (op === 'status') {
+  // いまの戦況を書き出す（投稿用の画像を作るため、11/19）
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST;
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const [s, c, td, yd, kz, rice, rg, ban] = await Promise.all([get('/tk/s.json'), get('/tk/c.json'), get('/tk/schd/' + d + '.json'), get('/tk/schd/' + (d - DAY) + '.json'), get('/tk/kz/' + (d - DAY) + '.json'), get('/tk/rice/' + d + '.json'), get('/tk/rg/' + d + '.json?shallow=true'), get('/tk/ban.json?shallow=true')]);
+  const cells = Array.isArray(c) ? c : Object.assign([], c);
+  const out = { now, d, n: s.n, m: s.m, ich: s.ich || null, end: s.end || null, today: td ? { h: td.h, k: td.k, x: td.x || null } : null, yk: yd ? yd.k : null, kz, rice, rgTaken: Object.keys(rg || {}).length, ban: Object.keys(ban || {}).length };
+  console.log('STATUS ' + JSON.stringify(out));
+  console.log('CELLS ' + cells.map(x => x || 'w').join(''));
 } else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac / daily のどれかにしてください'); process.exit(1); }
 
 // 時間割・米俵・決戦地を、今日から 11/30 まで作る（まだない日・足りない日だけ。すでに見えている日の時間割は変えない）
