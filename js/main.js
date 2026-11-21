@@ -149,10 +149,10 @@
     let txt = '', hot = false;
     if (me && !N.ended() && !N.s.stop && N.sched[N.dayStart()]) {
       const sl = N.fastNow();
-      if (sl) { hot = true; txt = t(sl.f === '*' ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) }); }
+      if (sl) { hot = true; txt = t(sl.f === '*' && sl.f2 !== me.f ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) }); }
       else {   // 今日これから来る早取り（自分の番か全陣営）を1つ
-        const d = N.dayStart(), hs = N.sched[d];
-        for (let i = Math.floor((now - d) / 3600000) + 1; i < 24; i++) { if (hs[i] === me.f || hs[i] === '*') { txt = t(hs[i] === '*' ? 'fs_nall' : 'fs_nmine', { a: fsH(i), b: fsH(i + 1) }); break; } }
+        const d = N.dayStart(), hs = N.sched[d], xs = (N.day[d] && N.day[d].x) || {};   // 決戦地のほうびの1時間（xs）も自分の番として数える
+        for (let i = Math.floor((now - d) / 3600000) + 1; i < 24; i++) { const mine = hs[i] === me.f || xs[i] === me.f; if (mine || hs[i] === '*') { txt = t(mine ? 'fs_nmine' : 'fs_nall', { a: fsH(i), b: fsH(i + 1) }); break; } }
       }
     }
     el.hidden = !txt; el.className = hot ? 'hot' : ''; if (txt && el.textContent !== txt) el.textContent = txt;

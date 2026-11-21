@@ -118,12 +118,15 @@ else if (op === 'launch' || op === 'reset') {
       own[i] = before.length ? before[before.length - 1].f : after.length ? after[0].p : c[i];
     }
     const vals = lm.c.map(i => own[i]), L = vals.every(v => v === vals[0]) && vals[0] !== 'w' ? vals[0] : '';
-    let e = -1;
-    if (L && ts && ts.h) { const i = ts.h.indexOf(L); for (const k of [i + 1, i - 1]) if (k >= 0 && k < 24 && d + (k + 1) * HR > now) { e = k; break; } }
+    // ほうびの1時間：自分の番のとなりの時間。この処理がおくれて、となりがもう始まっていたら、これから始まる時間のうち一番早いものにする（11/21）
+    const e = L && ts && ts.h ? pickBonusHour(ts.h, L, Math.floor((now - d) / HR)) : -1;
     if (e >= 0) { w['sch/' + (d + e * HR) + '/f2'] = L; w['schd/' + d + '/x'] = { [e]: L }; }
     w['kz/' + y] = { L, e, t: now };
     const nm = lm.n[0];
-    const m = L ? `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${FN(L)}の早取りの番は2時間（${H(Math.min(ts.h.indexOf(L), e))}〜${H(Math.max(ts.h.indexOf(L), e) + 1)}）。` : `お知らせ：きのうの決戦地「${nm}」は、24時にどの陣営も押さえきれなかった。`;
+    const mine = L && ts && ts.h ? ts.h.indexOf(L) : -1, adj = e >= 0 && Math.abs(e - mine) === 1;
+    const m = !L ? `お知らせ：きのうの決戦地「${nm}」は、24時にどの陣営も押さえきれなかった。`
+      : adj ? `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${FN(L)}の早取りの番は2時間（${H(Math.min(mine, e))}〜${H(Math.max(mine, e) + 1)}）。`
+        : `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${H(e)}〜${H(e + 1)}も、${FN(L)}は2分で1マス取れる。`;
     if (e >= 0 || !L) w['b/all/' + pid()] = { t: now, u: 'gm', n: 'なすP', m, g: true };
     else w['b/all/' + pid()] = { t: now, u: 'gm', n: 'なすP', m: `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！`, g: true };
     console.log('決戦地 ' + nm + '：' + (L ? FN(L) + '（2時間目：' + e + '時）' : 'だれも押さえていない'));
@@ -210,6 +213,14 @@ else if (op === 'launch' || op === 'reset') {
   console.log('CELLS ' + cells.map(x => x || 'w').join(''));
 } else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac / daily のどれかにしてください'); process.exit(1); }
 
+// 決戦地のほうびの1時間を決める。h：今日の時間割（24文字）、L：ほうびの陣営、cur：いまの時（0〜23）。まだ始まっていない時間から選ぶ。なければ -1
+export function pickBonusHour(h, L, cur) {
+  const i = h.indexOf(L), free = k => k > cur && k < 24 && h[k] !== L;
+  for (const k of [i + 1, i - 1]) if (k >= 0 && free(k)) return k;
+  for (let k = cur + 1; k < 24; k++) if (free(k) && h[k] !== '*') return k;
+  for (let k = cur + 1; k < 24; k++) if (free(k)) return k;
+  return -1;
+}
 // 時間割・米俵・決戦地を、今日から 11/30 まで作る（まだない日・足りない日だけ。すでに見えている日の時間割は変えない）
 async function ensureSched(redo) {
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999), RICE = 40;

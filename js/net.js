@@ -119,6 +119,8 @@
     const d = N.dayStart(); if (!N.day[d]) return;
     if (N.fake) { if (N.riceDay !== d) { N.rg = {}; N.rice = FK.rice(); N.riceDay = d; } return; }
     const [g, r] = await Promise.all([rest('rg/' + d), rest('rice/' + d)]); N.rg = g || {}; N.rice = r || {}; N.riceDay = d;
+    // 決戦地のほうびの1時間（x）は、0時よりあとに入ることがあるので、10分おきに読みなおす
+    if (!(N.loadRice.xAt > Date.now() - 600000)) { N.loadRice.xAt = Date.now(); try { const x = await rest('schd/' + d + '/x'); if (x && N.day[d]) N.day[d].x = x; } catch (e) { } }
   };
   N.riceLeft = () => { const dd = N.day[N.dayStart()]; if (!dd || N.riceDay !== N.dayStart()) return []; return [...dd.rc].filter(i => !N.rg[i]); };
   N.isRice = i => { const dd = N.day[N.dayStart()]; return !!(dd && N.riceDay === N.dayStart() && dd.rc.has(i) && !N.rg[i]); };
