@@ -104,6 +104,7 @@ else if (op === 'launch' || op === 'reset') {
   //  ①これからの日の時間割・米俵・決戦地がそろっているか ②きのうの決戦地の結果（勝った陣営は今日の早取りの番が2時間）③きのうの一番槍の発表
   await ensureSched(false);
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
+  await sweepRice(d);
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
   const FN = globalThis.TK_FNAME, w = {};
@@ -202,6 +203,9 @@ else if (op === 'launch' || op === 'reset') {
   const nm = {}; for (const [id, x] of mem) nm[x.n] = (nm[x.n] || 0) + 1;
   console.log('名前（多い順）：' + JSON.stringify(Object.entries(nm).sort((a, b) => b[1] - a[1]).slice(0, 40)));
   for (const [id, x] of mem.sort((a, b) => (a[1].j || 0) - (b[1].j || 0))) console.log('  ' + jst(x.j) + '　' + id + '　' + x.n + '　本拠' + x.h + '　取った' + (takes[id] || 0) + '回　最後に取った' + jst(x.t) + (x.r ? '　寝返り' : '') + (ban[id] ? '　止め済み' : '') + (on[id] ? '　いま開いている' : ''));
+} else if (op === 'rice') {
+  // 領内の米俵を、いますぐ蔵に入れる（毎日の処理と同じ）
+  const DAY = 86400000, JST = 9 * 3600000; await sweepRice(Math.floor((Date.now() + JST) / DAY) * DAY - JST);
 } else if (op === 'status') {
   // いまの戦況を書き出す（投稿用の画像を作るため、11/19）
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST;
@@ -213,6 +217,16 @@ else if (op === 'launch' || op === 'reset') {
   console.log('CELLS ' + cells.map(x => x || 'w').join(''));
 } else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac / daily のどれかにしてください'); process.exit(1); }
 
+// 領内の米俵（11/23）：いま色のついたマスにある、まだだれも取っていない今日の米俵を、その陣営の蔵に入れる（その陣営のだれも開いていないときのため）
+async function sweepRice(d) {
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const [rc, rg, c] = await Promise.all([get('/tk/rc/' + d + '.json'), get('/tk/rg/' + d + '.json'), get('/tk/c.json')]);
+  const w = {}, cnt = {}, now = Date.now();
+  for (const i of Object.keys(rc)) { const L = c[i]; if (rg[i] || !L || L === 'w') continue; w['rg/' + d + '/' + i] = { f: L, t: now }; cnt[L] = (cnt[L] || 0) + 1; }
+  for (const [L, n] of Object.entries(cnt)) w['rice/' + d + '/' + L] = { '.sv': { increment: n } };
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+  console.log('領内の米俵を蔵に入れた：' + JSON.stringify(cnt) + '（まだ白いマスにある米俵：' + Object.keys(rc).filter(i => !rg[i] && !w['rg/' + d + '/' + i]).length + '俵）');
+}
 // 決戦地のほうびの1時間を決める。h：今日の時間割（24文字）、L：ほうびの陣営、cur：いまの時（0〜23）。まだ始まっていない時間から選ぶ。なければ -1
 export function pickBonusHour(h, L, cur) {
   const i = h.indexOf(L), free = k => k > cur && k < 24 && h[k] !== L;

@@ -194,6 +194,24 @@ export async function run(drv, log = console.log) {
     { await no(tr(R1, 2, 3, 'a', '米取り', false, { ['rg/' + D + '/2']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(2) }), '米俵1つで兵糧を2増やすことはできない'); }
     if (true) { await yes(tr(R1, 2, 3, 'a', '米取り', true), 'R1が米俵のマス2を取って、兵糧が1増える'); ok((await drv.read('rice/' + D + '/b', R1)).val === 1, '武田の兵糧が1俵'); ok((await drv.read('rg/' + D + '/2', R2)).val.f === 'b', '米俵2は武田が取った'); }
     await no(drv.update({ ['rg/' + D + '/2']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(1), ['u/' + R2 + '/t']: SV, ['u/' + R2 + '/c']: '2' }, R2), '取られた米俵は二度は数えない');
+    // 領内の米俵（11/23）：いま自分の陣営のマスにある米俵は、その陣営の人が蔵に入れられる（マス3・4は武田のもの。5は米俵ではない）
+    {
+      const Z = await drv.user('Z6f'); await yes(join(Z, 'a', '織田の者'), 'Zが織田に仕える');
+      const claim = (u, c, f, n = 1, x = {}) => drv.update(Object.assign({ ['u/' + u + '/rk']: String(c), ['rg/' + D + '/' + c]: { f, t: SV }, ['rice/' + D + '/' + f]: INC(n) }, x), u);
+      await no(claim(Z, 3, 'a'), 'ほかの陣営のマスにある米俵は、蔵に入れられない');
+      await no(claim(Z, 3, 'b'), 'ほかの陣営の蔵に入れることもできない');
+      await no(claim(R2, 5, 'b'), '米俵のないマスでは、蔵に入れられない');
+      await no(claim(R2, 2, 'b'), 'もう取られた米俵は、蔵に入れられない');
+      await no(claim(R2, 3, 'b', 2), '領内の米俵1つで、兵糧を2増やすことはできない');
+      await no(drv.update({ ['u/' + R2 + '/rk']: '3', ['rice/' + D + '/b']: INC(1) }, R2), '米俵の記録を書かずに、兵糧だけは増やせない');
+      await no(drv.update({ ['u/' + R2 + '/rk']: '3', ['rg/' + D + '/3']: { f: 'b', t: SV } }, R2), '兵糧を増やさずに、米俵の記録だけは書けない');
+      await no(drv.update({ ['u/' + R2 + '/rk']: '3', ['rg/' + D + '/3']: { f: 'b', t: SV }, ['rg/' + D + '/4']: { f: 'b', t: SV }, ['rice/' + D + '/b']: INC(1) }, R2), '一度に2つの米俵は入れられない');
+      const before = (await drv.read('rice/' + D + '/b', R2)).val;
+      await yes(claim(R2, 3, 'b'), '領内（武田のマス3）の米俵を、武田の人が蔵に入れる');
+      ok((await drv.read('rice/' + D + '/b', R2)).val === before + 1, '武田の兵糧が1増えた');
+      await no(claim(R1, 3, 'b'), '同じ米俵を、もう一度は入れられない');
+      await yes(claim(R1, 4, 'b'), '別の人が、領内（マス4）の米俵を蔵に入れる');
+    }
     // 士気：兵糧を3俵にして、50分で取れるか
     await drv.admin({ ['rice/' + D + '/b']: 3 });
     const tq = (u, x) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, x || {}), u);

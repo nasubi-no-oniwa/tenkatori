@@ -131,6 +131,7 @@ tk.k = { '.read': false, '.write': false };
       t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
+      rk: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/)" },   // 領内の米俵を蔵に入れるとき、そのマス
       qd: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       q: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
@@ -158,11 +159,17 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
   tk.rg = { '.read': true, '.write': ADMIN, $d: { $c: {
     '.write': `${ADMIN} || (auth != null && ${OPEN} && ${NOBAN} && !data.exists() && newData.exists() && root.child('tk/rc/' + $d + '/' + $c).exists() && ${DAYOK}`
       + ` && ${U}.child('t').val() === now && ${U}.child('c').val() === $c && newData.child('f').val() === ${U}.child('f').val() && ${T}.child('c/' + $c).val() === ${U}.child('f').val() && root.child('tk/c/' + $c).val() !== ${U}.child('f').val()`
-      + ` && ${T}.child('rice/' + $d + '/' + ${U}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${U}.child('f').val()).val() + 1)`,
+      + ` && ${T}.child('rice/' + $d + '/' + ${U}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${U}.child('f').val()).val() + 1)`
+      // 領内の米俵（11/23）：いま自分の陣営のマスにある、まだだれも取っていない米俵は、その陣営の人が蔵に入れられる（u/rk＝そのマス）
+      + ` || (auth != null && ${OPEN} && ${NOBAN} && !data.exists() && newData.exists() && root.child('tk/rc/' + $d + '/' + $c).exists() && ${DAYOK}`
+      + ` && ${U}.child('rk').val() === $c && ${ME}.child('f').exists() && newData.child('f').val() === ${ME}.child('f').val() && root.child('tk/c/' + $c).val() === ${ME}.child('f').val() && ${T}.child('c/' + $c).val() === ${ME}.child('f').val()`
+      + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
   tk.rice = { '.read': true, '.write': ADMIN, $d: { $L: {
     '.write': `${ADMIN} || (auth != null && data.isNumber() && newData.val() === data.val() + 1 && ${U}.child('t').val() === now`
-      + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('c').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('c').val()).exists())`,
+      + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('c').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('c').val()).exists())`
+      + ` || (auth != null && data.isNumber() && newData.val() === data.val() + 1 && ${ME}.child('f').val() === $L && ${U}.child('rk').isString()`
+      + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('rk').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('rk').val()).exists() && root.child('tk/c/' + ${U}.child('rk').val()).val() === $L)`,
     '.validate': 'newData.isNumber()' } } };
 }
 // ---------- 早取りの時間割（管理人が先に書いておく。その日の0時になるまでだれも読めない） ----------
