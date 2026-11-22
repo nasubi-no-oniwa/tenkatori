@@ -465,6 +465,7 @@
   // ---------- ボタン ----------
   $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
   $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
+  N.onRice = k => { const L = N.me.f; toast(t('tk_rice_own', { k, n: N.rice[L] || 0, m: N.morale(L), w: Math.round(N.baseWait(L) / 60000) }), 4500); MP.kick(); updateHud(); refreshGlow(); };
   $('fastBar').onclick = () => openPanel('sched');
   $('ksBar').onclick = () => { const dd = N.day[N.dayStart()], ks = dd && N.LM.find(l => l.id === dd.k); if (ks) MP.focusLM(ks); };
   $('bWatch').onclick = () => enterGame(); $('bHow').onclick = () => openPanel('how'); $('bLang').onclick = () => openPanel('lang'); $('bAsk').onclick = () => openPanel('ask');

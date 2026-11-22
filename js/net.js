@@ -117,10 +117,28 @@
   N.rg = {}; N.rice = {}; N.riceDay = 0;
   N.loadRice = async function () {
     const d = N.dayStart(); if (!N.day[d]) return;
-    if (N.fake) { if (N.riceDay !== d) { N.rg = {}; N.rice = FK.rice(); N.riceDay = d; } return; }
+    if (N.fake) { if (N.riceDay !== d) { N.rg = {}; N.rice = FK.rice(); N.riceDay = d; } N.claimRice().catch(() => { }); return; }
     const [g, r] = await Promise.all([rest('rg/' + d), rest('rice/' + d)]); N.rg = g || {}; N.rice = r || {}; N.riceDay = d;
     // 決戦地のほうびの1時間（x）は、0時よりあとに入ることがあるので、10分おきに読みなおす
+    N.claimRice().catch(() => { });
     if (!(N.loadRice.xAt > Date.now() - 600000)) { N.loadRice.xAt = Date.now(); try { const x = await rest('schd/' + d + '/x'); if (x && N.day[d]) N.day[d].x = x; } catch (e) { } }
+  };
+  // 領内の米俵（11/23）：いま自分の陣営のマスにある、まだだれも取っていない米俵を、蔵に入れる（操作はいらない。ルールが確かめる）
+  N.claimRice = async function () {
+    const me = N.me, d = N.dayStart(), C = N.claimRice; C.tried = C.tried || {};
+    if (!me || C.busy || !N.cells || !N.day[d] || N.riceDay !== d || typeof N.rice[me.f] !== 'number' || N.ended() || (N.s && N.s.stop)) return 0;
+    C.busy = 1; let n = 0;
+    try {
+      for (const i of N.riceLeft()) {
+        if (N.cells[i] !== me.f || C.tried[d + ':' + i]) continue; C.tried[d + ':' + i] = 1;
+        try {
+          if (!N.fake) await update({ ['u/' + N.uid() + '/rk']: String(i), ['rg/' + d + '/' + i]: { f: me.f, t: SV }, ['rice/' + d + '/' + me.f]: INC(1) });
+          N.rg[i] = { f: me.f, t: N.now() }; N.rice[me.f] = (N.rice[me.f] || 0) + 1; n++;
+        } catch (e) { }   // ほかの人が先に入れた・地図が古かった、など
+      }
+    } finally { C.busy = 0; }
+    if (n && N.onRice) N.onRice(n);
+    return n;
   };
   N.riceLeft = () => { const dd = N.day[N.dayStart()]; if (!dd || N.riceDay !== N.dayStart()) return []; return [...dd.rc].filter(i => !N.rg[i]); };
   N.isRice = i => { const dd = N.day[N.dayStart()]; return !!(dd && N.riceDay === N.dayStart() && dd.rc.has(i) && !N.rg[i]); };
