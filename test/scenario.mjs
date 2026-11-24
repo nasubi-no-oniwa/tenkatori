@@ -252,18 +252,20 @@ export async function run(drv, log = console.log) {
     }
     await drv.admin({ ['schd/' + D]: null, ['rc/' + D]: null, ['rice/' + D]: null, ['rg/' + D]: null, ['schd/' + D2]: null, ['rice/' + D2]: null });
   }
-  log('7) 天下統一（半分の2500マス）');
+  log('7) 天下統一（11/25から：毎日24時に4000マス。2500マスでは止まらない）');
   await yes(join(D, 'b', '三郎'), 'Dが武田に仕える'); await age(D);
   const nb = (await drv.read('s/n/b', D)).val;
   await drv.admin({ 's/n/b': 2499 });
   const c2 = (await drv.read('c/2', D)).val, c3 = (await drv.read('c/3', D)).val;
   // 武田のとなりにある、武田でないマスを探す（2 か 1）
   const tgt = c2 !== 'b' ? 2 : 1, via = tgt + 1, prev = (await drv.read('c/' + tgt, D)).val;
-  await no(take(D, tgt, via, 'b', prev, '三郎'), '2500マス目は、終わりの印なしでは取れない');
   await no(drv.update({ 's/end': { f: 'b', t: SV, k: 'half' } }, D), '2500マスに届かないのに終わりにはできない');
-  await yes(take(D, tgt, via, 'b', prev, '三郎', { more: { 's/end': { f: 'b', t: SV, k: 'half' } } }), '2500マス目を取ると天下統一');
-  ok(((await drv.read('s/end', E)).val || {}).f === 'b', '天下人は武田');
-  await no(join(E, 'c', '四郎'), '終わったあとは仕えられない');
+  await no(drv.update({ 's/end': { f: 'b', t: SV, k: 'day' } }, D), '遊ぶ人は「24時の天下統一」を書けない');
+  await yes(take(D, tgt, via, 'b', prev, '三郎', { more: { 's/end': { f: 'b', t: SV, k: 'half' } } }), '前の版の画面が2500マス目で終わりの印を書いても、はじかれない');
+  await yes(join(E, 'c', '四郎'), '2500マスの印では止まらない（仕えられる）');
+  await drv.admin({ 's/end': { f: 'b', t: 1, k: 'day' } });
+  ok(((await drv.read('s/end', E)).val || {}).k === 'day', '24時の判定で、天下人は武田');
+  { const F2 = await drv.user('F2'); await no(join(F2, 'c', '五郎'), '天下統一のあとは仕えられない'); }
   await yes(ask(E, '楽しかった'), '終わったあとも質問は送れる');
   return { pass, fail };
 }

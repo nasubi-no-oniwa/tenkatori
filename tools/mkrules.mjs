@@ -22,7 +22,8 @@ const FASTT = 2 * 60 * 1000, ALLT = 5 * 60 * 1000;   // 早取り：番の陣営
 const WAIT = 1 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH = 10000;   // CLASH：同じマスが10秒以内に取り合いになったら「同時」
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
-const OPEN = `(!root.child('tk/s/end').exists() && !root.child('tk/s/stop').exists() && now <= ${END})`;
+// 天下統一（11/25）：毎日24時に4000マス以上の軍（毎日の処理が s/end に k:'day' で書く）。前の版の画面が書く k:'half'（2500マス）では止めない
+const OPEN = `((!root.child('tk/s/end').exists() || root.child('tk/s/end/k').val() === 'half') && !root.child('tk/s/stop').exists() && now <= ${END})`;
 const ME = "root.child('tk/u/' + auth.uid)";
 const NOBAN = "!root.child('tk/ban/' + auth.uid).exists()";
 // 書いたあとの tk（場所の深さごとに、上へたどる回数がちがう）
@@ -43,7 +44,6 @@ const tk = {};
         + ` && (root.child('tk/k/' + ${U}.child('v').val()).exists() || (root.child('tk/adj/' + ${U}.child('v').val() + '/' + ${U}.child('w').val()).exists() && (root.child('tk/c/' + ${U}.child('w').val()).val() === newData.val() || root.child('tk/c/' + ${U}.child('w').val()).val() === 'w')))`
         + ` && ${T}.child('s/n/' + newData.val()).val() === root.child('tk/s/n/' + newData.val()).val() + 1`
         + ` && ${T}.child('s/n/' + data.val()).val() === root.child('tk/s/n/' + data.val()).val() - 1`
-        + ` && (${T}.child('s/n/' + newData.val()).val() < ${HALF} || ${T}.child('s/end/f').val() === newData.val())`
         // 同時（そのマスが取られてから10秒以内）：マスの少ない陣営だけが取れる。同じ数ならくじ（データベースの時計が偶数のミリ秒なら取れる）
         + ` && ${T}.child('ct/' + $c).val() === now && (!root.child('tk/ct/' + $c).exists() || now - root.child('tk/ct/' + $c).val() >= ${CLASH}`
         + ` || root.child('tk/s/n/' + newData.val()).val() < root.child('tk/s/n/' + data.val()).val() - 1`
@@ -83,11 +83,11 @@ tk.k = { '.read': false, '.write': false };
       },
     },
     end: {
-      '.write': `${ADMIN} || (auth != null && !data.exists() && newData.exists() && ${up(2)}.child('s/n/' + newData.child('f').val()).val() >= ${HALF} && ${ME}.child('f').val() === newData.child('f').val())`,
+      '.write': `${ADMIN} || (auth != null && (!data.exists() || data.child('k').val() === 'half') && newData.exists() && newData.child('k').val() === 'half' && ${up(2)}.child('s/n/' + newData.child('f').val()).val() >= ${HALF} && ${ME}.child('f').val() === newData.child('f').val())`,
       '.validate': "newData.hasChildren(['f', 't', 'k'])",
       f: { '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/)" },
       t: { '.validate': 'newData.val() === now' },
-      k: { '.validate': "newData.isString() && newData.val().matches(/^(half|time|gm)$/)" },
+      k: { '.validate': "newData.isString() && newData.val().matches(/^(half|day|time|gm)$/)" },
       $other: { '.validate': false },
     },
     stop: { '.write': ADMIN, '.validate': 'newData.val() === true' },
