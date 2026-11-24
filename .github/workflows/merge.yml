@@ -1,4 +1,4 @@
-# 三つ巴の切りかえ（11/24 23:59）の予備：なすPのClaudeが手で動かせなかったときのため。日本時間 23:59 まで待ってから動かす
+# 三つ巴の切りかえ（11/24 23:59）の予備：なすPのClaudeが手で動かせなかったときのため。日本時間 23:55 に止めてまとめ、0:00 に再開する
 #  もうまとまっていれば何もしない（同じグループなので、手で動かした分と重なって動くことはない）
 name: 三つ巴の切りかえ（予備）
 on:
@@ -31,7 +31,7 @@ jobs:
       - name: 切りかえ
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
-        run: node tools/ops.mjs merge go 2359
+        run: node tools/ops.mjs merge go 2355-0000
       - name: 鍵を消す
         if: always()
         run: rm -f "$RUNNER_TEMP/sa.json"

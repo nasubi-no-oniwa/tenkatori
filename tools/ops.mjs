@@ -25,6 +25,11 @@ else if (op === 'notice') {
   // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
   if (nt.edit) { const [b, bp] = await Promise.all([api('GET', '/tk/b/all.json', undefined, tok), api('GET', '/tk/bp/all.json', undefined, tok)].map(p => p.then(x => JSON.parse(x) || {})));
     for (const ed of nt.edit) for (const [src, pre] of [[b, 'b/all/'], [bp, 'bp/all/']]) for (const [i, e] of Object.entries(src)) if (e && e.g && String(e.m).includes(ed.find)) w[pre + i + '/m'] = ed.m; }
+  // swap：全部の板（全体と20家の軍議）の、なすPの書きこみの中の文字を置きかえる（ピン止めの写しも）
+  if (nt.swap) for (const room of ['all', ...'abcdefghijklmnopqrst']) for (const pre of ['b', 'bp']) {
+    const v = JSON.parse(await api('GET', '/tk/' + pre + '/' + room + '.json' + (pre === 'b' ? '?orderBy="t"&limitToLast=60' : ''), undefined, tok)) || {};
+    for (const [i, e] of Object.entries(v)) if (e && e.g && !w[pre + '/' + room + '/' + i + '/m']) { let m = String(e.m); for (const [x, y] of nt.swap) m = m.split(x).join(y); if (m !== e.m) w[pre + '/' + room + '/' + i + '/m'] = m; }
+  }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('書いた・ピン止めした・書きかえた：' + Object.keys(w).length + 'か所');
 }
 else if (op === 'merge') {
@@ -33,7 +38,8 @@ else if (op === 'merge') {
   const go = (process.argv[3] || '').trim() === 'go', get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const LS = 'abcdefghijklmnopqrst'.split(''), FN = globalThis.TK_FNAME;
   // h に 2359 のような時刻を入れると、日本時間のその時刻まで待ってから動かす（12時間より先なら、もう過ぎたとみなしてすぐ動かす）
-  const at = (process.argv[4] || '').trim();
+  // 2355-0000 のように書くと、23:55 に止めてまとめ、0:00 まで止めたままにしてから再開する（11/24）
+  const [at, reopen] = (process.argv[4] || '').trim().split('-');
   if (/^\d{4}$/.test(at)) { const HR = 3600000, JST = 9 * HR, d0 = Math.floor((Date.now() + JST) / 86400000) * 86400000 - JST, tg = d0 + (+at.slice(0, 2)) * HR + (+at.slice(2)) * 60000, ms = tg - Date.now();
     if (ms > 0 && ms < 12 * HR) { console.log('日本時間 ' + at + ' まで ' + Math.round(ms / 1000) + '秒待ちます'); await new Promise(r => setTimeout(r, ms)); } }
   let s = await get('/tk/s.json');
@@ -67,7 +73,7 @@ else if (op === 'merge') {
   Object.assign(w, { 's/mg': mg, 's/mt': now, 's/ver': now, 's/av': now, 's/hk': Object.fromEntries(LS.map(L => [L, 0])) });
   // 「見込み」のピン止めを外し、確定のお知らせを出す
   const bp = (await get('/tk/bp.json')) || {};
-  for (const [room, list] of Object.entries(bp)) for (const [i, e] of Object.entries(list || {})) if (e && e.g && /見込み|三つ巴へ|23:59/.test(String(e.m))) w['bp/' + room + '/' + i] = null;
+  for (const [room, list] of Object.entries(bp)) for (const [i, e] of Object.entries(list || {})) if (e && e.g && /見込み|三つ巴へ|23:5|今夜0時/.test(String(e.m))) w['bp/' + room + '/' + i] = null;
   const pid = k => 'gm' + now.toString(36) + k + Math.random().toString(36).slice(2, 10), post = (room, k, m, pin) => { const i = pid(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/' + room + '/' + i] = e; if (pin) w['bp/' + room + '/' + i] = { t: e.t, n: e.n, m, g: true }; };
   const SN = L => FN(L).replace(/(氏康|元就|昌幸|信長|信玄|謙信|政宗|家康|秀吉|義久|義元|道三|義景|長政|義光|義重|経久|元親|宗麟|隆信)$/, '');
   post('all', 0, '【三つ巴、開戦】天下は三つに割れた！ ' + top.map(T => SN(T) + '軍（' + n2[T] + 'マス）').join('・') + '。ここからは軍と軍の戦い。寝返りはできない。2500マスを取った軍が天下統一！', true);
@@ -76,6 +82,11 @@ else if (op === 'merge') {
   await api('PATCH', '/tk.json', w, tok);
   console.log('まとめました：マス ' + Object.keys(cw).length + '・家臣 ' + Object.keys(w).filter(k => /^u\//.test(k)).length + '人');
   await ensureSched(true);
+  if (/^\d{4}$/.test(reopen || '')) {   // 再開の時刻まで止めたままにする（0000 なら次の日の0時。12時間より先なら待たない）
+    const HR = 3600000, JST = 9 * HR, DAY = 86400000, d0 = Math.floor((Date.now() + JST) / DAY) * DAY - JST;
+    let tg = d0 + (+reopen.slice(0, 2)) * HR + (+reopen.slice(2)) * 60000; if (tg < Date.now() - HR) tg += DAY;
+    const ms = tg - Date.now(); if (ms > 0 && ms < 12 * HR) { console.log('再開の ' + reopen + ' まで ' + Math.round(ms / 1000) + '秒、止めたまま待ちます'); await new Promise(r => setTimeout(r, ms + 2000)); }
+  }
   await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('止めるのを外しました（開戦）');
 }
 else if (op === 'nodf') { await api('PATCH', '/tk/s.json', { nodf: true }, tok); console.log('寝返りの受付をやめました'); }
