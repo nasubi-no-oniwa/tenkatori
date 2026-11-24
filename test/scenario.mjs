@@ -92,6 +92,16 @@ export async function run(drv, log = console.log) {
     const weak = Object.entries((await drv.read('s/n', N2)).val || {}).filter(([L]) => L !== 'w' && L !== 'b').sort((x, y) => x[1] - y[1]);
     await no(defect(N2, 'b', weak[0][0], '古参', 'b'), '寝返りの受付をやめたら、いちばん少ない武将へも寝返れない');
     await drv.admin({ 's/nodf': null }); }
+  // 三つ巴（11/24）：家→軍の表（s/mg）ができたら、軍にだけ仕えられる。家は、その軍に入った家ならよい
+  { const mg = {}; for (const L of 'abcdefghijklmnopqrst') mg[L] = 'abcdefghij'.includes(L) ? 'a' : 'k'; mg.k = 'k';
+    await drv.admin({ 's/mg': mg });
+    const M1 = await drv.user('M1'), M2 = await drv.user('M2'), M3 = await drv.user('M3'), M4 = await drv.user('M4');
+    await no(join(M1, 'b', '消えた家'), 'まとまって消えた家（武田）には仕えられない');
+    await yes(join(M2, 'a', '武田の与力', { ['u/' + M2 + '/h']: 'b' }), '武田の家として、武田が入った軍（織田）に仕えられる');
+    ok((await drv.read('u/' + M2, M2)).val.h === 'b', '家（h）は武田のまま');
+    await no(join(M3, 'a', 'よその家', { ['u/' + M3 + '/h']: 'm' }), '別の軍に入った家（浅井→斎藤軍）を名乗って織田軍には仕えられない');
+    await yes(join(M4, 'k', '斎藤の者'), '軍の家（斎藤）にはそのまま仕えられる');
+    await drv.admin({ 's/mg': null }); }
 
   log('5) なすPへの質問・いま開いている人');
   const ask = (u, m) => drv.update({ ['u/' + u + '/a']: SV, ['ask/' + pid()]: { t: SV, u, m, l: 'ja', x: '', n: '武田の太郎' } }, u);

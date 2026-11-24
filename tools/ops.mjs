@@ -33,6 +33,57 @@ else if (op === 'notice') {
     for (const ed of nt.edit) for (const [src, pre] of [[b, 'b/all/'], [bp, 'bp/all/']]) for (const [i, e] of Object.entries(src)) if (e && e.g && String(e.m).includes(ed.find)) w[pre + i + '/m'] = ed.m; }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('書いた・ピン止めした・書きかえた：' + Object.keys(w).length + 'か所');
 }
+else if (op === 'merge') {
+  // 三つ巴（11/24 23:59）：マスの多い上位3家を「軍」にして、ほかの17家を城の近い軍にまとめる。q に go と入れたときだけ本当に動かす（空なら下見だけ）
+  //  近さが同じくらい（差が1マス未満）なら、家臣の少ない軍へ。家（h）と家紋はそのまま。前の地図と所属は tkbak/{時刻} に控える
+  const go = (process.argv[3] || '').trim() === 'go', get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const LS = 'abcdefghijklmnopqrst'.split(''), FN = globalThis.TK_FNAME;
+  // h に 2359 のような時刻を入れると、日本時間のその時刻まで待ってから動かす（12時間より先なら、もう過ぎたとみなしてすぐ動かす）
+  const at = (process.argv[4] || '').trim();
+  if (/^\d{4}$/.test(at)) { const HR = 3600000, JST = 9 * HR, d0 = Math.floor((Date.now() + JST) / 86400000) * 86400000 - JST, tg = d0 + (+at.slice(0, 2)) * HR + (+at.slice(2)) * 60000, ms = tg - Date.now();
+    if (ms > 0 && ms < 12 * HR) { console.log('日本時間 ' + at + ' まで ' + Math.round(ms / 1000) + '秒待ちます'); await new Promise(r => setTimeout(r, ms)); } }
+  let s = await get('/tk/s.json');
+  if (s.mg) { console.log('もうまとまっています：' + JSON.stringify(s.mg)); process.exit(0); }
+  if (go) { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('止めました。書きこみが落ちつくのを待ちます'); await new Promise(r => setTimeout(r, 12000)); s = await get('/tk/s.json'); }
+  const [c0, u] = await Promise.all([get('/tk/c.json'), go ? get('/tk/u.json') : Promise.resolve({})]);
+  const c = Array.isArray(c0) ? c0.slice() : Object.assign([], c0);
+  const top = LS.slice().sort((a, b) => (s.n[b] || 0) - (s.n[a] || 0)).slice(0, 3);
+  const xy = L => [MAP.cells[2 * MAP.castle[L]], MAP.cells[2 * MAP.castle[L] + 1]], mg = {};
+  const mem = {}; for (const T of top) mem[T] = s.m[T] || 0;
+  // 家臣の多い家から順に決める（同じくらいの近さのときに、人数をならせるように）
+  for (const L of LS.filter(L => !top.includes(L)).sort((a, b) => (s.m[b] || 0) - (s.m[a] || 0))) {
+    const [x, y] = xy(L), ds = top.map(T => { const [a, b2] = xy(T); return [Math.hypot(a - x, b2 - y), T]; }).sort((p, q) => p[0] - q[0]);
+    const near = ds.filter(d => d[0] - ds[0][0] < 1).sort((p, q) => mem[p[1]] - mem[q[1]]);
+    mg[L] = near[0][1]; mem[mg[L]] += s.m[L] || 0;
+    console.log('  ' + FN(L) + ' → ' + FN(mg[L]) + '　' + ds.map(d => FN(d[1]) + d[0].toFixed(2)).join(' '));
+  }
+  for (const T of top) mg[T] = T;
+  const n2 = { w: 0 }, m2 = {}; for (const L of LS) { n2[L] = 0; m2[L] = 0; }
+  const cw = {}; c.forEach((L, i) => { if (L && L !== 'w' && mg[L] !== L) { cw['c/' + i] = mg[L]; c[i] = mg[L]; } }); c.forEach(L => { if (L) n2[L] = (n2[L] || 0) + 1; });
+  for (const L of LS) m2[mg[L]] += s.m[L] || 0;
+  for (const T of top) console.log(FN(T) + '軍：' + LS.filter(L => mg[L] === T).map(FN).join('・') + '｜' + n2[T] + 'マス｜家臣' + m2[T] + '人');
+  if (top.some(T => n2[T] >= 2500)) { console.log('2500マスをこえる軍があるので、止めます'); if (go) await api('DELETE', '/tk/s/stop.json', undefined, tok); process.exit(1); }
+  if (!go) { console.log('下見だけです（q に go と入れると本当に動かします）'); process.exit(0); }
+  const now = Date.now();
+  await api('PUT', '/tkbak/' + now + '.json', { c: c0, s, uf: Object.fromEntries(Object.entries(u).filter(([, x]) => x && x.f).map(([id, x]) => [id, x.f])) }, tok);
+  console.log('控えを tkbak/' + now + ' に残しました');
+  const w = Object.assign({}, cw);
+  for (const [id, x] of Object.entries(u)) if (x && x.f && mg[x.f] !== x.f) w['u/' + id + '/f'] = mg[x.f];
+  for (const L of LS) { w['s/n/' + L] = n2[L]; w['s/m/' + L] = m2[L]; } w['s/n/w'] = n2.w;
+  Object.assign(w, { 's/mg': mg, 's/mt': now, 's/ver': now, 's/av': now, 's/hk': Object.fromEntries(LS.map(L => [L, 0])) });
+  // 「見込み」のピン止めを外し、確定のお知らせを出す
+  const bp = (await get('/tk/bp.json')) || {};
+  for (const [room, list] of Object.entries(bp)) for (const [i, e] of Object.entries(list || {})) if (e && e.g && /見込み|三つ巴へ|23:59/.test(String(e.m))) w['bp/' + room + '/' + i] = null;
+  const pid = k => 'gm' + now.toString(36) + k + Math.random().toString(36).slice(2, 10), post = (room, k, m, pin) => { const i = pid(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/' + room + '/' + i] = e; if (pin) w['bp/' + room + '/' + i] = { t: e.t, n: e.n, m, g: true }; };
+  const SN = L => FN(L).replace(/(氏康|元就|昌幸|信長|信玄|謙信|政宗|家康|秀吉|義久|義元|道三|義景|長政|義光|義重|経久|元親|宗麟|隆信)$/, '');
+  post('all', 0, '【三つ巴、開戦】天下は三つに割れた！ ' + top.map(T => SN(T) + '軍（' + n2[T] + 'マス）').join('・') + '。ここからは軍と軍の戦い。寝返りはできない。2500マスを取った軍が天下統一！', true);
+  post('all', 1, top.map(T => SN(T) + '軍←' + LS.filter(L => mg[L] === T && L !== T).map(SN).join('・')).join('　'), true);
+  for (const T of top) post(T, 0, '【三つ巴、開戦】' + LS.filter(L => mg[L] === T && L !== T).map(SN).join('・') + 'の与力の皆の者、よくぞ来た！ 今日からこの軍議で、ともに天下を取りにいく。', true);
+  await api('PATCH', '/tk.json', w, tok);
+  console.log('まとめました：マス ' + Object.keys(cw).length + '・家臣 ' + Object.keys(w).filter(k => /^u\//.test(k)).length + '人');
+  await ensureSched(true);
+  await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('止めるのを外しました（開戦）');
+}
 else if (op === 'nodf') { await api('PATCH', '/tk/s.json', { nodf: true }, tok); console.log('寝返りの受付をやめました'); }
 else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
@@ -142,13 +193,13 @@ else if (op === 'launch' || op === 'reset') {
       const es = lg.filter(e => +e.c === i).sort((a, b) => a.t - b.t), before = es.filter(e => e.t < d), after = es.filter(e => e.t >= d);
       own[i] = before.length ? before[before.length - 1].f : after.length ? after[0].p : c[i];
     }
-    const vals = lm.c.map(i => own[i]), L = vals.every(v => v === vals[0]) && vals[0] !== 'w' ? vals[0] : '';
+    const vals = lm.c.map(i => own[i] && s && s.mg && s.mg[own[i]] ? s.mg[own[i]] : own[i]), L = vals.every(v => v === vals[0]) && vals[0] !== 'w' ? vals[0] : '';   // 三つ巴のあとは、家を軍に読みかえる
     // ほうびの1時間：自分の番のとなりの時間。この処理がおくれて、となりがもう始まっていたら、これから始まる時間のうち一番早いものにする（11/21）
     const e = L && ts && ts.h ? pickBonusHour(ts.h, L, Math.floor((now - d) / HR)) : -1;
     if (e >= 0) { w['sch/' + (d + e * HR) + '/f2'] = L; w['schd/' + d + '/x'] = { [e]: L }; }
     w['kz/' + y] = { L, e, t: now };
     const nm = lm.n[0];
-    const mine = L && ts && ts.h ? ts.h.indexOf(L) : -1, adj = e >= 0 && Math.abs(e - mine) === 1;
+    const mine = L && ts && ts.h ? ts.h.indexOf(L) : -1, adj = e >= 0 && Math.abs(e - mine) === 1 && ts.h.split(L).length === 2;
     const m = !L ? `お知らせ：きのうの決戦地「${nm}」は、24時にどの陣営も押さえきれなかった。`
       : adj ? `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${FN(L)}の早取りの番は2時間（${H(Math.min(mine, e))}〜${H(Math.max(mine, e) + 1)}）。`
         : `お知らせ：きのうの決戦地「${nm}」は${FN(L)}が守りぬいた！ ほうびに、本日の${H(e)}〜${H(e + 1)}も、${FN(L)}は2分で1マス取れる。`;
@@ -167,6 +218,13 @@ else if (op === 'launch' || op === 'reset') {
       console.log('一番槍：' + (u.n || e.n) + ' ' + top[1] + 'マス');
     } else { w['s/ich'] = { d, u: '', c: 0 }; console.log('一番槍：きのうはだれも取っていません'); }
   } else console.log('一番槍：もう出しています');
+  // ④ 与力の手柄番付（三つ巴のあと、11/24）：三つ巴になってから取ったマスを、家（h）ごとに数える。止めた人はのぞく
+  if (s && s.mt) {
+    const lg = (await get('/tk/log.json?orderBy="t"&startAt=' + s.mt)) || {}, hk = {};
+    for (const L of 'abcdefghijklmnopqrst') hk[L] = 0;
+    for (const e of Object.values(lg)) if (e && e.y === 't' && e.h && hk[e.h] !== undefined && !(ban && ban[e.u])) hk[e.h]++;
+    w['s/hk'] = hk; console.log('与力の手柄：' + JSON.stringify(hk));
+  }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
 } else if (op === 'bots') {
   // Bot らしい人を探す（11/18）。q：何点以上を対象にするか（ふだん 3）。h に go と入れたときだけ、止めて取ったマスも戻す
@@ -261,9 +319,11 @@ export function pickBonusHour(h, L, cur) {
 }
 // 時間割・米俵・決戦地を、今日から 11/30 まで作る（まだない日・足りない日だけ。すでに見えている日の時間割は変えない）
 async function ensureSched(redo) {
-  const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999), RICE = 40;
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
   const have = await get('/tk/schd.json'), now = Date.now();
+  // 三つ巴（11/24）：s/mg があれば、早取りは軍ごとに1日2時間（ほかの時間は '-'＝ふだん）。米俵は20俵
+  const mg = await get('/tk/s/mg.json'), ARM = Object.keys(mg).length ? 'abcdefghijklmnopqrst'.split('').filter(L => mg[L] === L) : null, RICE = ARM ? 20 : 40;
   const d0 = Math.floor((now + JST) / DAY) * DAY - JST, FAST = [0, 6, 12, 18];
   const slots = [...Array(24).keys()].filter(i => !FAST.includes(i));
   const castle = new Set(Object.values(MAP.castle)), LMS = MAP.lm.filter(l => l.id !== 'azuchi').map(l => l.id);
@@ -274,13 +334,14 @@ async function ensureSched(redo) {
     const keep = old && !(redo && d > now);
     if (!keep) {
       for (let tries = 0; tries < 5000; tries++) {   // くじ。前の日と同じ時間に同じ陣営が来ないようにする
-        const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
+        const L = ARM ? [...ARM, ...ARM, ...Array(slots.length - 2 * ARM.length).fill('-')] : 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
         const a = Array(24).fill('*'); slots.forEach((i, k) => a[i] = L[k]);
-        if (!prev || a.every((x, i) => x === '*' || prev[i] !== x)) { h = a.join(''); break; }
+        if (ARM && ARM.some(A => { const ix = a.flatMap((x, i) => x === A ? [i] : []); return ix[1] - ix[0] < 3; })) continue;   // 同じ軍の2回は、3時間以上あける
+        if (!prev || a.every((x, i) => x === '*' || x === '-' || prev[i] !== x)) { h = a.join(''); break; }
       }
       w['schd/' + d + '/r'] = d; w['schd/' + d + '/h'] = h; for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = { a: d + i * HR, f: h[i] };
     }
-    if (!(old && old.k && old.rc)) {   // 米俵と決戦地（11/18 から）
+    if (!(old && old.k && old.rc) || (redo && d > now)) {   // 米俵と決戦地（11/18 から）。redo のときは、まだ来ていない日も作りなおす
       let k; do { k = LMS[Math.floor(Math.random() * LMS.length)]; } while (k === prevK && LMS.length > 1);
       const rc = new Set(); while (rc.size < RICE) { const i = Math.floor(Math.random() * MAP.n); if (!castle.has(i)) rc.add(i); }
       w['schd/' + d + '/k'] = k; w['schd/' + d + '/rc'] = [...rc].join(',');

@@ -93,6 +93,10 @@ tk.k = { '.read': false, '.write': false };
     stop: { '.write': ADMIN, '.validate': 'newData.val() === true' },
     pin: { '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length <= 300' },
     ver: { '.write': ADMIN, '.validate': 'newData.isNumber()' },
+    mg: { '.write': ADMIN, $L: { '.validate': "$L.matches(/^[a-t]$/) && newData.isString() && newData.val().matches(/^[a-t]$/)" } },   // 三つ巴：家→軍（11/24）
+    mt: { '.write': ADMIN, '.validate': 'newData.isNumber()' },   // 三つ巴になった時刻
+    hk: { '.write': ADMIN, $L: { '.validate': "$L.matches(/^[a-t]$/) && newData.isNumber()" } },   // 与力の手柄（家ごとの、三つ巴のあとに取ったマスの数）
+    av: { '.write': ADMIN, '.validate': 'newData.isNumber()' },   // 画面の版（変わったら、開いたままの画面が読みなおす）
     nodf: { '.write': ADMIN, '.validate': 'newData.val() === true' },   // 寝返りの受付をやめる（三つ巴、11/24）
     pi: { '.write': ADMIN, '.validate': 'newData.isNumber() && newData.val() >= 20 && newData.val() <= 600' },   // 読みなおしの間隔（秒）
     $other: { '.validate': false },
@@ -117,7 +121,9 @@ tk.k = { '.read': false, '.write': false };
       f: {
         '.write': `${SELF} && ${OPEN} && ${NOBAN} && newData.exists() && (`
           // はじめて仕える
-          + `(!data.exists() && newData.parent().child('h').val() === newData.val() && newData.parent().child('j').val() === now && newData.parent().child('n').exists()`
+          // 三つ巴（11/24）：s/mg（家→軍）ができたら、仕えられるのは軍だけ。家（h）は、その軍に入った家ならよい
+          + `(!data.exists() && (!root.child('tk/s/mg').exists() || root.child('tk/s/mg/' + newData.val()).val() === newData.val())`
+          + ` && (newData.parent().child('h').val() === newData.val() || root.child('tk/s/mg/' + newData.parent().child('h').val()).val() === newData.val()) && newData.parent().child('j').val() === now && newData.parent().child('n').exists()`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1)`
           // 寝返る（3日に1回。マスがいちばん少ない武将のところへだけ。同じ数ならどれでもよい）
           + ` || (data.exists() && !root.child('tk/s/nodf').exists() && newData.val() !== data.val() && (!data.parent().child('d').exists() || now - data.parent().child('d').val() >= ${DEFECT}) && data.parent().child('j').isNumber() && now - data.parent().child('j').val() >= ${JOIND}`
@@ -126,7 +132,7 @@ tk.k = { '.read': false, '.write': false };
           + ` && ${T}.child('s/m/' + data.val()).val() === root.child('tk/s/m/' + data.val()).val() - 1))`,
         '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/)",
       },
-      h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val() === newData.parent().child('f').val()" },
+      h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/) && (newData.val() === newData.parent().child('f').val() || root.child('tk/s/mg/' + newData.val()).val() === newData.parent().child('f').val())" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
       t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },

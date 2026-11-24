@@ -1,0 +1,37 @@
+# 三つ巴の切りかえ（11/24 23:59）の予備：なすPのClaudeが手で動かせなかったときのため。日本時間 23:59 まで待ってから動かす
+#  もうまとまっていれば何もしない（同じグループなので、手で動かした分と重なって動くことはない）
+name: 三つ巴の切りかえ（予備）
+on:
+  schedule:
+    - cron: '20 14 24 11 *'
+    - cron: '50 14 24 11 *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tk-rules
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 道具を入れる
+        run: mkdir -p "$RUNNER_TEMP/x" && cd "$RUNNER_TEMP/x" && npm init -y >/dev/null && npm i google-auth-library@9 --silent
+      - name: 鍵を一時ファイルに書く
+        env:
+          SA: ${{ secrets.FT_BLUE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then echo "FT_BLUE_SERVICE_ACCOUNT が登録されていません"; exit 1; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+      - name: 切りかえ
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: node tools/ops.mjs merge go 2359
+      - name: 鍵を消す
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
