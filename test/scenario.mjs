@@ -87,6 +87,11 @@ export async function run(drv, log = console.log) {
   await no(defect(A, 'd', 'e', '与作', 'a'), '3日たつまで次は寝返れない');
   ok(!(await drv.read('b/a', A)).ok && (await drv.read('b/d', A)).ok, '寝返ると、前の軍議は読めず、新しい軍議が読める');
   if (drv.advance) { await drv.advance(3 * 24 * 3600 * 1000 + 1000); await yes(defect(A, 'd', 'e', '与作', 'a'), '3日たつと、また寝返れる'); }
+  // 三つ巴（11/24）：寝返りの受付をやめたら、だれも寝返れない
+  { const N2 = await drv.user('N2'); await yes(join(N2, 'b', '古参'), '古参が武田に仕える'); await age(N2); await drv.admin({ ['u/' + N2 + '/j']: 1, 's/nodf': true });
+    const weak = Object.entries((await drv.read('s/n', N2)).val || {}).filter(([L]) => L !== 'w' && L !== 'b').sort((x, y) => x[1] - y[1]);
+    await no(defect(N2, 'b', weak[0][0], '古参', 'b'), '寝返りの受付をやめたら、いちばん少ない武将へも寝返れない');
+    await drv.admin({ 's/nodf': null }); }
 
   log('5) なすPへの質問・いま開いている人');
   const ask = (u, m) => drv.update({ ['u/' + u + '/a']: SV, ['ask/' + pid()]: { t: SV, u, m, l: 'ja', x: '', n: '武田の太郎' } }, u);

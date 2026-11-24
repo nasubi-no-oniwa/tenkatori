@@ -93,6 +93,7 @@ tk.k = { '.read': false, '.write': false };
     stop: { '.write': ADMIN, '.validate': 'newData.val() === true' },
     pin: { '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length <= 300' },
     ver: { '.write': ADMIN, '.validate': 'newData.isNumber()' },
+    nodf: { '.write': ADMIN, '.validate': 'newData.val() === true' },   // 寝返りの受付をやめる（三つ巴、11/24）
     pi: { '.write': ADMIN, '.validate': 'newData.isNumber() && newData.val() >= 20 && newData.val() <= 600' },   // 読みなおしの間隔（秒）
     $other: { '.validate': false },
   };
@@ -119,7 +120,7 @@ tk.k = { '.read': false, '.write': false };
           + `(!data.exists() && newData.parent().child('h').val() === newData.val() && newData.parent().child('j').val() === now && newData.parent().child('n').exists()`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1)`
           // 寝返る（3日に1回。マスがいちばん少ない武将のところへだけ。同じ数ならどれでもよい）
-          + ` || (data.exists() && newData.val() !== data.val() && (!data.parent().child('d').exists() || now - data.parent().child('d').val() >= ${DEFECT}) && data.parent().child('j').isNumber() && now - data.parent().child('j').val() >= ${JOIND}`
+          + ` || (data.exists() && !root.child('tk/s/nodf').exists() && newData.val() !== data.val() && (!data.parent().child('d').exists() || now - data.parent().child('d').val() >= ${DEFECT}) && data.parent().child('j').isNumber() && now - data.parent().child('j').val() >= ${JOIND}`
           + ` && newData.parent().child('d').val() === now && newData.parent().child('r').val() === true && ${least}`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1`
           + ` && ${T}.child('s/m/' + data.val()).val() === root.child('tk/s/m/' + data.val()).val() - 1))`,
