@@ -15,17 +15,11 @@ else if (op === 'notice') {
   // お知らせを掲示板に書いてピン止めする（11/24）。q：data/notice/ のファイル名。all の並びのとおり上から出るよう、時刻を1秒ずつずらす
   const nt = JSON.parse(fs.readFileSync('data/notice/' + (process.argv[3] || '').trim() + '.json', 'utf8')), now = Date.now(), w = {};
   const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
-  nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
-  for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
-  // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
-  if (nt.edit) { const [b, bp] = await Promise.all([api('GET', '/tk/b/all.json', undefined, tok), api('GET', '/tk/bp/all.json', undefined, tok)].map(p => p.then(x => JSON.parse(x) || {})));
-    for (const ed of nt.edit) for (const [src, pre] of [[b, 'b/all/'], [bp, 'bp/all/']]) for (const [i, e] of Object.entries(src)) if (e && e.g && String(e.m).includes(ed.find)) w[pre + i + '/m'] = ed.m; }
-  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('書いた・ピン止めした・書きかえた：' + Object.keys(w).length + 'か所');
-}
-else if (op === 'notice') {
-  // お知らせを掲示板に書いてピン止めする（11/24）。q：data/notice/ のファイル名。all の並びのとおり上から出るよう、時刻を1秒ずつずらす
-  const nt = JSON.parse(fs.readFileSync('data/notice/' + (process.argv[3] || '').trim() + '.json', 'utf8')), now = Date.now(), w = {};
-  const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
+  // del：前に出したなすPのお知らせ（番号が del で始まるもの）を、書きこみもピン止めも消す
+  if (nt.del) for (const room of ['all', ...'abcdefghijklmnopqrst']) for (const pre of ['b', 'bp']) {
+    const v = JSON.parse(await api('GET', '/tk/' + pre + '/' + room + '.json?shallow=true', undefined, tok)) || {};
+    for (const i of Object.keys(v)) if (i.startsWith(nt.del)) w[pre + '/' + room + '/' + i] = null;
+  }
   nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
   for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
   // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
