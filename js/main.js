@@ -368,10 +368,11 @@
       if (first) bdSeen = new Set();
       if (pins !== undefined) loadBoard.pins = pins || [];
       // ピン止めと、今日の時間割のお知らせ（0時に出るもの）は、一番上に固定する
-      const top = (loadBoard.pins || []).slice().sort((x, y) => y.t - x.t).concat(sysPosts(room).filter(e => e.id[0] === 'd'));
+      // 一番上に固定：今日の早取りの時間割（画面が作る）→ 管理人のピン止め（一番槍・天下統一の決まり）。決戦地と米俵のお知らせは流れの中へ（11/25）
+      const top = sysPosts(room).filter(e => e.id === 'd' + N.dayStart()).concat((loadBoard.pins || []).slice().sort((x, y) => y.t - x.t));
       const tk = top.map(e => e.id).join();
       if (pb && (first || tk !== pb.dataset.k)) { loadBoard.pt = pins !== undefined ? Date.now() : loadBoard.pt; pb.dataset.k = tk; pb.innerHTML = ''; top.forEach(e => pb.appendChild(bdMsg(e, room, now, true))); }
-      const sys = sysPosts(room).filter(e => e.id[0] !== 'd' && !bdSeen.has(e.id));
+      const sys = sysPosts(room).filter(e => e.id !== 'd' + N.dayStart() && !bdSeen.has(e.id));
       const list = raw.filter(e => first || e.t > bdLast).concat(sys).sort((x, y) => y.t - x.t);   // 新しい順
       if (first) box.innerHTML = list.length ? '' : `<p class="note">${esc(t('bd_empty'))}</p>`; else if (list.length && box.querySelector('.note')) box.innerHTML = '';
       const frag = document.createDocumentFragment();
@@ -390,7 +391,7 @@
   async function checkEnd() {
     if (endShown || !N.ended() || scr !== 'game') return; endShown = true; refreshGlow();
     try { await N.loadState(); } catch (e) { }
-    const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.s.end && N.s.end.k === 'half'), names = win.map(TK.fname).join('・');
+    const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.endOK() && (N.s.end.k === 'day' || N.s.end.k === 'gm')), names = win.map(TK.fname).join('・');
     $('enT').textContent = half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
     $('enS').textContent = t(enKey, { name: names });
     $('enWin').hidden = !(N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');

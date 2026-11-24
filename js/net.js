@@ -161,14 +161,15 @@
     }
     return Math.max(0, Math.max(best, b) - now);
   };
-  N.ended = () => !!(N.s && N.s.end) || N.now() > TK.END;
+  N.endOK = () => !!(N.s && N.s.end && N.s.end.k !== 'half');   // 前の版の画面が書いた2500マスの印（half）では終わらない（11/25）
+  N.ended = () => N.endOK() || N.now() > TK.END;
   // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
   // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
   N.LM = M.lm || [];
   N.holder = function (lm, cells) { cells = cells || N.cells; if (!cells) return ''; const L = cells[lm.c[0]]; if (L === 'w') return ''; for (const i of lm.c) if (cells[i] !== L) return ''; return L; };
   N.holders = function (cells) { const o = {}; for (const lm of N.LM) o[lm.id] = N.holder(lm, cells); return o; };
   N.KEY = N.LM.find(l => l.id === 'azuchi') || null;        // 天下分け目の城
-  N.winners = function () { if (N.s.end && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
+  N.winners = function () { if (N.endOK() && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）
   N.weakest = function () { let mn = 1e9, w = []; for (const L of N.armies()) { const n = N.s.n[L] || 0; if (n < mn) { mn = n; w = [L]; } else if (n === mn) w.push(L); } return w; };
   N.defectWait = () => { const me = N.me; if (!me) return 0; const a = me.d ? me.d + TK.DEFECT : 0, b = me.j ? me.j + (TK.JOIND || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };
@@ -248,7 +249,6 @@
     // この一手で名所を占領した・相手の占領をくずしたときは、記録に入れる（戦況に出す）
     const lm = N.LM.find(l => l.c.includes(i));
     if (lm) { const was = N.holder(lm); if (was && was !== me.f) w['log/' + id].x = lm.id; if (lm.c.every(c => c === i || N.cells[c] === me.f)) w['log/' + id].k = lm.id; }
-    if ((N.s.n[me.f] || 0) + 1 >= TK.HALF) w['s/end'] = { f: me.f, t: SV, k: 'half' };
     await update(w);
     N.cells[i] = me.f; N.s.n[me.f] = (N.s.n[me.f] || 0) + 1; N.s.n[prev] = (N.s.n[prev] || 0) - 1;
     if (rice) { N.rg[i] = { f: me.f, t: N.now() }; N.rice[me.f] = (N.rice[me.f] || 0) + 1; }
