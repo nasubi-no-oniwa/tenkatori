@@ -11,6 +11,22 @@ const op = process.argv[2], tok = await token();
 globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
 const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
+else if (op === 'notice') {
+  // お知らせを掲示板に書いてピン止めする（11/24）。q：data/notice/ のファイル名。all の並びのとおり上から出るよう、時刻を1秒ずつずらす
+  const nt = JSON.parse(fs.readFileSync('data/notice/' + (process.argv[3] || '').trim() + '.json', 'utf8')), now = Date.now(), w = {};
+  const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
+  nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
+  for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
+  await api('PATCH', '/tk.json', w, tok); console.log('書いてピン止めしました：' + Object.keys(w).length / 2 + '件');
+}
+else if (op === 'notice') {
+  // お知らせを掲示板に書いてピン止めする（11/24）。q：data/notice/ のファイル名。all の並びのとおり上から出るよう、時刻を1秒ずつずらす
+  const nt = JSON.parse(fs.readFileSync('data/notice/' + (process.argv[3] || '').trim() + '.json', 'utf8')), now = Date.now(), w = {};
+  const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
+  nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
+  for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
+  await api('PATCH', '/tk.json', w, tok); console.log('書いてピン止めしました：' + Object.keys(w).length / 2 + '件');
+}
 else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
 else if (op === 'launch' || op === 'reset') {
