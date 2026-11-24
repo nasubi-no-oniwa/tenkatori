@@ -97,6 +97,7 @@
     lg_empty: ['まだ動きがありません', 'Nothing has happened yet', '還沒有動靜', '아직 움직임이 없습니다'],
     now: ['たったいま', 'just now', '剛剛', '방금'], min_ago: ['{n}分前', '{n}m ago', '{n}分鐘前', '{n}분 전'], hr_ago: ['{n}時間前', '{n}h ago', '{n}小時前', '{n}시간 전'], day_ago: ['{n}日前', '{n}d ago', '{n}天前', '{n}일 전'],
     df_body: ['3日に1回（仕官してから3日たってから）、マスがいちばん少ない武将のもとへ寝返れます。名前の頭に「寝返った」がつき、元の陣営の軍議は読めなくなります。', 'Once every 3 days (starting 3 days after you join) you may defect to the warlord with the fewest tiles. "Turncoat" is added to your name, and you lose access to your old side\'s council.', '每3天可以倒戈一次（加入3天後才可以），投向格子最少的武將。名字前會加上「倒戈的」，也看不到原陣營的軍議。', '3일에 한 번(섬기기 시작하고 3일이 지난 뒤부터), 칸이 가장 적은 무장에게 배신해 갈 수 있습니다. 이름 앞에 "배신한"이 붙고, 원래 진영의 군의는 읽을 수 없게 됩니다.'],
+    df_off: ['三つ巴の戦いになったため、寝返りはできなくなりました。仕えた軍で最後まで戦いぬこう。', 'Since the realm split three ways, defecting is no longer possible. Fight to the end with your army.', '天下已成三分之勢，不能再倒戈了。和你的軍一起戰到最後吧。', '삼파전이 되어 이제 배신할 수 없습니다. 섬기는 군과 끝까지 싸우자.'],
     df_to: ['寝返れる先（いちばんマスが少ない武将）', 'You may defect to (fewest tiles)', '可以倒戈的對象（格子最少的武將）', '배신해 갈 수 있는 곳 (칸이 가장 적은 무장)'],
     df_go: ['{name}に寝返る', 'Defect to {name}', '倒戈到{name}', '{name}에게 배신하다'],
     df_wait: ['次に寝返れるまで あと{t}', 'You can defect again in {t}', '距離下次能倒戈還有{t}', '다음 배신까지 {t}'],

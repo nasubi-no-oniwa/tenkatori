@@ -17,7 +17,10 @@ else if (op === 'notice') {
   const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
   nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
   for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
-  await api('PATCH', '/tk.json', w, tok); console.log('書いてピン止めしました：' + Object.keys(w).length / 2 + '件');
+  // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
+  if (nt.edit) { const [b, bp] = await Promise.all([api('GET', '/tk/b/all.json', undefined, tok), api('GET', '/tk/bp/all.json', undefined, tok)].map(p => p.then(x => JSON.parse(x) || {})));
+    for (const ed of nt.edit) for (const [src, pre] of [[b, 'b/all/'], [bp, 'bp/all/']]) for (const [i, e] of Object.entries(src)) if (e && e.g && String(e.m).includes(ed.find)) w[pre + i + '/m'] = ed.m; }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('書いた・ピン止めした・書きかえた：' + Object.keys(w).length + 'か所');
 }
 else if (op === 'notice') {
   // お知らせを掲示板に書いてピン止めする（11/24）。q：data/notice/ のファイル名。all の並びのとおり上から出るよう、時刻を1秒ずつずらす
@@ -25,8 +28,12 @@ else if (op === 'notice') {
   const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', id = k => 'gm' + now.toString(36) + k + Array.from({ length: 8 }, () => AZ[Math.floor(Math.random() * 62)]).join('');
   nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
   for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
-  await api('PATCH', '/tk.json', w, tok); console.log('書いてピン止めしました：' + Object.keys(w).length / 2 + '件');
+  // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
+  if (nt.edit) { const [b, bp] = await Promise.all([api('GET', '/tk/b/all.json', undefined, tok), api('GET', '/tk/bp/all.json', undefined, tok)].map(p => p.then(x => JSON.parse(x) || {})));
+    for (const ed of nt.edit) for (const [src, pre] of [[b, 'b/all/'], [bp, 'bp/all/']]) for (const [i, e] of Object.entries(src)) if (e && e.g && String(e.m).includes(ed.find)) w[pre + i + '/m'] = ed.m; }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('書いた・ピン止めした・書きかえた：' + Object.keys(w).length + 'か所');
 }
+else if (op === 'nodf') { await api('PATCH', '/tk/s.json', { nodf: true }, tok); console.log('寝返りの受付をやめました'); }
 else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
 else if (op === 'launch' || op === 'reset') {
