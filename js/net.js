@@ -26,7 +26,11 @@
     if (saved && saved.rt) {
       const r = await Promise.race([fetch(AUTH.ref + '?key=' + key, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(saved.rt) }), late(12000)]);
       if (r.ok) { const j = await r.json(); T.tok = j.id_token; T.exp = Date.now() + (Math.max(300, +j.expires_in || 3600) - 240) * 1000; T.uid = j.user_id; store(sk, { rt: j.refresh_token, uid: j.user_id }); return T.tok; }
-      if (r.status !== 400 && r.status !== 403) throw new Error('auth ' + r.status);
+      // 名乗りなおし（＝別人になる）は、合言葉がもう使えないとはっきり言われたときだけ（11/24）。
+      // それ以外の失敗（通信・混雑など）で別人にしてしまうと、仕官がやり直しになる。3回つづけてだめなら、あきらめて名乗りなおす
+      let msg = ''; try { msg = String(((await r.json()).error || {}).message || ''); } catch (e) { }
+      const dead = r.status === 400 && /TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN/.test(msg), bad = (saved.bad || 0) + 1;
+      if (!dead && !((r.status === 400 || r.status === 403) && bad >= 3)) { if (r.status === 400 || r.status === 403) store(sk, { rt: saved.rt, uid: saved.uid, bad }); throw new Error('auth ' + r.status); }
       store(sk, { rt: '' });
     }
     const r = await Promise.race([fetch(AUTH.up + '?key=' + key, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"returnSecureToken":true}' }), late(12000)]);
@@ -172,30 +176,37 @@
   // ---------- 読む ----------
   let stateAt = 0;
   N.loadState = async function () { const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); stateAt = Date.now(); return N.s; };
-  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; return N.me; };
+  N.meOK = false;   // 「仕えているか」を、データベースで確かめられたか（読めなかっただけのときに、診断へ戻さないため。11/24）
+  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); N.meOK = true; return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; N.meOK = true; return N.me; };
   function applyLog(list) { for (const e of list) { if (e.y === 't' && e.c != null && N.cells) N.cells[+e.c] = e.f; if (e.t > N.lastT) N.lastT = e.t; } }
-  function saveCells() { store('tk_c', { c: N.cells.join(''), t: N.lastT, ver: N.s.ver || 0, at: Date.now() }); }
+  // full：地図をまるごと読んだ時刻。覚えた地図は、6時間に1回はまるごと読みなおす（ずれたままにしない。11/24）
+  let fullAt = 0; const FULLMS = 6 * 3600 * 1000;
+  function saveCells() { store('tk_c', { c: N.cells.join(''), t: N.lastT, ver: N.s.ver || 0, at: Date.now(), full: fullAt }); }
   // 地図を読む。戻り値：前に見たあとに起きたこと（記録の並び。はじめてなら空）
   N.loadCells = async function () {
     if (N.fake) { N.cells = FK.cells(); N.lastT = Date.now(); return []; }
     const cache = store('tk_c');
-    if (cache && typeof cache.c === 'string' && cache.c.length === NC && cache.ver === (N.s.ver || 0) && Date.now() - cache.at < 36 * 3600 * 1000) {
+    if (cache && typeof cache.c === 'string' && cache.c.length === NC && cache.ver === (N.s.ver || 0) && Date.now() - cache.at < 36 * 3600 * 1000 && cache.full && Date.now() - cache.full < FULLMS) {
       try {
         const v = await rest('log', { orderBy: 't', startAt: cache.t + 1, limitToLast: 700 }); const list = sorted(v);
-        if (list.length < 700) { N.cells = cache.c.split(''); N.lastT = cache.t; applyLog(list); saveCells(); return list; }
+        if (list.length < 700) { N.cells = cache.c.split(''); N.lastT = cache.t; fullAt = cache.full; applyLog(list); saveCells(); return list; }
       } catch (e) { }
     }
     const last = sorted(await rest('log', { orderBy: 't', limitToLast: 1 }));
     const c = await rest('c');
     const arr = new Array(NC); for (let i = 0; i < NC; i++) arr[i] = (c && c[i]) || M.own[i];
-    N.cells = arr; N.lastT = last.length ? last[0].t - 1 : 0; saveCells(); return [];
+    N.cells = arr; N.lastT = last.length ? last[0].t - 1 : 0; fullAt = Date.now(); saveCells(); return [];
   };
+  // 地図をまるごと読みなおす（取れないマスがあったとき・長く閉じていたとき）
+  N.fullCells = async function () { if (N.fake) return; store('tk_c', null); await N.loadCells(); };
   // 読みなおし（30秒ごと）：増えた記録だけ。戻り値：新しい記録
   N.poll = async function () {
     if (!N.sched[N.dayStart()]) N.loadSched().catch(() => { }); else N.loadRice().catch(() => { });
     if (N.fake) return FK.poll();
     const ver = N.s.ver || 0;
     const list = sorted(await rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 }));
+    // 400件ちょうど返ってきたら、その前にも読めていない記録がある（スマホを長く寝かせたあとなど）。つぎはぎにせず、まるごと読みなおす（11/24）
+    if (list.length >= 400 || (fullAt && Date.now() - fullAt > FULLMS)) { await N.loadState().catch(() => { }); await N.fullCells(); return [{ reload: true }]; }
     if (list.length || Date.now() - stateAt > 300000) { const s = await N.loadState(); if ((s.ver || 0) !== ver) { store('tk_c', null); await N.loadCells(); return [{ reload: true }]; } }
     applyLog(list); if (list.length) saveCells(); return list;
   };

@@ -11,6 +11,7 @@ const op = process.argv[2], tok = await token();
 globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
 const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
+else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
 else if (op === 'launch' || op === 'reset') {
   const d = build(JSON.parse(fs.readFileSync('data/map.json', 'utf8'))); d.s.ver = Date.now(); if (op === 'reset') d.s.stop = true;   // ver を変えると、みんなのスマホに残った古い地図も読みなおされる

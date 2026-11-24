@@ -233,7 +233,11 @@
             if (!done) { await N.lose(i).catch(() => { }); done = true; MP.flash(i, '#8a8d93', 1300); updateHud(); refreshGlow(); toast(t('clash_lose', { army: foe ? TK.army(foe) : '' }), 5000); if (TK.fx) { const p = MP.screenOf(i); TK.fx('dark', p.x, p.y + 30); } }
           }
         } catch (e3) { }
-        if (!done) toast(t('tk_fail'));
+        if (!done) {
+          toast(t('tk_fail'));
+          // 覚えていた地図がずれていて取れないこともあるので、地図をまるごと読みなおす（1分に1回まで。11/24）
+          if (!(doTake.fullAt > Date.now() - 60000)) { doTake.fullAt = Date.now(); N.fullCells().then(() => { MP.repaint(); refreshGlow(); updateHud(); checkLM(false); }).catch(() => { }); }
+        }
       }
       else if (e && e.why) { showCell(i); } else toast(t('net_err'));
     }
@@ -463,7 +467,20 @@
     B.scrollTop = 0; B.scrollLeft = 0;
   }
   // ---------- ボタン ----------
-  $('bStart').onclick = () => { if (N.me || N.ended()) enterGame(); else startQuiz(); };
+  // 診断へ進んでよいか：true＝まだ仕えていない／false＝仕えている／null＝確かめられなかった（通信のせいで診断へ戻さない。11/24）
+  async function needQuiz() {
+    if (N.me) return false; if (N.fake || N.meOK || !(N.store('tk_auth') || {}).rt) return true;
+    try { await Promise.race([N.loadMe(), sleep(10000).then(() => { throw new Error('timeout'); })]); } catch (e) { return null; }
+    return !N.me;
+  }
+  let startBusy = false;
+  $('bStart').onclick = async () => {
+    if (N.me || N.ended()) return enterGame(); if (startBusy) return; startBusy = true;
+    $('loading').textContent = t('loading'); $('loading').classList.remove('off');
+    const r = await needQuiz(); $('loading').classList.add('off'); startBusy = false;
+    if (r === null) { toast(t('net_err'), 5000); return; }
+    if (r) startQuiz(); else { renderTitle(); enterGame(); }
+  };
   $('keyBar').onclick = () => { if (N.KEY) MP.focusLM(N.KEY); };
   N.onRice = k => { const L = N.me.f; toast(t('tk_rice_own', { k, n: N.rice[L] || 0, m: N.morale(L), w: Math.round(N.baseWait(L) / 60000) }), 4500); MP.kick(); updateHud(); refreshGlow(); };
   $('fastBar').onclick = () => openPanel('sched');
@@ -473,7 +490,7 @@
   $('rvJoin').onclick = join; $('rvName').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.target.blur(); join(); } });
   $('rvX').onclick = () => postX(quizText(rvF)); $('rvXi').onclick = async () => postImg(await quizCard(rvF), quizText(rvF), $('rvMsg'), 'tenkatori_' + rvF.L);
   $('rvGo').onclick = () => enterGame(true);
-  $('hudMe').onclick = () => { if (N.me) MP.focusFaction(N.me.f); else if (!N.ended() && !N.s.stop) startQuiz(); };
+  $('hudMe').onclick = async () => { if (N.me) return MP.focusFaction(N.me.f); if (N.ended() || N.s.stop) return; const r = await needQuiz(); if (r === null) toast(t('net_err'), 5000); else if (r) startQuiz(); else { updateHud(); refreshGlow(); MP.focusFaction(N.me.f); } };
   const setLM = on => { MP.showLM = on; $('zLm').className = on ? '' : 'off'; N.store('tk_lmui', on ? 1 : 0); MP.kick(); };
   $('zLm').onclick = () => { setLM(!MP.showLM); toast(TK.L(MP.showLM ? ['名所の札を出しました', 'Site labels on', '已顯示名所標示', '명소 표시를 켰습니다'] : ['名所の札をかくしました（金のふちは残ります）', 'Site labels off (gold outlines stay)', '已隱藏名所標示（金框保留）', '명소 표시를 껐습니다 (금색 테두리는 남습니다)']), 1800); };
   if (N.store('tk_lmui') === 0) setLM(false);
