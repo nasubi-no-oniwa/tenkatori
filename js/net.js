@@ -170,12 +170,21 @@
   N.KEY = N.LM.find(l => l.id === 'azuchi') || null;        // 天下分け目の城
   N.winners = function () { if (N.s.end && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）
-  N.weakest = function () { let mn = 1e9, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n < mn) { mn = n; w = [f.L]; } else if (n === mn) w.push(f.L); } return w; };
+  N.weakest = function () { let mn = 1e9, w = []; for (const L of N.armies()) { const n = N.s.n[L] || 0; if (n < mn) { mn = n; w = [L]; } else if (n === mn) w.push(L); } return w; };
   N.defectWait = () => { const me = N.me; if (!me) return 0; const a = me.d ? me.d + TK.DEFECT : 0, b = me.j ? me.j + (TK.JOIND || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };
 
   // ---------- 読む ----------
   let stateAt = 0;
-  N.loadState = async function () { const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); stateAt = Date.now(); return N.s; };
+  N.loadState = async function () {
+    const s = N.fake ? FK.state() : await rest('s'); N.s = Object.assign({ n: {}, m: {}, ver: 0 }, s || {}); stateAt = Date.now();
+    // 新しい版の画面が出たら（av が変わったら）、開いたままの画面を1回だけ読みなおす（三つ巴の切りかえなど、11/24）
+    if (!N.fake) { const av = +N.s.av || 0; if (N.av0 === undefined) N.av0 = av; else if (av !== N.av0) { let done = ''; try { done = sessionStorage.getItem('tk_av'); sessionStorage.setItem('tk_av', String(av)); } catch (e) { } if (done !== String(av) && G.location && G.location.reload) G.location.reload(); } }
+    return N.s;
+  };
+  // ---------- 三つ巴（11/24）：s/mg＝家→軍。まとまったあとは、陣営（f）は軍、家（h）は元の家 ----------
+  N.mg = () => (N.s && N.s.mg) || null;
+  N.armyOf = L => { const g = N.mg(); return g && g[L] ? g[L] : L; };
+  N.armies = () => { const g = N.mg(); return g ? TK.F.map(f => f.L).filter(L => g[L] === L) : TK.F.map(f => f.L); };
   N.meOK = false;   // 「仕えているか」を、データベースで確かめられたか（読めなかっただけのときに、診断へ戻さないため。11/24）
   N.loadMe = async function () { if (N.fake) { N.me = FK.me(); N.meOK = true; return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; N.meOK = true; return N.me; };
   function applyLog(list) { for (const e of list) { if (e.y === 't' && e.c != null && N.cells) N.cells[+e.c] = e.f; if (e.t > N.lastT) N.lastT = e.t; } }
@@ -222,8 +231,8 @@
   N.join = async function (L, name) {
     name = N.cleanName(name); if (!name) throw new Error('name');
     if (!N.fake) await N.token(false);
-    const u = N.uid();
-    await update({ ['u/' + u + '/f']: L, ['u/' + u + '/h']: L, ['u/' + u + '/n']: name, ['u/' + u + '/j']: SV, ['s/m/' + L]: INC(1) });
+    const u = N.uid(), A = N.armyOf(L);   // 三つ巴のあとは、家（L）が入った軍（A）に仕える
+    await update({ ['u/' + u + '/f']: A, ['u/' + u + '/h']: L, ['u/' + u + '/n']: name, ['u/' + u + '/j']: SV, ['s/m/' + A]: INC(1) });
     await N.loadMe(); return N.me;
   };
   N.take = async function (i) {
@@ -291,10 +300,19 @@
       if (FK.c) return; const sv = store('tk_fake'); FK.c = (sv && sv.c && sv.c.length === NC) ? sv.c.split('') : M.own.split('');
       FK.n = { w: 0 }; FK.m = {}; for (const f of TK.F) { FK.n[f.L] = 0; FK.m[f.L] = 20 + (f.i * 37) % 60; } for (const L of FK.c) FK.n[L]++;
       FK.u = (sv && sv.u) || null; FK.end = null;
+      // ?mg=1：三つ巴のあとを試す（マスの多い上位3家に、城の近い家をまとめる）
+      if (/[?&]mg=1/.test(location.search)) {
+        const top = TK.F.map(f => f.L).sort((a, b) => FK.n[b] - FK.n[a]).slice(0, 3), xy = L => [M.cells[2 * M.castle[L]], M.cells[2 * M.castle[L] + 1]];
+        FK.mg = {}; for (const f of TK.F) { const [x, y] = xy(f.L); FK.mg[f.L] = top.includes(f.L) ? f.L : top.slice().sort((a, b) => { const [ax, ay] = xy(a), [bx, by] = xy(b); return Math.hypot(ax - x, ay - y) - Math.hypot(bx - x, by - y); })[0]; }
+        FK.c = FK.c.map(L => L === 'w' ? L : FK.mg[L]); FK.n = { w: 0 }; for (const f of TK.F) FK.n[f.L] = 0; for (const L of FK.c) FK.n[L]++;
+        const m2 = {}; for (const f of TK.F) m2[f.L] = 0; for (const f of TK.F) m2[FK.mg[f.L]] += FK.m[f.L]; FK.m = m2;
+        FK.hk = {}; for (const f of TK.F) FK.hk[f.L] = (f.i * 13) % 40;
+        if (FK.u && FK.mg[FK.u.f] !== FK.u.f) FK.u.f = FK.mg[FK.u.f];
+      }
       const warm = +(new URLSearchParams(location.search).get('warm') || 0); for (let i = 0; i < warm; i++) FK.bot(true);
     },
     save() { store('tk_fake', { c: FK.c.join(''), u: FK.u }); },
-    state() { FK.init(); return { n: Object.assign({}, FK.n), m: Object.assign({}, FK.m), ver: 0, end: FK.end, pin: '' }; },
+    state() { FK.init(); return Object.assign({ n: Object.assign({}, FK.n), m: Object.assign({}, FK.m), ver: 0, end: FK.end, pin: '' }, FK.mg ? { mg: FK.mg, hk: FK.hk, mt: 1, nodf: true } : {}); },
     me() { FK.init(); return FK.u ? Object.assign({}, FK.u) : null; },
     cells() { FK.init(); return FK.c.slice(); },
     names: ['与作', '権兵衛', 'おりん', '小太郎', '弥助', 'お市', '半蔵', '佐助', 'たぬき', '茶々', '五右衛門', 'かえで'],

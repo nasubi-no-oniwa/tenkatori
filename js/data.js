@@ -140,9 +140,10 @@
   };
   // 偏りをならす（11/18）：家臣の数 m がわかっていれば、答えに近い上位 TK.PICKN 人の中から、家臣のいちばん少ない武将にする
   TK.PICKN = 3;
-  TK.judge = function (ans, m) {
+  // 三つ巴（11/24）：mg（家→軍）があれば、その家が入る軍の家臣の数でならす
+  TK.judge = function (ans, m, mg) {
     const r = TK.rank(ans); if (!m) return r[0];
-    return r.slice(0, TK.PICKN).map((i, k) => [i, +(m[F[i].L]) || 0, k]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2]))[0][0];
+    return r.slice(0, TK.PICKN).map((i, k) => [i, +(m[mg && mg[F[i].L] ? mg[F[i].L] : F[i].L]) || 0, k]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2]))[0][0];
   };
   // ---------- 決まりの数字 ----------
   TK.JOINT = 1 * 3600 * 1000;                    // 仕官してから最初の1マスまで（作り直し対策、11/17）

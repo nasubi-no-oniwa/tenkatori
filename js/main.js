@@ -55,8 +55,8 @@
   }
   let toastT = 0;
   function toast(m, ms) { const e = $('toast'); e.textContent = m; e.hidden = false; if (G.gsap) gsap.fromTo(e, { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.25 }); clearTimeout(toastT); toastT = setTimeout(() => { e.hidden = true; }, ms || 3200); }
-  const rankOf = L => { const n = N.s.n[L] || 0; let r = 1; for (const f of TK.F) if ((N.s.n[f.L] || 0) > n) r++; return r; };
-  const sortedF = () => TK.F.slice().sort((a, b) => (N.s.n[b.L] || 0) - (N.s.n[a.L] || 0) || a.i - b.i);
+  const rankOf = L => { const n = N.s.n[L] || 0; let r = 1; for (const A of N.armies()) if ((N.s.n[A] || 0) > n) r++; return r; };
+  const sortedF = () => N.armies().map(L => TK.FI[L]).sort((a, b) => (N.s.n[b.L] || 0) - (N.s.n[a.L] || 0) || a.i - b.i);
   const drawCrest = (cv, f) => { const c = cv.getContext('2d'); c.clearRect(0, 0, cv.width, cv.height); c.drawImage(TK.crest(f, cv.width), 0, 0); };
 
   // ---------- 名所：占領の知らせ（テロップ） ----------
@@ -116,13 +116,13 @@
     q.a.forEach((a, k) => { const b = document.createElement('button'); b.className = 'qa'; b.innerHTML = '<i>' + '一二三四'[k] + '</i><span>' + esc(TK.L(a[0])) + '</span>'; b.onclick = () => pick(k); box.appendChild(b); });
     if (G.gsap) { gsap.fromTo('#qText', { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: 0.35, ease: 'power2.out' }); gsap.fromTo('.qa', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.06, delay: 0.08, ease: 'power2.out' }); }
   }
-  function pick(k) { ans[qi] = k; if (qi < 9) { qi++; renderQ(); } else { $('qBar').style.width = '100%'; const fi = TK.judge(ans, N.s && N.s.m); N.store('tk_quiz', { a: ans, f: fi }); ev('quiz_done', { warlord: TK.F[fi].L }); showReveal(TK.F[fi], 'new'); } }
+  function pick(k) { ans[qi] = k; if (qi < 9) { qi++; renderQ(); } else { $('qBar').style.width = '100%'; const fi = TK.judge(ans, N.s && N.s.m, N.mg()); N.store('tk_quiz', { a: ans, f: fi }); ev('quiz_done', { warlord: TK.F[fi].L }); showReveal(TK.F[fi], 'new'); } }
 
   // ---------- 仕える武将が決まる場面（mode：new＝はじめて、defect＝寝返ったあと） ----------
   let rvF = null, rvMode = 'new';
   function showReveal(f, mode) {
     rvF = f; rvMode = mode; show('reveal'); $('reveal').scrollTop = 0; scene('banner', { f });
-    $('rvType').textContent = '「' + TK.L(f.type) + '」'; $('rvServe').textContent = mode === 'defect' ? t('df_done', { name: TK.fname(f) }) : t('rv_serve', { name: TK.fname(f) });
+    $('rvType').textContent = '「' + TK.L(f.type) + '」'; $('rvServe').textContent = mode === 'defect' ? t('df_done', { name: TK.fname(f) }) : N.armyOf(f.L) !== f.L ? t('rv_serve_mg', { name: TK.fname(f), army: TK.army(TK.FI[N.armyOf(f.L)]) }) : t('rv_serve', { name: TK.fname(f) });
     $('rvDesc').textContent = TK.L(f.desc); $('rvCastle').textContent = TK.L(f.castle) + '　' + TK.kuni(M.prov[M.castle[f.L]]);
     $('rvHome').textContent = TK.lang() === 'en' ? '' : TK.L(f.home) + (TK.lang() === 'ja' ? 'の' : TK.lang() === 'zh' ? '的' : '의');
     $('rvForm').hidden = mode !== 'new'; $('rvGo').hidden = mode === 'new'; $('rvErr').textContent = ''; $('rvMsg').textContent = '';
@@ -163,16 +163,16 @@
     const d = N.dayStart(), hs = N.sched[d], now = N.now(), out = []; if (!hs) return out;
     const nm = L => TK.fname(TK.FI[L]);
     if (room === 'all') {
-      const list = []; for (let i = 0; i < 24; i++) if (hs[i] !== '*') list.push(fsH(i) + ' ' + nm(hs[i]));
+      const list = []; for (let i = 0; i < 24; i++) if (hs[i] !== '*' && TK.FI[hs[i]]) list.push(fsH(i) + ' ' + (N.mg() ? TK.army(TK.FI[hs[i]]) : nm(hs[i])));
       out.push({ id: 'd' + d, t: d, m: t('sy_day', { list: list.join('、') }) });
       const dd = N.day[d], ks = dd && dd.k && N.LM.find(l => l.id === dd.k);
       if (ks) out.push({ id: 'dk' + d, t: d, m: t('sy_kessen', { name: TK.L(ks.n) }) });
       if (dd && dd.rc && dd.rc.size) out.push({ id: 'dr' + d, t: d, m: t('sy_rice', { n: dd.rc.size }) });
       for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000) continue; if (hs[i] === '*') out.push({ id: 'h' + a, t: a + 1, m: t('sy_hall', { b: fsH(i + 1) }) }); }   // 陣営ごとの番（2分）は、その陣営の軍議だけに出す
     } else {
-      const i = hs.indexOf(room); if (i < 0) return out; const a = d + i * 3600000;
-      out.push({ id: 'd' + d, t: d, m: t('sy_fday', { a: fsH(i), b: fsH(i + 1) }) });
-      if (a <= now && now < a + 3600000) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) });
+      const ix = []; for (let i = 0; i < 24; i++) if (hs[i] === room) ix.push(i); if (!ix.length) return out;   // 三つ巴のあとは1日2回
+      out.push({ id: 'd' + d, t: d, m: ix.length === 1 ? t('sy_fday', { a: fsH(ix[0]), b: fsH(ix[0] + 1) }) : t('sy_fday2', { list: ix.map(i => fsH(i) + '〜' + fsH(i + 1)).join('、') }) });
+      for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) }); }
     }
     return out.filter(e => e.t <= now).map(e => Object.assign(e, { g: true, sys: true }));
   }
@@ -297,6 +297,8 @@
       else for (let i = 0; i < 24; i++) {
         const L = hs[i], a = d + i * 3600000, f = TK.FI[L], cur = now >= a && now < a + 3600000, past = now >= a + 3600000;
         const x2 = ((N.day[d] || {}).x || {})[i], f2 = x2 && TK.FI[x2];
+        if (L === '-' && f2) { h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && me.f === x2 ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b><canvas width="60" height="60" data-c="${x2}"></canvas><span>${esc(TK.army(f2))}<br><small>${esc(t('fs_x', { name: TK.fname(f2) }))}</small></span><em>${esc(t('fs_2'))}</em></div>`; continue; }
+        if (L === '-') { h += `<div class="fsRow nr${cur ? ' cur' : ''}${past ? ' past' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b><i>・</i><span>${esc(t('fs_norm'))}</span><em>${esc(t('fs_60'))}</em></div>`; continue; }
         h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && (me.f === L || me.f === x2) ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b>${f ? `<canvas width="60" height="60" data-c="${L}"></canvas><span>${esc(TK.fname(f))}${f2 ? '<br><small>' + esc(t('fs_x', { name: TK.fname(f2) })) + '</small>' : ''}</span><em>${esc(t('fs_2'))}</em>` : `<i>⚡</i><span>${esc(t('fs_all'))}</span><em>${esc(t('fs_5'))}</em>`}</div>`;
       }
       B.innerHTML = h; B.querySelectorAll('canvas[data-c]').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
@@ -309,7 +311,11 @@
     } else if (kind === 'power') {
       const list = sortedF(), top = N.s.n[list[0].L] || 0;
       let h = `<div class="pwTop"><span>${esc(t('pw_half'))}</span><span>${top} / ${TK.HALF}</span></div><div class="pwBar"><i style="width:${Math.min(100, top / TK.HALF * 100).toFixed(1)}%;background:${list[0].col}"></i></div><div class="pwTop"><span>${esc(N.ended() ? t('t_ended') : t('t_until', { t: TK.dur(TK.END - N.now()) }))}</span><span>${esc(t('pw_white', { n: N.s.n.w || 0 }))}</span></div>`;
-      list.forEach((f, k) => { const n = N.s.n[f.L] || 0; h += `<div class="pw${me && me.f === f.L ? ' me' : ''}" data-l="${f.L}"><span class="r">${rankOf(f.L)}</span><canvas width="90" height="90" data-c="${f.L}"></canvas><div class="nm">${esc(TK.fname(f))}<small>${esc(t('pw_members', { n: N.s.m[f.L] || 0 }))}${N.riceDay === N.dayStart() ? '・' + esc(t('hud_rice', { n: N.rice[f.L] || 0, m: N.morale(f.L) })) : ''}</small><div class="bar"><i style="width:${Math.min(100, n / Math.max(1, top) * 100).toFixed(1)}%;background:${f.col}"></i></div></div><span class="n">${n}<small>${esc(t('cells', { n: '' }).trim())}</small></span></div>`; });
+      list.forEach((f, k) => { const n = N.s.n[f.L] || 0; h += `<div class="pw${me && me.f === f.L ? ' me' : ''}" data-l="${f.L}"><span class="r">${rankOf(f.L)}</span><canvas width="90" height="90" data-c="${f.L}"></canvas><div class="nm">${esc(N.mg() ? TK.army(f) : TK.fname(f))}<small>${N.mg() ? esc(t('pw_with', { list: TK.F.filter(x => N.mg()[x.L] === f.L && x.L !== f.L).map(x => TK.fname(x)).join('・') })) + '<br>' : ''}${esc(t('pw_members', { n: N.s.m[f.L] || 0 }))}${N.riceDay === N.dayStart() ? '・' + esc(t('hud_rice', { n: N.rice[f.L] || 0, m: N.morale(f.L) })) : ''}</small><div class="bar"><i style="width:${Math.min(100, n / Math.max(1, top) * 100).toFixed(1)}%;background:${f.col}"></i></div></div><span class="n">${n}<small>${esc(t('cells', { n: '' }).trim())}</small></span></div>`; });
+      // 三つ巴（11/24）：与力の手柄番付（まとまったあとに取ったマスを、家ごとに数える。1時間ごと）
+      if (N.mg()) { const g = N.mg(), hk = N.s.hk || {}, ys = TK.F.filter(f => g[f.L] && g[f.L] !== f.L).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0) || a.i - b.i);
+        h += `<h3 class="pwH">${esc(t('pw_yoriki'))}</h3><p class="note">${esc(t('pw_yoriki_n'))}</p>`;
+        ys.forEach((f, k) => { h += `<div class="pw yr${me && me.h === f.L ? ' me' : ''}" data-l="${g[f.L]}"><span class="r">${k + 1}</span><canvas width="90" height="90" data-c="${f.L}"></canvas><div class="nm">${esc(TK.fname(f))}<small>${esc(TK.army(TK.FI[g[f.L]]))}</small></div><span class="n">${hk[f.L] || 0}<small>${esc(t('cells', { n: '' }).trim())}</small></span></div>`; }); }
       B.innerHTML = h; B.querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c])); B.querySelectorAll('.pw').forEach(r => r.onclick = () => { closePanel(); MP.focusFaction(r.dataset.l); });
     } else if (kind === 'board') {
       T.textContent = t('nav_board'); const rooms = me ? [[me.f, t('bd_mine', { name: TK.fname(TK.FI[me.f]) })], ['all', t('bd_all')]] : [['all', t('bd_all')]];
@@ -337,7 +343,7 @@
       T.textContent = t('nav_more'); const items = [['mr_me', () => { closePanel(); if (N.me) MP.focusFaction(N.me.f); }, !!me], ['mr_fit', () => { closePanel(); MP.fit(); }, true], ['how', () => openPanel('how'), true], ['mr_share', shareState, true], ['mr_lang', () => openPanel('lang'), true], ['askbtn', () => openPanel('ask'), true], ['mr_title', () => { closePanel(); show('title'); scene('title'); renderTitle(); }, true], ['mr_home', () => { location.href = 'https://nasubi-no-oniwa.github.io/'; }, true]];
       const d = document.createElement('div'); d.className = 'menu'; for (const [k, fn, on] of items) { if (!on) continue; const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = t(k); b.onclick = fn; d.appendChild(b); } B.appendChild(d); B.insertAdjacentHTML('beforeend', '<p class="note" id="mrMsg" style="margin-top:10px"></p>');
     } else if (kind === 'how') {
-      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + [1, 2, 9, 10, 8, 3, 4, 7, 5, 6].map(i => '<li>' + esc(t(i === 5 && N.s.nodf ? 'df_off' : 'how' + i)) + '</li>').join('') + '</ol>';
+      T.textContent = t('how'); B.innerHTML = '<ol class="how">' + (N.mg() ? [1, 11, 2, 9, 10, 8, 3, 4, 7, 5, 6] : [1, 2, 9, 10, 8, 3, 4, 7, 5, 6]).map(i => '<li>' + esc(t(i === 5 && N.s.nodf ? 'df_off' : 'how' + i, { n: N.mg() ? 20 : 40 })) + '</li>').join('') + '</ol>';
     } else if (kind === 'lang') {
       T.textContent = '言語 / Language'; const d = document.createElement('div'); d.className = 'langs'; [['ja', '日本語'], ['en', 'English'], ['zh', '繁體中文'], ['ko', '한국어']].forEach(([l, nm]) => { const b = document.createElement('button'); b.className = 'btn sm' + (TK.lang() === l ? ' main' : ''); b.textContent = nm; b.onclick = () => { TK.setLang(l); applyLang(); closePanel(); }; d.appendChild(b); }); B.appendChild(d);
     } else if (kind === 'ask') {
@@ -388,7 +394,8 @@
     $('enT').textContent = half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
     $('enS').textContent = t(enKey, { name: names });
     $('enWin').hidden = !(N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
-    $('enList').innerHTML = sortedF().slice(0, 5).map(x => `<div class="pw"><span class="r">${rankOf(x.L)}</span><canvas width="90" height="90" data-c="${x.L}"></canvas><div class="nm">${esc(TK.fname(x))}</div><span class="n">${N.s.n[x.L] || 0}</span></div>`).join(''); $('enList').querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
+    const g = N.mg(), hk = N.s.hk || {}, best = g ? TK.F.filter(x => g[x.L] === f.L && x.L !== f.L && (hk[x.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
+    $('enList').innerHTML = (best ? `<p class="enYr">${esc(t('en_yoriki', { name: TK.fname(best), n: hk[best.L] }))}</p>` : '') + sortedF().slice(0, 5).map(x => `<div class="pw"><span class="r">${rankOf(x.L)}</span><canvas width="90" height="90" data-c="${x.L}"></canvas><div class="nm">${esc(TK.fname(x))}</div><span class="n">${N.s.n[x.L] || 0}</span></div>`).join(''); $('enList').querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
     $('taken').hidden = true; closePanel(); showCell(-1); $('endscr').hidden = false; $('map').hidden = true; $('game').hidden = true; scene('banner', { f, gold: 1 });
     if (G.gsap) { gsap.fromTo('#enT', { opacity: 0, scale: 2.2 }, { opacity: 1, scale: 1, duration: 0.9, ease: 'power4.out' }); gsap.fromTo('#enS', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.7 }); gsap.fromTo('.enbox', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, delay: 1.2 }); }
     if (TK.fireworks) TK.fireworks(6);
