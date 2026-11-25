@@ -188,6 +188,10 @@
    }
   }
  },
+ "rp": {
+  ".read": true,
+  ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"
+ },
  "rice": {
   ".read": true,
   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
@@ -262,7 +266,7 @@
    ],
    ".validate": "$room.matches(/^(all|[a-t])$/)",
    "$id": {
-    ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (auth != null && !root.child('tk/ban/' + auth.uid).exists() && !data.exists() && newData.exists() && !newData.child('g').exists() && newData.child('u').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().parent().child('u/' + auth.uid).child('bt').val() === now && root.child('tk/u/' + auth.uid).child('f').exists() && ($room === 'all' || root.child('tk/u/' + auth.uid).child('f').val() === $room) && newData.child('n').val() === root.child('tk/u/' + auth.uid).child('n').val() && newData.child('h').val() === root.child('tk/u/' + auth.uid).child('h').val() && newData.child('f').val() === root.child('tk/u/' + auth.uid).child('f').val() && (newData.child('r').val() === true) === (root.child('tk/u/' + auth.uid).child('r').val() === true))",
+    ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (auth != null && !root.child('tk/ban/' + auth.uid).exists() && (now <= 1796050799999 + 86400000 && !(root.child('tk/s/end').exists() && root.child('tk/s/end/k').val() !== 'half' && now > root.child('tk/s/end/t').val() + 86400000)) && !data.exists() && newData.exists() && !newData.child('g').exists() && newData.child('u').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().parent().child('u/' + auth.uid).child('bt').val() === now && root.child('tk/u/' + auth.uid).child('f').exists() && ($room === 'all' || root.child('tk/u/' + auth.uid).child('f').val() === $room) && newData.child('n').val() === root.child('tk/u/' + auth.uid).child('n').val() && newData.child('h').val() === root.child('tk/u/' + auth.uid).child('h').val() && newData.child('f').val() === root.child('tk/u/' + auth.uid).child('f').val() && (newData.child('r').val() === true) === (root.child('tk/u/' + auth.uid).child('r').val() === true))",
     ".validate": "$id.matches(/^[A-Za-z0-9_-]{8,30}$/) && newData.hasChildren(['t', 'u', 'n', 'm'])",
     "t": {
      ".validate": "newData.isNumber()"

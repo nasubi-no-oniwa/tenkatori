@@ -267,5 +267,10 @@ export async function run(drv, log = console.log) {
   ok(((await drv.read('s/end', E)).val || {}).k === 'day', '24時の判定で、天下人は武田');
   { const F2 = await drv.user('F2'); await no(join(F2, 'c', '五郎'), '天下統一のあとは仕えられない'); }
   await yes(ask(E, '楽しかった'), '終わったあとも質問は送れる');
+  // 掲示板の封鎖（11/25）：天下統一から24時間たったら書けない。24時間たつまでは書ける
+  await no(post(E, 'all', { n: '四郎', h: 'c', f: 'c', m: 'おつかれさま' }), '天下統一から24時間たったら、掲示板に書けない');
+  await drv.admin({ 's/end/t': SV });
+  await yes(post(E, 'all', { n: '四郎', h: 'c', f: 'c', m: 'おつかれさま' }), '天下統一から24時間たつまでは、掲示板に書ける');
+  ok((await drv.read('b/all', E)).ok, '封鎖のあとも読める');
   return { pass, fail };
 }

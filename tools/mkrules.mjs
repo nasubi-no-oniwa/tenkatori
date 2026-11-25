@@ -23,6 +23,7 @@ const WAIT = 1 * 3600 * 1000, DEFECT = 3 * 24 * 3600 * 1000, HALF = 2500, CLASH 
 const LET = 'abcdefghijklmnopqrst'.split('');
 const ADMIN = "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())";
 // 天下統一（11/25）：毎日24時に4000マス以上の軍（毎日の処理が s/end に k:'day' で書く）。前の版の画面が書く k:'half'（2500マス）では止めない
+const BOARDOPEN = `(now <= ${END} + 86400000 && !(root.child('tk/s/end').exists() && root.child('tk/s/end/k').val() !== 'half' && now > root.child('tk/s/end/t').val() + 86400000))`;
 const OPEN = `((!root.child('tk/s/end').exists() || root.child('tk/s/end/k').val() === 'half') && !root.child('tk/s/stop').exists() && now <= ${END})`;
 const ME = "root.child('tk/u/' + auth.uid)";
 const NOBAN = "!root.child('tk/ban/' + auth.uid).exists()";
@@ -172,6 +173,7 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
       + ` && ${U}.child('rk').val() === $c && ${ME}.child('f').exists() && newData.child('f').val() === ${ME}.child('f').val() && root.child('tk/c/' + $c).val() === ${ME}.child('f').val() && ${T}.child('c/' + $c).val() === ${ME}.child('f').val()`
       + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
+  tk.rp = { '.read': true, '.write': ADMIN };   // エンドロール（地図の移り変わりと名前。終わったときに毎日の処理が作る）
   tk.rice = { '.read': true, '.write': ADMIN, $d: { $L: {
     '.write': `${ADMIN} || (auth != null && data.isNumber() && newData.val() === data.val() + 1 && ${U}.child('t').val() === now`
       + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('c').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('c').val()).exists())`
@@ -223,7 +225,8 @@ tk.schd = { '.write': ADMIN, $d: { '.read': "data.child('r').val() <= now" } };
       '.indexOn': ['t'],
       '.validate': "$room.matches(/^(all|[a-t])$/)",
       $id: {
-        '.write': `${ADMIN} || (auth != null && ${NOBAN} && !data.exists() && newData.exists() && !newData.child('g').exists()`
+        // 掲示板の封鎖（11/25）：天下統一（k が half 以外の終わり）か、11/30 23:59 の終戦から24時間たったら、書きこめない
+        '.write': `${ADMIN} || (auth != null && ${NOBAN} && ${BOARDOPEN} && !data.exists() && newData.exists() && !newData.child('g').exists()`
           + ` && newData.child('u').val() === auth.uid && newData.child('t').val() === now && ${U}.child('bt').val() === now`
           + ` && ${ME}.child('f').exists() && ($room === 'all' || ${ME}.child('f').val() === $room)`
           + ` && newData.child('n').val() === ${ME}.child('n').val() && newData.child('h').val() === ${ME}.child('h').val() && newData.child('f').val() === ${ME}.child('f').val()`

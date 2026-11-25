@@ -240,12 +240,19 @@ else if (op === 'launch' || op === 'reset') {
     if (win) { w['s/end'] = { f: win, t: d, k: 'day' }; w['b/all/' + pid() + 'w'] = { t: now + 2, u: 'gm', n: 'なすP', m: `お知らせ：24時、${FN(win)}軍が${n0[win]}マスを治め、天下統一を果たした！ 天下取りマース、これにて終戦。`, g: true }; }
   }
   if (s && s.end && s.end.k === 'half' && !w['s/end']) w['s/end'] = null;   // 前の版の画面が書いた2500マスの印は消す
+  // 終わっていたら（天下統一か、11/30 23:59 の終戦）、エンドロールの元を作る（まだなら）
+  { const ended = w['s/end'] || (s && s.end && s.end.k !== 'half') || now > Date.UTC(2026, 10, 30, 14, 59, 59, 999);
+    if (ended) { const rp = await get('/tk/rp/fin.json'); if (!rp) { if (Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); for (const k in w) delete w[k]; }
+      const s2 = await get('/tk/s.json'); await buildReplay(s2); await api('PUT', '/tk/rp/fin.json', true, tok); } } }
   // 一番槍のピン止めを、今日の分に入れかえる（全体と3軍の軍議）
   if (w['s/ich'] && w['s/ich'].u) {
     const ich = w['s/ich'], m = `お知らせ：きのうの一番槍は「${ich.n}」（${FN(ich.f)}軍）！ 1日で${ich.c}マスを取った。本日一日、名前に「一番槍」がつく。`;
     for (const room of pinRooms(s)) { const v = (await get('/tk/bp/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) if (i.startsWith('ich')) w['bp/' + room + '/' + i] = null; w['bp/' + room + '/ich' + d] = { t: now + 1, n: 'なすP', m, g: true }; }
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+} else if (op === 'replay') {
+  // エンドロールの元を、いまの記録で作る（試し・作りなおし）
+  await buildReplay(JSON.parse(await api('GET', '/tk/s.json', undefined, tok)));
 } else if (op === 'pins') {
   // ピン止めを「一番槍」と「天下統一の決まり」だけにする（早取りの時間割は画面が自動で一番上に出す。11/25）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), s = await get('/tk/s.json'), FN = globalThis.TK_FNAME, w = {}, now = Date.now();
@@ -415,3 +422,37 @@ async function revertIds(ids, u, ban, logo, c0) {
 
 // ピン止めを置く板：全体と、軍の軍議（三つ巴のあと）
 function pinRooms(s) { const mg = (s && s.mg) || null; return ['all', ...(mg ? 'abcdefghijklmnopqrst'.split('').filter(L => mg[L] === L) : [])]; }
+
+// エンドロールの元（11/25）：開戦から終わりまでの地図の移り変わりを1時間ごとのコマにし、マスを多く取った人と合わせて rp に置く
+//  コマ：前のコマから変わったマスだけを「マス番号（36進3けた）＋持ち主1文字」で並べる。三つ巴の切りかえ（mt）は控え（tkbak）の地図を軍にまとめて入れる
+async function buildReplay(s) {
+  const HR = 3600000, get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const [lg0, c0, ban, u] = await Promise.all([get('/tk/log.json'), get('/tk/c.json'), get('/tk/ban.json'), get('/tk/u.json')]);
+  const lg = Object.values(lg0 || {}).filter(e => e && e.y === 't' && e.c != null && typeof e.t === 'number').sort((a, b) => a.t - b.t);
+  const cur = Array.isArray(c0) ? c0 : Object.assign([], c0), N = MAP.n;
+  const endT = s.end && s.end.k !== 'half' ? Math.max(s.end.t, ...(lg.length ? [] : [0])) : Math.min(Date.now(), Date.UTC(2026, 10, 30, 14, 59, 59, 999));
+  const t0 = Math.floor((lg.length ? lg[0].t : endT) / HR) * HR, nF = Math.max(1, Math.ceil((endT - t0) / HR));
+  let bak = null; if (s.mt) bak = await get('/tk/tkbak/' + s.mt + '/c.json');
+  const st = MAP.own.split(''), prev = st.slice(), frames = []; let k = 0, mi = -1;
+  const snap = () => { let o = ''; for (let i = 0; i < N; i++) if (st[i] !== prev[i]) { o += i.toString(36).padStart(3, '0') + st[i]; prev[i] = st[i]; } frames.push(o); };
+  for (let f = 0; f < nF; f++) {
+    const e1 = t0 + (f + 1) * HR;
+    while (k < lg.length && lg[k].t < e1) {
+      if (s.mt && mi < 0 && lg[k].t >= s.mt) break;
+      st[+lg[k].c] = lg[k].f; k++;
+    }
+    if (s.mt && mi < 0 && s.mt < e1) {   // 三つ巴の切りかえ
+      if (bak) for (let i = 0; i < N; i++) { const L = bak[i] || MAP.own[i]; st[i] = L === 'w' ? 'w' : (s.mg[L] || L); }
+      else for (let i = 0; i < N; i++) if (st[i] !== 'w') st[i] = s.mg[st[i]] || st[i];
+      mi = f;
+      while (k < lg.length && lg[k].t < e1) { st[+lg[k].c] = lg[k].f; k++; }
+    }
+    if (f === nF - 1) for (let i = 0; i < N; i++) st[i] = cur[i] || MAP.own[i];   // 最後のコマは、いまの地図にそろえる（止めた人のマスを戻した分など）
+    snap();
+  }
+  const cnt = {}; for (const e of lg) if (e.u && !(ban && ban[e.u])) cnt[e.u] = (cnt[e.u] || 0) + 1;
+  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([id, n]) => { const x = (u && u[id]) || {}; const e = lg.find(z => z.u === id) || {}; return [x.n || e.n || '?', x.h || e.h || '', x.f || e.f || '', n]; });
+  const rp = { t0, hr: HR, nf: nF, mi, f: frames.join('|'), top, at: Date.now(), ver: 1 };
+  await api('PUT', '/tk/rp.json', rp, tok);
+  console.log('エンドロールの元を作りました：' + nF + 'コマ（' + new Date(t0 + 9 * HR).toISOString().slice(0, 16) + '〜）・三つ巴は' + mi + 'コマ目・' + rp.f.length + '文字・上位' + top.length + '人（1位 ' + (top[0] || []).join(' ') + '）');
+}
