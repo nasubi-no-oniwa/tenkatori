@@ -261,7 +261,9 @@ export async function run(drv, log = console.log) {
   const tgt = c2 !== 'b' ? 2 : 1, via = tgt + 1, prev = (await drv.read('c/' + tgt, D)).val;
   await no(drv.update({ 's/end': { f: 'b', t: SV, k: 'half' } }, D), '2500マスに届かないのに終わりにはできない');
   await no(drv.update({ 's/end': { f: 'b', t: SV, k: 'day' } }, D), '遊ぶ人は「24時の天下統一」を書けない');
-  await yes(take(D, tgt, via, 'b', prev, '三郎', { more: { 's/end': { f: 'b', t: SV, k: 'half' } } }), '前の版の画面が2500マス目で終わりの印を書いても、はじかれない');
+  await no(take(D, tgt, via, 'b', prev, '三郎', { more: { 's/end': { f: 'b', t: SV, k: 'half' } } }), '遊ぶ人は終わりの印（2500マス）を書けない');
+  await yes(take(D, tgt, via, 'b', prev, '三郎'), '2500マス目も、終わりの印なしでふつうに取れる');
+  ok(!(await drv.read('s/end', E)).val, '2500マスでは終わらない');
   await yes(join(E, 'c', '四郎'), '2500マスの印では止まらない（仕えられる）');
   await drv.admin({ 's/end': { f: 'b', t: 1, k: 'day' } });
   ok(((await drv.read('s/end', E)).val || {}).k === 'day', '24時の判定で、天下人は武田');

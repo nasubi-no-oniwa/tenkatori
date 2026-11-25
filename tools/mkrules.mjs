@@ -84,7 +84,8 @@ tk.k = { '.read': false, '.write': false };
       },
     },
     end: {
-      '.write': `${ADMIN} || (auth != null && (!data.exists() || data.child('k').val() === 'half') && newData.exists() && newData.child('k').val() === 'half' && ${up(2)}.child('s/n/' + newData.child('f').val()).val() >= ${HALF} && ${ME}.child('f').val() === newData.child('f').val())`,
+      // 11/25：遊ぶ人は終わりの印を書けない（前の版の画面が2500マスで書く印が、古い画面に「天下統一」と出してしまうため）。毎日の処理だけが書く
+      '.write': `${ADMIN} || (false && auth != null && ${up(2)}.child('s/n/' + newData.child('f').val()).val() >= ${HALF} && ${ME}.child('f').val() === newData.child('f').val())`,
       '.validate': "newData.hasChildren(['f', 't', 'k'])",
       f: { '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/)" },
       t: { '.validate': 'newData.val() === now' },

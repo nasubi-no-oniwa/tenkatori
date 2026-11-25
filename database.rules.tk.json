@@ -36,7 +36,7 @@
    }
   },
   "end": {
-   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (auth != null && (!data.exists() || data.child('k').val() === 'half') && newData.exists() && newData.child('k').val() === 'half' && newData.parent().parent().child('s/n/' + newData.child('f').val()).val() >= 2500 && root.child('tk/u/' + auth.uid).child('f').val() === newData.child('f').val())",
+   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (false && auth != null && newData.parent().parent().child('s/n/' + newData.child('f').val()).val() >= 2500 && root.child('tk/u/' + auth.uid).child('f').val() === newData.child('f').val())",
    ".validate": "newData.hasChildren(['f', 't', 'k'])",
    "f": {
     ".validate": "newData.isString() && newData.val().matches(/^[a-t]$/)"
