@@ -91,7 +91,7 @@ else if (op === 'merge') {
   await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('止めるのを外しました（開戦）');
 }
 else if (op === 'nodf') { await api('PATCH', '/tk/s.json', { nodf: true }, tok); console.log('寝返りの受付をやめました'); }
-else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
+else if (op === 'ver') { await api('PATCH', '/tk/s.json', { ver: Date.now(), av: Date.now() }, tok); console.log('地図の版の番号を上げました（みんなのスマホの地図が読みなおされます）'); }
 else if (op === 'open') { await api('DELETE', '/tk/s/stop.json', undefined, tok); console.log('開戦準備中を外しました'); }
 else if (op === 'launch' || op === 'reset') {
   const d = build(JSON.parse(fs.readFileSync('data/map.json', 'utf8'))); d.s.ver = Date.now(); if (op === 'reset') d.s.stop = true;   // ver を変えると、みんなのスマホに残った古い地図も読みなおされる
@@ -261,7 +261,6 @@ else if (op === 'launch' || op === 'reset') {
     w['bp/' + room + '/rule4000'] = { t: now, n: 'なすP', m: RULE4000, g: true };
     if (s.ich && s.ich.u) w['bp/' + room + '/ich' + s.ich.d] = { t: now + 1, n: 'なすP', m: `お知らせ：きのうの一番槍は「${s.ich.n}」（${FN(s.ich.f)}軍）！ 1日で${s.ich.c}マスを取った。本日一日、名前に「一番槍」がつく。`, g: true };
   }
-  w['b/all/gm' + now.toString(36) + 'r4k'] = { t: now, u: 'gm', n: 'なすP', m: RULE4000, g: true };
   if (s.end && s.end.k === 'half') w['s/end'] = null;
   w['s/av'] = now;   // 開いている画面を新しい版に読みなおさせる
   await api('PATCH', '/tk.json', w, tok); console.log('ピン止めをそろえました：' + pinRooms(s).join(','));

@@ -96,7 +96,7 @@
     $('rvX').textContent = t('x_post'); $('rvXi').textContent = t('x_img'); $('rvGo').textContent = t('tk_back');
     const nv = $('nav').querySelectorAll('button'); ['nav_power', 'nav_board', 'nav_log', 'nav_defect', 'nav_scroll', 'nav_more'].forEach((k, i) => { if (nv[i]) nv[i].querySelector('span').textContent = t(k); }); if ($('scroll') && !$('scroll').hidden) renderScroll();
     $('tkX').textContent = t('x_post'); $('tkXi').textContent = t('x_img'); $('tkBack').textContent = t('tk_back');
-    $('enX').textContent = t('x_post'); $('enXi').textContent = t('x_img'); $('enMap').textContent = t('en_map');
+    $('enRoll').textContent = t('roll_btn'); $('rollX').textContent = t('roll_skip'); $('enX').textContent = t('x_post'); $('enXi').textContent = t('x_img'); $('enMap').textContent = t('en_map');
     renderTitle(); if (scr === 'quiz') renderQ(); if (scr === 'game') { updateHud(); MP.kick(); if (selCell >= 0) showCell(selCell); }
   }
   function renderTitle() {
@@ -322,7 +322,8 @@
       if (!rooms.some(r => r[0] === bdRoom)) bdRoom = rooms[0][0]; if (arg && arg.room) bdRoom = arg.room;
       rooms.forEach(([r, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = r === bdRoom ? 'on' : ''; b.onclick = () => { bdRoom = r; openPanel('board'); }; TB.appendChild(b); });
       B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdPin"></div><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
-      if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('bd_wait') : t('net_err')); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
+      if (N.boardClosed()) F.innerHTML = `<p class="note" style="margin:0">${esc(t('bd_closed'))}</p>`;
+      else if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('bd_wait') : t('net_err')); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
       else F.innerHTML = `<p class="note" style="text-align:center">${esc(t('bd_need'))}</p>`;
       bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 30000);
     } else if (kind === 'log') {
@@ -402,6 +403,52 @@
     if (TK.fireworks) TK.fireworks(6);
     enCanvas = await card({ f, title: half ? t('en_title') : t('t_ended'), sub: [t(enKey, { name: names }), t('cells', { n: N.s.n[f.L] || 0 })], big: 76 });
     ev('end_view');
+    // エンドロール：元ができていればボタンを出し、はじめて終わりの画面を見たときは一度だけ自動で流す
+    N.loadReplay().then(rp => { if (!rp) return; rollRp = rp; $('enRoll').hidden = false; if (!N.store('tk_roll') || /[?&]roll=1/.test(location.search)) { N.store('tk_roll', 1); setTimeout(playRoll, 2200); } }).catch(() => { });
+  }
+  // ---------- エンドロール（11/25）：地図の移り変わりを約60秒で早送り → 名前を流す ----------
+  let rollRp = null, rollOn = false;
+  async function playRoll() {
+    const rp = rollRp; if (!rp || rollOn) return; rollOn = true;
+    const R = $('roll'), C = $('rollC'), x = C.getContext('2d'), fr = rp.f.split('|'), real = N.cells.slice(), st = M.own.split('');
+    R.hidden = false; $('rollCr').style.opacity = 0; $('rollIn').style.transition = 'none'; $('rollIn').style.transform = ''; $('rollCap').style.opacity = 0; $('rollD').style.opacity = 1;
+    const dpr = Math.min(2, G.devicePixelRatio || 1); C.width = innerWidth * dpr; C.height = innerHeight * dpr;
+    let stop = false; const end = () => { stop = true; };
+    $('rollX').onclick = () => { stop = true; finish(); };
+    const draw = () => {
+      N.cells = st; MP.repaint(); const b = MP.base(); N.cells = real;
+      const w = C.width, h = C.height; x.fillStyle = '#0b1118'; x.fillRect(0, 0, w, h);
+      const k = b.width / M.W, sx = bb[0] * k, sy = bb[1] * k, sw = (bb[2] - bb[0]) * k, sh = (bb[3] - bb[1]) * k, z = Math.min(w * 0.96 / sw, h * 0.8 / sh);
+      x.imageSmoothingQuality = 'high'; x.drawImage(b, sx, sy, sw, sh, (w - sw * z) / 2, (h - sh * z) / 2 + h * 0.02, sw * z, sh * z);
+    };
+    const bb = [1e9, 1e9, 0, 0]; for (let i = 0; i < M.n; i++) { const cx = M.cells[2 * i], cy = M.cells[2 * i + 1]; bb[0] = Math.min(bb[0], cx); bb[1] = Math.min(bb[1], cy); bb[2] = Math.max(bb[2], cx + 1); bb[3] = Math.max(bb[3], cy + 1); }   // 陸のある範囲だけを大きく出す
+    const apply = s => { for (let j = 0; j + 3 < s.length; j += 4) st[parseInt(s.substr(j, 3), 36)] = s[j + 3]; };
+    const dt = 60000 / Math.max(1, fr.length), J = 9 * 3600000;
+    const label = f => { const d = new Date(rp.t0 + (f + 1) * rp.hr + J); $('rollD').textContent = t('roll_date', { m: d.getUTCMonth() + 1, d: d.getUTCDate(), h: d.getUTCHours() }); $('rollBar').firstChild.style.width = ((f + 1) / fr.length * 100).toFixed(1) + '%'; };
+    let t0 = performance.now(), drawn = 0;
+    for (let f = 0; f < fr.length && !stop; f++) {
+      apply(fr[f]); const due = t0 + (f + 1) * dt;
+      if (performance.now() > due && f !== rp.mi && f < fr.length - 1 && performance.now() - drawn < 400) continue;   // 遅れているコマは描かずに先へ（約60秒に合わせる）
+      label(f); draw(); drawn = performance.now();
+      if (f === rp.mi) { $('rollCap').textContent = t('roll_mitsu'); if (G.gsap) gsap.fromTo('#rollCap', { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: .6, ease: 'power3.out' }); else $('rollCap').style.opacity = 1; await sleep(1800); t0 += 1800; if (G.gsap) gsap.to('#rollCap', { opacity: 0, duration: .5 }); else $('rollCap').style.opacity = 0; }
+      const wait = due - performance.now(); if (wait > 0) await sleep(wait);
+    }
+    if (stop) return;
+    await sleep(1200); credits();
+    function credits() {
+      const g = N.mg(), hk = N.s.hk || {}, win = N.winners().map(L => TK.FI[L]).filter(Boolean), W0 = win[0];
+      let h = `<p class="big" style="font-size:16px;letter-spacing:.3em;color:#c9a44c">${esc(t('roll_win'))}</p><h2>${esc(win.map(f => g ? TK.army(f) : TK.fname(f)).join('・'))}</h2><small>${esc(W0 ? t('cells', { n: N.s.n[W0.L] || 0 }) : '')}</small>`;
+      if (g) { h += `<h3>${esc(t('roll_armies'))}</h3>`; for (const L of N.armies().sort((a, b) => (N.s.n[b] || 0) - (N.s.n[a] || 0))) { const ys = TK.F.filter(f => g[f.L] === L && f.L !== L).map(TK.fname); h += `<p class="big" style="color:${TK.FI[L].col}">${esc(TK.army(TK.FI[L]))}</p><small>${esc(t('pw_with', { list: ys.join('・') }))}</small>`; }
+        const best = W0 ? TK.F.filter(f => g[f.L] === W0.L && f.L !== W0.L && (hk[f.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
+        if (best) h += `<h3>${esc(t('roll_best'))}</h3><p class="big">${esc(TK.fname(best))}</p><small>${esc(t('cells', { n: hk[best.L] }))}</small>`; }
+      if (rp.top && rp.top.length) { h += `<h3>${esc(t('roll_top'))}</h3>`; rp.top.forEach((p, i) => { h += `<p class="tp"><b>${i + 1}</b>${esc(TK.who(p[0], p[1], false))}　${esc(t('cells', { n: p[3] }))}</p>`; }); }
+      h += `<h3>${esc(t('roll_made'))}</h3><p class="big">なすびのお庭</p><h3 style="margin-top:90px;font-size:22px;letter-spacing:.2em;color:#fff5dc">${esc(t('roll_thx'))}</h3>`;
+      const I = $('rollIn'); I.innerHTML = h; $('rollCr').style.transition = 'opacity 1s'; $('rollCr').style.opacity = 1; $('rollD').style.opacity = 0;
+      const H2 = I.offsetHeight + innerHeight, sec = Math.max(25, Math.min(60, H2 / 45));
+      requestAnimationFrame(() => { I.style.transition = `transform ${sec}s linear`; I.style.transform = `translateY(${-H2}px)`; });
+      setTimeout(() => { if (!stop) finish(); }, sec * 1000 + 600);
+    }
+    function finish() { R.hidden = true; rollOn = false; N.cells = real; MP.repaint(); $('rollIn').style.transition = 'none'; }
   }
   const endText = () => { const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
 
@@ -511,6 +558,7 @@
   $('tkBack').onclick = () => { $('taken').hidden = true; if (N.me) MP.focusFaction(N.me.f); };
   $('tkX').onclick = () => postX(tkText); $('tkXi').onclick = () => tkCanvas && postImg(tkCanvas, tkText, $('tkMsg'), 'tenkatori_take');
   $('enX').onclick = () => postX(endText()); $('enXi').onclick = () => enCanvas && postImg(enCanvas, endText(), $('enMsg'), 'tenkatori_end');
+  $('enRoll').onclick = () => playRoll();
   $('enMap').onclick = () => { $('endscr').hidden = true; $('map').hidden = false; $('game').hidden = false; scene('off'); MP.resize(); MP.fit(); };
   // ダブルタップ・2本指で、ページそのものが大きくならないようにする（地図は自分で広げる）
   let lastTouch = 0;
@@ -519,7 +567,7 @@
   document.addEventListener('dblclick', e => e.preventDefault());
 
   // ---------- はじまり ----------
-  TK.app = { openPanel, closePanel, enterGame, showReveal, startQuiz, showTaken, card, checkEnd, telop, checkLM, show };
+  TK.app = { roll: async () => { rollRp = await N.loadReplay(); playRoll(); }, openPanel, closePanel, enterGame, showReveal, startQuiz, showTaken, card, checkEnd, telop, checkLM, show };
   (async function boot() {
     TK.setLang(TK.lang()); applyLang(); scene('title');
     await fontReady('毘天下取りマース一二三四勢議報返他');

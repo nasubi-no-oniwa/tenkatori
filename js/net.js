@@ -163,6 +163,14 @@
   };
   N.endOK = () => !!(N.s && N.s.end && N.s.end.k !== 'half');   // 前の版の画面が書いた2500マスの印（half）では終わらない（11/25）
   N.ended = () => N.endOK() || N.now() > TK.END;
+  // 掲示板の封鎖（11/25）：天下統一か終戦から24時間たったら、読むだけ
+  N.boardClosed = () => N.now() > TK.END + 86400000 || (N.endOK() && N.now() > (+N.s.end.t || 0) + 86400000);
+  // エンドロールの元（毎日の処理が、終わったときに作る。fin が true のものだけ使う。?roll=1 なら作りかけでも見る）
+  N.loadReplay = async function () {
+    if (N.fake) return FK.replay();
+    const v = await rest('rp'); if (!v || typeof v.f !== 'string') return null;
+    if (!v.fin && !/[?&]roll=1/.test((G.location && G.location.search) || '')) return null; return v;
+  };
   // 終わったときの天下人（半分とった武将。時間切れなら、安土城を占領している武将。だれも占領していなければ、いちばん多い武将。同じ数なら並んで天下人）
   // 名所の占領：そのマスを全部、同じ陣営が持っていれば、その陣営（だれも占領していなければ ''）
   N.LM = M.lm || [];
@@ -344,5 +352,9 @@
   FK.day = d => { const h = FK.sched(d), rc = []; while (rc.length < 40) { const i = Math.floor(Math.random() * NC); if (!CASTLE.has(i) && !rc.includes(i)) rc.push(i); } return { h, k: 'sekigahara', rc: rc.join(','), x: {} }; };
   FK.rice = () => { const r = {}; for (const f of TK.F) r[f.L] = Math.floor(Math.random() * 14); return r; };
   FK.sched = d => { const L = 'abcdefghijklmnopqrst'.split(''); for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; } let h = ''; for (let i = 0; i < 24; i++) h += i % 6 === 0 ? '*' : L.shift(); return h; };
+  // にせもの：今の地図を目指して、白い地図から少しずつ埋まっていく移り変わり（試し用）
+  FK.replay = () => { FK.init(); const NCn = NC, own = M.own, fin = FK.c, nf = 200, mi = 150, fr = []; const order = []; for (let i = 0; i < NCn; i++) if (fin[i] !== own[i]) order.push(i); order.sort(() => Math.random() - .5);
+    let k = 0; for (let f = 0; f < nf; f++) { let o = ''; const to = Math.round(order.length * (f + 1) / nf); for (; k < to; k++) o += order[k].toString(36).padStart(3, '0') + fin[order[k]]; fr.push(o); }
+    const top = FK.names.map((n, i) => [n, TK.F[i % 20].L, TK.F[i % 20].L, 300 - i * 17]); return { t0: Date.UTC(2026, 10, 15, 17), hr: 3600000, nf, mi, f: fr.join('|'), top, fin: true }; };
   N.FK = FK;
 })(window);

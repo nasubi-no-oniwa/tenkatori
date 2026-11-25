@@ -158,6 +158,13 @@
     pw_yoriki_n: ['三つ巴になってから取ったマスを、元の家ごとに数えます（1時間ごと）。天下を取った軍でいちばん働いた家が「天下一の与力」。', 'Tiles taken since the three-way split, counted by original house (updated hourly). The top house in the winning army becomes "Greatest Ally of the Realm".', '計算三分天下後各原家族取得的格數（每小時更新）。取得天下之軍中最出力的家族，就是「天下第一與力」。', '삼파전이 된 뒤 차지한 칸을 원래 가문별로 셉니다(1시간마다). 천하를 잡은 군에서 가장 활약한 가문이 "천하제일 요리키".'],
     en_yoriki: ['天下一の与力：{name}の家（{n}マス）', 'Greatest Ally of the Realm: house of {name} ({n} tiles)', '天下第一與力：{name}家（{n}格）', '천하제일 요리키: {name} 가문 ({n}칸)'],
     how11: ['三つ巴：11月24日23時59分、マスの多い上位3家が「軍」になり、ほかの家は城の近い軍に与力として合流しました。家と家紋はそのまま、軍の陣地を足場に戦えます。寝返りはできません。早取りは各軍1日2回。', 'Three-way war: at 23:59 on Nov 24 the three largest houses became armies, and every other house joined the nearest one as an ally. Your house and crest stay the same and you fight from your army\'s land. Defecting is no longer possible. Each army gets two rush turns a day.', '三分天下：11月24日23點59分，格數最多的前3家成為「軍」，其他家族以與力身分併入城最近的軍。家族與家紋不變，以軍的領地為據點作戰。不能倒戈。每軍每天有2次搶攻時段。', '삼파전: 11월 24일 23시 59분, 칸이 많은 상위 3가문이 "군"이 되고 다른 가문은 성이 가까운 군에 요리키로 합류했습니다. 가문과 가문 문장은 그대로, 군의 영지를 발판으로 싸웁니다. 배신은 불가. 속공은 각 군 하루 2번.'],
+    // エンドロール（11/25）
+    roll_btn: ['エンドロールを見る', 'Watch the end credits', '觀看片尾', '엔딩 크레딧 보기'], roll_skip: ['とばす', 'Skip', '略過', '건너뛰기'],
+    roll_date: ['{m}月{d}日 {h}時', '{m}/{d} {h}:00', '{m}月{d}日 {h}點', '{m}월 {d}일 {h}시'], roll_mitsu: ['三つ巴', 'Three-way war', '三分天下', '삼파전'],
+    roll_win: ['天下人', 'Ruler of the realm', '天下人', '천하인'], roll_armies: ['三つ巴の三軍', 'The three armies', '三分天下的三軍', '삼파전의 세 군'],
+    roll_best: ['天下一の与力', 'Greatest ally of the realm', '天下第一與力', '천하제일 요리키'], roll_top: ['マスを多く取った者たち', 'Those who took the most tiles', '取得最多格的人們', '가장 많은 칸을 차지한 이들'],
+    roll_made: ['制作', 'Made by', '製作', '제작'], roll_thx: ['遊んでくれて、ありがとう', 'Thank you for playing', '謝謝你的參與', '플레이해 주셔서 감사합니다'],
+    bd_closed: ['戦は終わった。掲示板は閉じられ、いまは読むことだけができる。', 'The war is over. The boards are closed and can only be read.', '戰爭結束了。告示板已關閉，只能閱讀。', '전쟁은 끝났다. 게시판은 닫혀 이제 읽기만 할 수 있다.'],
     gm: ['なすP', 'NasuP', 'NasuP', 'NasuP'], notice: ['なすPより', 'From NasuP', 'NasuP的公告', 'NasuP의 알림'],
     follow: ['新作を毎日出してます　𝕏 なすPをフォロー', 'New games every day — follow NasuP on 𝕏', '每天推出新作　在𝕏追蹤NasuP', '매일 신작을 냅니다　𝕏 NasuP 팔로우'],
   };
