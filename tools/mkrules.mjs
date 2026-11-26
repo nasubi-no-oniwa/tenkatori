@@ -186,9 +186,9 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
       + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
   tk.rp = { '.read': true, '.write': ADMIN };
-  // 狼煙（毎日8回）：nr（決まり用。国のマスの一覧。読めない）と nrd/{その日の0時}/{0〜7}（上がった時刻と国。上がってから読める）
+  // 狼煙（毎日3回×3か国）：nr（決まり用。国のマスの一覧。読めない）と nrd/{その日の0時}/{0〜7}（上がった時刻と国。上がってから読める）
   tk.nr = { '.read': false, '.write': ADMIN };
-  tk.nrd = { '.write': ADMIN, $d: { $i: { '.read': "data.child('a').val() <= now" } } };   // $i：1日を3時間ずつ8つに分けた何番目か（0〜7）
+  tk.nrd = { '.write': ADMIN, $d: { $i: { '.read': "data.child('a').val() <= now" } } };   // $i：1日を8時間ずつ3つに分けた何番目か（0〜2）
   // 天下人予想（11/26〜11/29 24時）：1人1回。仕官した人だけ。予想できるのは軍（三つ巴のあと）。読めるのは本人と管理人
   tk.pred = { '.read': ADMIN, $uid: { '.read': `auth != null && auth.uid === $uid`,
     '.write': `${ADMIN} || (auth != null && auth.uid === $uid && !data.exists() && newData.exists() && now < ${Date.UTC(2026, 10, 29, 15)} && ${OPEN} && ${NOBAN} && ${ME}.child('f').exists())`,

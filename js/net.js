@@ -96,7 +96,7 @@
     if (via === undefined) return { ok: false, why: 'boxed' };
     if (N.ended()) return { ok: false, why: 'end', via };
     if (N.s.stop) return { ok: false, why: 'stop', via };
-    if (N.wait() > 0) return { ok: false, why: 'wait', via };
+    if (N.wait() > 0 && !(N.inNr(i) && N.nrReady())) return { ok: false, why: 'wait', via };   // 狼煙の国のマスは1分で取れる
     return { ok: true, via, w };
   };
   const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
@@ -158,7 +158,19 @@
     N.gk[d] = v === N.me.f ? v : '';
   };
   N.isGk = (f, t) => { const d = N.dayStart(t); return !!(f && N.gk[d] && N.gk[d] === f); };
-  N.fastFor = (sl, f) => { if (!sl || !f) return 0; const k = N.isGk(f, sl.a) ? 0.5 : 1; return (sl.f === f || sl.f2 === f) ? TK.FASTT * k : sl.f === '*' ? TK.ALLT * k : 0; };
+  N.fastFor = (sl, f) => { if (!sl || !f) return 0; const k = N.isGk(f, sl.a) ? 0.5 : 1; return (sl.f === f || sl.f2 === f || sl.f === '!') ? TK.FASTT * k : sl.f === '*' ? TK.ALLT * k : 0; };   // '!'：最終決戦（全軍2分）
+  // ---------- 狼煙（11/26から、毎日3回×3か国）：nrd/{その日の0時}/{0〜2} は上がってから読める。上がって30分、その国のマスは全軍1分 ----------
+  N.nr = {};   // N.nr[その日の0時] = { 0: {a,p:[国],k}, ... }
+  N.loadNr = async function (d) {
+    d = d || N.dayStart(); const o = N.nr[d] = N.nr[d] || {}; if (N.loadNr.at > Date.now() - 60000) return; N.loadNr.at = Date.now();
+    for (let b = 0; b < 3; b++) { if (o[b] || d + b * 8 * 3600000 > N.now()) continue;
+      if (N.fake) { if (/[?&]nr=1/.test(location.search) && b === Math.floor((N.now() - d) / 28800000)) { const ps = [M.prov[N.takeable()[0] || 0], 3, 7]; o[b] = { a: N.now() - 60000, p: ps, k: String(N.now() - 60000) }; } continue; }
+      try { const v = await rest('nrd/' + d + '/' + b); if (v && typeof v.a === 'number') o[b] = v; } catch (e) { } }
+  };
+  N.nrList = () => Object.values(N.nr[N.dayStart()] || {}).filter(v => v.a <= N.now()).sort((x, y) => x.a - y.a);
+  N.nrNow = () => N.nrList().find(v => N.now() < v.a + 1800000) || null;
+  N.inNr = i => { const v = N.nrNow(); return !!(v && (v.p || []).includes(M.prov[i])); };
+  N.nrReady = () => { const me = N.me; if (!me || !N.nrNow()) return false; const now = N.now(); return (!me.t || now - me.t >= 60000) && (!me.j || now >= me.j + (TK.JOINT || 0)); };
   N.fastNow = () => { const me = N.me, sl = N.slotAt(N.now()); return me && N.fastFor(sl, me.f) ? sl : null; };
   // 今日の自分の陣営の番（なければ null）
   N.mySlot = f => { const d = N.dayStart(), h = N.sched[d]; if (!h || !f) return null; const i = h.indexOf(f); return i < 0 ? null : { a: d + i * HR, e: d + (i + 1) * HR, f, i }; };
@@ -229,6 +241,7 @@
   // 読みなおし（30秒ごと）：増えた記録だけ。戻り値：新しい記録
   N.poll = async function () {
     if (!N.sched[N.dayStart()]) N.loadSched().catch(() => { }); else N.loadRice().catch(() => { });
+    N.loadNr().catch(() => { });
     if (N.fake) return FK.poll();
     const ver = N.s.ver || 0;
     const list = sorted(await rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 }));
@@ -258,7 +271,8 @@
     const u = N.uid(), id = pid(), prev = N.cells[i];
     const w = { ['c/' + i]: me.f, ['ct/' + i]: SV, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
-    { const sl = N.fastNow(); if (sl) w['u/' + u + '/q'] = String(sl.a); }   // 早取りの時間なら、その時間の始まりの時刻もいっしょに書く
+    { const sl = N.fastNow(); if (sl) w['u/' + u + '/q'] = String(sl.a); }
+    if (N.inNr(i)) w['u/' + u + '/qn'] = N.nrNow().k;   // 狼煙の国のマスなら、狼煙のかぎもいっしょに書く   // 早取りの時間なら、その時間の始まりの時刻もいっしょに書く
     // 兵糧集め：今日の日付（士気の短縮に使う）と、米俵のマスなら兵糧+1
     const td = N.dayStart(), rice = N.isRice(i) && typeof N.rice[me.f] === 'number';
     if (N.day[td]) w['u/' + u + '/qd'] = String(td);
@@ -303,6 +317,10 @@
     if (N.fake) return FK.post(room, m);
     await update({ ['u/' + u + '/bt']: SV, ['b/' + room + '/' + pid()]: Object.assign({ t: SV, u, n: me.n, h: me.h, f: me.f, m }, me.r ? { r: true } : {}) });
   };
+  // 天下人予想（11/26〜11/29 24時）：1人1回。仕えている人だけ
+  N.PREDEND = Date.UTC(2026, 10, 29, 15);
+  N.myPred = async function () { if (N.fake) return FK.pred || null; if (!N.uid()) return null; try { return await rest('pred/' + N.uid(), null, true); } catch (e) { return null; } };
+  N.predict = async function (f) { const me = N.me; if (N.fake) { FK.pred = { f, t: Date.now(), n: me.n, h: me.h }; return FK.pred; } await update({ ['pred/' + N.uid()]: { f, t: SV, n: me.n, h: me.h } }); return { f }; };
   N.ask = async function (m, x, l, name) {
     if (N.fake) return; await N.token(false); const u = N.uid();
     await update({ ['u/' + u + '/a']: SV, ['ask/' + pid()]: { t: SV, u, m: Array.from(String(m || '')).slice(0, 300).join(''), x: N.cleanX(x), l: l || 'ja', n: String(name || '').slice(0, 30) } });
@@ -364,6 +382,6 @@
   // にせもの：今の地図を目指して、白い地図から少しずつ埋まっていく移り変わり（試し用）
   FK.replay = () => { FK.init(); const NCn = NC, own = M.own, fin = FK.c, nf = 200, mi = 150, fr = []; const order = []; for (let i = 0; i < NCn; i++) if (fin[i] !== own[i]) order.push(i); order.sort(() => Math.random() - .5);
     let k = 0; for (let f = 0; f < nf; f++) { let o = ''; const to = Math.round(order.length * (f + 1) / nf); for (; k < to; k++) o += order[k].toString(36).padStart(3, '0') + fin[order[k]]; fr.push(o); }
-    const top = FK.names.map((n, i) => [n, TK.F[i % 20].L, TK.F[i % 20].L, 300 - i * 17]); return { t0: Date.UTC(2026, 10, 15, 17), hr: 3600000, nf, mi, f: fr.join('|'), top, fin: true }; };
+    const top = FK.names.map((n, i) => [n, TK.F[i % 20].L, TK.F[i % 20].L, 300 - i * 17]); return { t0: Date.UTC(2026, 10, 15, 17), hr: 3600000, nf, mi, f: fr.join('|'), top, pred: { w: 'a', n: 63, all: 200, names: FK.names.map((n, i) => [n, TK.F[i % 20].L]) }, fin: true }; };
   N.FK = FK;
 })(window);

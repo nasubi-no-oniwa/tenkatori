@@ -9,7 +9,7 @@ import { build } from './mapseed.mjs';
 const op = process.argv[2], tok = await token();
 // 地図（名所・天守閣）と武将の名前
 globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
-const RULE4000 = '【天下統一】毎日24時の時点で4000マス以上の軍が天下統一！ 2500マスでは終わらない。11/30の23:59までに届かなければ、安土城を押さえた軍が天下人。';
+const RULE4000 = '【天下統一】毎日24時に4000マスの軍が天下統一。届かねば11/30の23:59に安土城を押さえた軍が天下人。最終日21時〜は全軍2分！ 狼煙・天下人予想も開催中';
 const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
 else if (op === 'notice') {
@@ -21,7 +21,7 @@ else if (op === 'notice') {
     const v = JSON.parse(await api('GET', '/tk/' + pre + '/' + room + '.json?shallow=true', undefined, tok)) || {};
     for (const i of Object.keys(v)) if (i.startsWith(nt.del)) w[pre + '/' + room + '/' + i] = null;
   }
-  nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });
+  nt.all.forEach((m, k) => { const i = id(k), e = { t: now - k * 1000, u: 'gm', n: 'なすP', m, g: true }; w['b/all/' + i] = e; if (!nt.nopin) w['bp/all/' + i] = { t: e.t, n: e.n, m, g: true }; });   // nopin：ピン止めしない
   for (const [L, m] of Object.entries(nt.rooms || {})) { const i = id(L), e = { t: now, u: 'gm', n: 'なすP', m, g: true }; w['b/' + L + '/' + i] = e; w['bp/' + L + '/' + i] = { t: now, n: e.n, m, g: true }; }
   // edit：すでに出したなすPの書きこみ（全体）のうち、find をふくむものの文を書きかえる（ピン止めの写しも）
   if (nt.edit) { const [b, bp] = await Promise.all([api('GET', '/tk/b/all.json', undefined, tok), api('GET', '/tk/bp/all.json', undefined, tok)].map(p => p.then(x => JSON.parse(x) || {})));
@@ -482,7 +482,7 @@ async function buildReplay(s) {
   console.log('エンドロールの元を作りました：' + nF + 'コマ（' + new Date(t0 + 9 * HR).toISOString().slice(0, 16) + '〜）・三つ巴は' + mi + 'コマ目・' + rp.f.length + '文字・上位' + top.length + '人（1位 ' + (top[0] || []).join(' ') + '）');
 }
 
-// 狼煙（11/26から、毎日8回）：1日を3時間ずつ8つに分け、それぞれのランダムな時刻に30分。今日の分がまだなければ作る（今日の途中なら、いまから1時間後より後の回だけ）
+// 狼煙（11/26から、毎日3回×3か国）：1日を8時間ずつ3つに分け、それぞれのランダムな時刻に、3つの国で同時に30分。今日の分がまだなければ作る（今日の途中なら、いまから1時間後より後の回だけ）
 //  国は、2つ以上の軍が入りまじる国から、その日まだ選んでいない国を選ぶ
 async function ensureNoroshi(force) {
   const HR = 3600000, MIN = 60000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
@@ -492,17 +492,17 @@ async function ensureNoroshi(force) {
   const c0 = await get('/tk/c.json'), c = Array.isArray(c0) ? c0 : Object.assign([], c0), castle = new Set(Object.values(MAP.castle));
   const byP = {}; for (let i = 0; i < MAP.n; i++) { if (castle.has(i)) continue; const p = MAP.prov[i]; (byP[p] = byP[p] || []).push(i); }
   const mixed = Object.keys(byP).filter(p => { const own = new Set(byP[p].map(i => c[i] || MAP.own[i]).filter(L => L !== 'w')); return own.size >= 2 && byP[p].length >= 15; });
-  let pool = (mixed.length >= 8 ? mixed : Object.keys(byP).filter(p => byP[p].length >= 15)).slice();
-  for (const v of Object.values(have)) pool = pool.filter(p => +p !== v.p);
-  const w = {}, out = [];
-  for (let b = 0; b < 8; b++) {
+  let pool = (mixed.length >= 9 ? mixed : Object.keys(byP).filter(p => byP[p].length >= 15)).slice();
+  for (const v of Object.values(have)) pool = pool.filter(p => !(v.p || []).includes(+p));
+  const nm = p => { const pv = MAP.provs[p]; return Array.isArray(pv) ? pv[0] : pv; }, w = {}, out = [];
+  for (let b = 0; b < 3; b++) {
     if (have[b] && have[b].a <= now) continue;   // もう上がった回はそのまま
-    const lo = Math.max(d + b * 3 * HR, Math.ceil((now + HR) / (5 * MIN)) * 5 * MIN), hi = d + (b + 1) * 3 * HR - 30 * MIN; if (lo > hi) continue;
-    const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
-    const k = Math.floor(Math.random() * pool.length), p = +pool.splice(k, 1)[0]; if (Number.isNaN(p)) break;
-    const pv = MAP.provs[p], name = Array.isArray(pv) ? pv[0] : pv;
-    w['nr/' + a] = { a, p, c: Object.fromEntries(byP[p].map(i => [i, true])) }; w['nrd/' + d + '/' + b] = { a, p, k: String(a) };
-    out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + name + '（' + byP[p].length + 'マス）');
+    const lo = Math.max(d + b * 8 * HR, Math.ceil((now + HR) / (5 * MIN)) * 5 * MIN), hi = d + (b + 1) * 8 * HR - 30 * MIN; if (lo > hi) continue;
+    const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN, ps = [], cells = {};
+    for (let k = 0; k < 3 && pool.length; k++) { const p = +pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; ps.push(p); for (const i of byP[p]) cells[i] = true; }
+    if (!ps.length) break;
+    w['nr/' + a] = { a, p: ps, c: cells }; w['nrd/' + d + '/' + b] = { a, p: ps, k: String(a) };
+    out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + ps.map(nm).join('・'));
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
   console.log('今日の狼煙：' + (out.length ? out.join('、') : 'なし'));
