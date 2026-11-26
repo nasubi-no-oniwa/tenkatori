@@ -117,7 +117,7 @@
    },
    "t": {
     ".write": "auth != null && auth.uid === $uid && ((!root.child('tk/s/end').exists() || root.child('tk/s/end/k').val() === 'half') && !root.child('tk/s/stop').exists() && now <= 1796050799999)",
-    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 3600000 || (newData.parent().child('q').isString() && root.child('tk/sch/' + newData.parent().child('q').val()).child('a').isNumber() && now >= root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() && now < root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() + 3600000 && (((root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === newData.parent().child('f').val() || root.child('tk/sch/' + newData.parent().child('q').val()).child('f2').val() === newData.parent().child('f').val()) && (now - data.val() >= 120000 || ((newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000) && now - data.val() >= 60000))) || (root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === '*' && (now - data.val() >= 300000 || ((newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000) && now - data.val() >= 150000))))) || (newData.parent().child('qd').isString() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').isNumber() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000 && ((root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 3 && now - data.val() >= 3000000) || (root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 7 && now - data.val() >= 2400000) || (root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 12 && now - data.val() >= 1800000)))) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= 3600000"
+    ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 3600000 || (newData.parent().child('q').isString() && root.child('tk/sch/' + newData.parent().child('q').val()).child('a').isNumber() && now >= root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() && now < root.child('tk/sch/' + newData.parent().child('q').val()).child('a').val() + 3600000 && (((root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === newData.parent().child('f').val() || root.child('tk/sch/' + newData.parent().child('q').val()).child('f2').val() === newData.parent().child('f').val()) && (now - data.val() >= 120000 || ((newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000) && now - data.val() >= 60000))) || (root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === '*' && (now - data.val() >= 300000 || ((newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000) && now - data.val() >= 150000))) || (root.child('tk/sch/' + newData.parent().child('q').val()).child('f').val() === '!' && (now - data.val() >= 120000 || ((newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000) && now - data.val() >= 60000))))) || (newData.parent().child('qd').isString() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').isNumber() && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000 && ((root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 3 && now - data.val() >= 3000000) || (root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 7 && now - data.val() >= 2400000) || (root.child('tk/rice/' + newData.parent().child('qd').val() + '/' + newData.parent().child('f').val()).val() >= 12 && now - data.val() >= 1800000))) || (newData.parent().child('qn').isString() && root.child('tk/nr/' + newData.parent().child('qn').val() + '/a').isNumber() && now >= root.child('tk/nr/' + newData.parent().child('qn').val() + '/a').val() && now < root.child('tk/nr/' + newData.parent().child('qn').val() + '/a').val() + 1800000 && root.child('tk/nr/' + newData.parent().child('qn').val() + '/c/' + newData.parent().child('c').val()).exists() && now - data.val() >= 60000)) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= 3600000"
    },
    "c": {
     ".write": "auth != null && auth.uid === $uid",
@@ -126,6 +126,10 @@
    "rk": {
     ".write": "auth != null && auth.uid === $uid",
     ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/)"
+   },
+   "qn": {
+    ".write": "auth != null && auth.uid === $uid",
+    ".validate": "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now"
    },
    "qd": {
     ".write": "auth != null && auth.uid === $uid",
@@ -191,6 +195,41 @@
  "rp": {
   ".read": true,
   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"
+ },
+ "nr": {
+  ".read": false,
+  ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())"
+ },
+ "nrd": {
+  ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
+  "$d": {
+   "$i": {
+    ".read": "data.child('a').val() <= now"
+   }
+  }
+ },
+ "pred": {
+  ".read": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
+  "$uid": {
+   ".read": "auth != null && auth.uid === $uid",
+   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (auth != null && auth.uid === $uid && !data.exists() && newData.exists() && now < 1795964400000 && ((!root.child('tk/s/end').exists() || root.child('tk/s/end/k').val() === 'half') && !root.child('tk/s/stop').exists() && now <= 1796050799999) && !root.child('tk/ban/' + auth.uid).exists() && root.child('tk/u/' + auth.uid).child('f').exists())",
+   ".validate": "newData.hasChildren(['f', 't', 'n', 'h']) && newData.child('t').val() === now && root.child('tk/s/mg/' + newData.child('f').val()).val() === newData.child('f').val() && newData.child('n').val() === root.child('tk/u/' + auth.uid).child('n').val() && newData.child('h').val() === root.child('tk/u/' + auth.uid).child('h').val()",
+   "f": {
+    ".validate": "newData.isString()"
+   },
+   "t": {
+    ".validate": true
+   },
+   "n": {
+    ".validate": "newData.isString()"
+   },
+   "h": {
+    ".validate": "newData.isString()"
+   },
+   "$other": {
+    ".validate": false
+   }
+  }
  },
  "gk": {
   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",

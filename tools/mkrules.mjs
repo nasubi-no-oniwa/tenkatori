@@ -114,7 +114,13 @@ tk.k = { '.read': false, '.write': false };
     + ` && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000)`;
   const FAST = `(newData.parent().child('q').isString() && ${S}.child('a').isNumber() && now >= ${S}.child('a').val() && now < ${S}.child('a').val() + 3600000`
     + ` && (((${S}.child('f').val() === newData.parent().child('f').val() || ${S}.child('f2').val() === newData.parent().child('f').val()) && (now - data.val() >= ${FASTT} || (${GK} && now - data.val() >= ${FASTT / 2})))`
-    + ` || (${S}.child('f').val() === '*' && (now - data.val() >= ${ALLT} || (${GK} && now - data.val() >= ${ALLT / 2})))))`;
+    + ` || (${S}.child('f').val() === '*' && (now - data.val() >= ${ALLT} || (${GK} && now - data.val() >= ${ALLT / 2})))`
+    // 最終決戦（11/30 21時〜）：'!' の時間は全軍2分（下剋上の軍は1分）
+    + ` || (${S}.child('f').val() === '!' && (now - data.val() >= ${FASTT} || (${GK} && now - data.val() >= ${FASTT / 2})))))`;
+  // 狼煙（11/26から）：qn＝狼煙のかぎ（nr のかぎ＝上がった時刻）。上がってから30分、その国のマス（nr/{かぎ}/c）は全軍1分で取れる
+  const QN = "newData.parent().child('qn').val()", NRA = `root.child('tk/nr/' + ${QN} + '/a')`;
+  const NOROSHI = `(newData.parent().child('qn').isString() && ${NRA}.isNumber() && now >= ${NRA}.val() && now < ${NRA}.val() + 1800000`
+    + ` && root.child('tk/nr/' + ${QN} + '/c/' + newData.parent().child('c').val()).exists() && now - data.val() >= 60000)`;
   // 兵糧（11/18）：qd＝今日の0時（schd のかぎ）。その日にその陣営が集めた米俵が3・7・12俵で、待ちが50・40・30分になる
   const QD = "newData.parent().child('qd').val()", SD = `root.child('tk/schd/' + ${QD} + '/r')`, RC = `root.child('tk/rice/' + ${QD} + '/' + newData.parent().child('f').val()).val()`;
   const MORALE = `(newData.parent().child('qd').isString() && ${SD}.isNumber() && ${SD}.val() <= now && now < ${SD}.val() + 86400000`
@@ -141,10 +147,11 @@ tk.k = { '.read': false, '.write': false };
       h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/) && (newData.val() === newData.parent().child('f').val() || root.child('tk/s/mg/' + newData.val()).val() === newData.parent().child('f').val())" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
-      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
+      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE} || ${NOROSHI}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
       rk: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/)" },   // 領内の米俵を蔵に入れるとき、そのマス
+      qn: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },   // 狼煙のかぎ
       qd: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       q: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },
       v: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
@@ -179,6 +186,15 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
       + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
   tk.rp = { '.read': true, '.write': ADMIN };
+  // 狼煙（毎日8回）：nr（決まり用。国のマスの一覧。読めない）と nrd/{その日の0時}/{0〜7}（上がった時刻と国。上がってから読める）
+  tk.nr = { '.read': false, '.write': ADMIN };
+  tk.nrd = { '.write': ADMIN, $d: { $i: { '.read': "data.child('a').val() <= now" } } };   // $i：1日を3時間ずつ8つに分けた何番目か（0〜7）
+  // 天下人予想（11/26〜11/29 24時）：1人1回。仕官した人だけ。予想できるのは軍（三つ巴のあと）。読めるのは本人と管理人
+  tk.pred = { '.read': ADMIN, $uid: { '.read': `auth != null && auth.uid === $uid`,
+    '.write': `${ADMIN} || (auth != null && auth.uid === $uid && !data.exists() && newData.exists() && now < ${Date.UTC(2026, 10, 29, 15)} && ${OPEN} && ${NOBAN} && ${ME}.child('f').exists())`,
+    '.validate': "newData.hasChildren(['f', 't', 'n', 'h']) && newData.child('t').val() === now && root.child('tk/s/mg/' + newData.child('f').val()).val() === newData.child('f').val()"
+      + ` && newData.child('n').val() === ${ME}.child('n').val() && newData.child('h').val() === ${ME}.child('h').val()`,
+    f: { '.validate': "newData.isString()" }, t: { '.validate': true }, n: { '.validate': 'newData.isString()' }, h: { '.validate': 'newData.isString()' }, $other: { '.validate': false } } };
   // 下剋上（11/27から）：その日の下剋上の軍。読めるのはその軍の人と管理人だけ（ほかの軍には知らせない）
   tk.gk = { '.write': ADMIN, $d: { '.read': `${ADMIN} || (auth != null && root.child('tk/u/' + auth.uid + '/f').val() === data.val())` } };   // エンドロール（地図の移り変わりと名前。終わったときに毎日の処理が作る）
   tk.rice = { '.read': true, '.write': ADMIN, $d: { $L: {

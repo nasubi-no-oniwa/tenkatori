@@ -186,6 +186,7 @@ else if (op === 'launch' || op === 'reset') {
   await ensureSched(false);
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
   await sweepRice(d);
+  await ensureNoroshi(false);
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
   const FN = globalThis.TK_FNAME, w = {};
@@ -257,6 +258,18 @@ else if (op === 'launch' || op === 'reset') {
     for (const room of pinRooms(s)) { const v = (await get('/tk/bp/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) if (i.startsWith('ich')) w['bp/' + room + '/' + i] = null; w['bp/' + room + '/ich' + d] = { t: now + 1, n: 'なすP', m, g: true }; }
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+} else if (op === 'final') {
+  // 最終決戦と安土城（11/26）：11/30 の21〜23時を '!'（全軍2分）にし、その時間の番は20時へ移す。11/30 の決戦地を安土城にする
+  const HR = 3600000, d = Date.UTC(2026, 10, 29, 15), get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const x = await get('/tk/schd/' + d + '.json'); if (!x || !x.h) { console.log('11/30 の時間割がありません'); process.exit(1); }
+  const h = x.h.split(''), moved = [];
+  for (const i of [21, 22, 23]) { const L = h[i]; if (L !== '-' && L !== '*' && L !== '!') moved.push(L); h[i] = '!'; }
+  for (const L of moved) { const k = [20, 16, 15, 14, 13, 10, 9, 8].find(i => h[i] === '-'); if (k != null) h[k] = L; }
+  const w = { ['schd/' + d + '/h']: h.join(''), ['schd/' + d + '/k']: 'azuchi' };
+  for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = Object.assign({ a: d + i * HR, f: h[i] }, (await get('/tk/sch/' + (d + i * HR) + '/f2.json')) ? { f2: await get('/tk/sch/' + (d + i * HR) + '/f2.json') } : {});
+  await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
+} else if (op === 'noroshi') {
+  await ensureNoroshi(true);
 } else if (op === 'replay') {
   // エンドロールの元を、いまの記録で作る（試し・作りなおし）
   await buildReplay(JSON.parse(await api('GET', '/tk/s.json', undefined, tok)));
@@ -458,7 +471,39 @@ async function buildReplay(s) {
   }
   const cnt = {}; for (const e of lg) if (e.u && !(ban && ban[e.u])) cnt[e.u] = (cnt[e.u] || 0) + 1;
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([id, n]) => { const x = (u && u[id]) || {}; const e = lg.find(z => z.u === id) || {}; return [x.n || e.n || '?', x.h || e.h || '', x.f || e.f || '', n]; });
-  const rp = { t0, hr: HR, nf: nF, mi, f: frames.join('|'), top, at: Date.now(), ver: 1 };
+  // 天下人予想（11/26〜）：天下人を当てた人（早く予想した順に50人）と人数。天下人は、天下統一ならその軍、終戦なら安土城を押さえた軍、いなければマスのいちばん多い軍
+  let win = s.end && s.end.k !== 'half' ? s.end.f : '';
+  if (!win) { const az = MAP.lm.find(l => l.id === 'azuchi'), o = az ? cur[az.c[0]] : ''; if (az && o && o !== 'w' && az.c.every(i => cur[i] === o)) win = o; }
+  if (!win) win = Object.keys(s.n || {}).filter(L => L !== 'w').sort((a, b) => s.n[b] - s.n[a])[0] || '';
+  const pr = (await get('/tk/pred.json')) || {}, hit = Object.values(pr).filter(x => x && x.f === win).sort((a, b) => a.t - b.t);
+  const pred = { w: win, n: hit.length, all: Object.keys(pr).length, names: hit.slice(0, 50).map(x => [x.n, x.h]) };
+  const rp = { t0, hr: HR, nf: nF, mi, f: frames.join('|'), top, pred, at: Date.now(), ver: 1 };
   await api('PUT', '/tk/rp.json', rp, tok);
   console.log('エンドロールの元を作りました：' + nF + 'コマ（' + new Date(t0 + 9 * HR).toISOString().slice(0, 16) + '〜）・三つ巴は' + mi + 'コマ目・' + rp.f.length + '文字・上位' + top.length + '人（1位 ' + (top[0] || []).join(' ') + '）');
+}
+
+// 狼煙（11/26から、毎日8回）：1日を3時間ずつ8つに分け、それぞれのランダムな時刻に30分。今日の分がまだなければ作る（今日の途中なら、いまから1時間後より後の回だけ）
+//  国は、2つ以上の軍が入りまじる国から、その日まだ選んでいない国を選ぶ
+async function ensureNoroshi(force) {
+  const HR = 3600000, MIN = 60000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  if (now > END) return; const have = (await get('/tk/nrd/' + d + '.json')) || {};
+  if (Object.keys(have).length && !force) { console.log('今日の狼煙：もう決まっています（' + Object.keys(have).length + '回）'); return; }
+  const c0 = await get('/tk/c.json'), c = Array.isArray(c0) ? c0 : Object.assign([], c0), castle = new Set(Object.values(MAP.castle));
+  const byP = {}; for (let i = 0; i < MAP.n; i++) { if (castle.has(i)) continue; const p = MAP.prov[i]; (byP[p] = byP[p] || []).push(i); }
+  const mixed = Object.keys(byP).filter(p => { const own = new Set(byP[p].map(i => c[i] || MAP.own[i]).filter(L => L !== 'w')); return own.size >= 2 && byP[p].length >= 15; });
+  let pool = (mixed.length >= 8 ? mixed : Object.keys(byP).filter(p => byP[p].length >= 15)).slice();
+  for (const v of Object.values(have)) pool = pool.filter(p => +p !== v.p);
+  const w = {}, out = [];
+  for (let b = 0; b < 8; b++) {
+    if (have[b] && have[b].a <= now) continue;   // もう上がった回はそのまま
+    const lo = Math.max(d + b * 3 * HR, Math.ceil((now + HR) / (5 * MIN)) * 5 * MIN), hi = d + (b + 1) * 3 * HR - 30 * MIN; if (lo > hi) continue;
+    const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
+    const k = Math.floor(Math.random() * pool.length), p = +pool.splice(k, 1)[0]; if (Number.isNaN(p)) break;
+    const pv = MAP.provs[p], name = Array.isArray(pv) ? pv[0] : pv;
+    w['nr/' + a] = { a, p, c: Object.fromEntries(byP[p].map(i => [i, true])) }; w['nrd/' + d + '/' + b] = { a, p, k: String(a) };
+    out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + name + '（' + byP[p].length + 'マス）');
+  }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+  console.log('今日の狼煙：' + (out.length ? out.join('、') : 'なし'));
 }

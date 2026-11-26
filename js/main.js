@@ -427,7 +427,7 @@
     };
     const bb = [1e9, 1e9, 0, 0]; for (let i = 0; i < M.n; i++) { const cx = M.cells[2 * i], cy = M.cells[2 * i + 1]; bb[0] = Math.min(bb[0], cx); bb[1] = Math.min(bb[1], cy); bb[2] = Math.max(bb[2], cx + 1); bb[3] = Math.max(bb[3], cy + 1); }   // 陸のある範囲だけを大きく出す
     const apply = s => { for (let j = 0; j + 3 < s.length; j += 4) st[parseInt(s.substr(j, 3), 36)] = s[j + 3]; };
-    const dt = 60000 / Math.max(1, fr.length), J = 9 * 3600000;
+    const dt = 90000 / Math.max(1, fr.length), J = 9 * 3600000;
     const label = f => { const d = new Date(rp.t0 + (f + 1) * rp.hr + J); $('rollD').textContent = t('roll_date', { m: d.getUTCMonth() + 1, d: d.getUTCDate(), h: d.getUTCHours() }); $('rollBar').firstChild.style.width = ((f + 1) / fr.length * 100).toFixed(1) + '%'; };
     let t0 = performance.now(), drawn = 0;
     for (let f = 0; f < fr.length && !stop; f++) {

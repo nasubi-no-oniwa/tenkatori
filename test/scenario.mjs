@@ -205,6 +205,33 @@ export async function run(drv, log = console.log) {
     }
     await drv.admin({ ['sch/' + K4]: null, ['sch/' + K5]: null, ['schd/' + DG]: null, ['gk/' + DG]: null });
   }
+  log('6h) 最終決戦（"!" の時間は全軍2分）・狼煙（その国のマスは30分間1分）・天下人予想（1人1回、軍だけ）');
+  {
+    const X = await drv.user('X6h'), Y = await drv.user('Y6h');
+    await yes(join(X, 'a', '決戦'), 'Xが織田に仕える'); await yes(join(Y, 'b', '狼煙'), 'Yが武田に仕える'); await age(X, Y);
+    const K6 = '37' + String(Date.now()).slice(-11), NK = '38' + String(Date.now()).slice(-11);
+    await drv.admin({ ['sch/' + K6]: { a: SV, f: '!' }, ['nr/' + NK]: { a: SV, p: 1, c: { 5: true, 6: true } } });
+    const tg = (u, o) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, Object.fromEntries(Object.entries(o || {}).map(([k, v]) => ['u/' + u + '/' + k, v]))), u);
+    await yes(tg(X), 'Xが1マス取る'); await yes(tg(Y, { c: '5' }), 'Yも1マス取る');
+    ok(!(await drv.read('nr/' + NK, Y)).ok, '狼煙の国のマスの一覧（決まり用）は読めない');
+    if (drv.advance) {
+      await drv.advance(60 * 1000 + 500);
+      await yes(tg(Y, { c: '5', qn: NK }), '狼煙の国のマスは、1分で次が取れる');
+      await drv.advance(60 * 1000 + 500);
+      await no(tg(Y, { c: '9', qn: NK }), '狼煙の国でないマスは、1分では取れない');
+      await yes(tg(X, { q: K6 }), '最終決戦の時間は、どの軍も2分で次が取れる');
+      await drv.advance(30 * 60 * 1000);
+      await no(tg(Y, { c: '6', qn: NK }), '狼煙は30分で終わる');
+    }
+    await drv.admin({ ['sch/' + K6]: null, ['nr/' + NK]: null, 's/mg': { a: 'a', b: 'a', c: 'c' } });
+    const pr = (u, f, n, h) => drv.update({ ['pred/' + u]: { f, t: SV, n, h } }, u);
+    await no(pr(X, 'b', '決戦', 'a'), '軍でない家は予想できない');
+    await no(pr(X, 'a', 'にせ', 'a'), '自分の名前でなければ予想できない');
+    await yes(pr(X, 'a', '決戦', 'a'), '軍を1つ予想できる');
+    await no(pr(X, 'c', '決戦', 'a'), '予想は1回だけ');
+    ok((await drv.read('pred/' + X, X)).ok && !(await drv.read('pred/' + X, Y)).ok, '予想は本人にしか読めない');
+    await drv.admin({ 's/mg': null, ['pred/' + X]: null });
+  }
   log('6e) ピン止め（管理人だけが書ける。読めるのは掲示板と同じ人）');
   {
     const P1 = await drv.user('P6e'); await yes(join(P1, 'b', '読む人'), '武田に仕える');
