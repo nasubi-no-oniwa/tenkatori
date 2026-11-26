@@ -186,6 +186,11 @@
     pd_closed: ['予想の受付は終わりました。', 'Predictions are closed.', '預測已截止。', '예상 접수가 끝났습니다.'],
     roll_pred: ['天下人を当てた者たち（{n}人）', 'Those who predicted the ruler ({n})', '猜中天下人的人們（{n}人）', '천하인을 맞힌 이들 ({n}명)'],
     roll_pred_more: ['ほか{n}人', 'and {n} more', '另外{n}人', '외 {n}명'],
+    // 奇襲（11/26）
+    fs_ki_atk: ['⚔ 奇襲！ {army}のマスは1分で1マス（残り {t}）', '⚔ Surprise attack! {army} tiles: 1 tile / 1 min ({t} left)', '⚔ 奇襲！{army}的格子每1分鐘1格（剩 {t}）', '⚔ 기습! {army}의 칸은 1분에 1칸 (남은 {t})'],
+    fs_ki_def: ['⚠ {army}の奇襲！ 敵は当軍のマスを1分で奪える（残り {t}）', '⚠ {army} attacks! They can take our tiles every minute ({t} left)', '⚠ {army}來襲！敵軍每1分鐘可奪本軍1格（剩 {t}）', '⚠ {army}의 기습! 적은 우리 칸을 1분에 빼앗는다 (남은 {t})'],
+    sy_ki_atk: ['【奇襲】好機到来！ {b}まで、{army}のマスは1分で取れる。討て！', '[Surprise attack] Our chance! Until {b}, {army} tiles can be taken every minute. Strike!', '【奇襲】良機到來！到{b}為止，{army}的格子每1分鐘可取。出擊！', '[기습] 호기 도래! {b}까지 {army}의 칸은 1분에 빼앗을 수 있다. 쳐라!'],
+    sy_ki_def: ['【奇襲】{army}が奇襲をしかけてきた！ {b}まで、敵は当軍のマスを1分で奪える。守れ！', '[Surprise attack] {army} has launched a surprise attack! Until {b} they can take our tiles every minute. Defend!', '【奇襲】{army}發動奇襲！到{b}為止，敵軍每1分鐘可奪本軍的格子。守住！', '[기습] {army}이(가) 기습해 왔다! {b}까지 적은 우리 칸을 1분에 빼앗을 수 있다. 지켜라!'],
     gm: ['なすP', 'NasuP', 'NasuP', 'NasuP'], notice: ['なすPより', 'From NasuP', 'NasuP的公告', 'NasuP의 알림'],
     follow: ['新作を毎日出してます　𝕏 なすPをフォロー', 'New games every day — follow NasuP on 𝕏', '每天推出新作　在𝕏追蹤NasuP', '매일 신작을 냅니다　𝕏 NasuP 팔로우'],
   };

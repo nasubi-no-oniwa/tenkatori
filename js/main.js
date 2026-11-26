@@ -153,8 +153,9 @@
   function fastBar() {
     const el = $('fastBar'); if (!el) return; const me = N.me, now = N.now();
     let txt = '', hot = false;
-    const nr = N.nrNow();
-    if (me && nr && !N.ended() && !N.s.stop) { hot = true; txt = t('fs_nr', { list: nrNames(nr), t: TK.clock(nr.a + 1800000 - now) }); }   // 狼煙（いちばん先に出す）
+    const nr = N.nrNow(), ki = me && N.kiNow();
+    if (ki && !N.ended() && !N.s.stop) { hot = true; txt = t(ki.f === me.f ? 'fs_ki_atk' : 'fs_ki_def', { army: TK.army(TK.FI[ki.f === me.f ? ki.g : ki.f]), t: TK.clock(ki.a + 1800000 - now) }); }   // 奇襲（その2軍の人だけ）
+    else if (me && nr && !N.ended() && !N.s.stop) { hot = true; txt = t('fs_nr', { list: nrNames(nr), t: TK.clock(nr.a + 1800000 - now) }); }   // 狼煙（いちばん先に出す）
     else if (me && !N.ended() && !N.s.stop && N.sched[N.dayStart()]) {
       const sl = N.fastNow();
       if (sl) { hot = true; txt = sl.f === '!' ? gkTxt(t('fs_hfin', { t: TK.clock(sl.e - now) })) : gkTxt(t(sl.f === '*' && sl.f2 !== me.f ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) })); }
@@ -181,6 +182,7 @@
       if (dd && dd.rc && dd.rc.size) out.push({ id: 'dr' + d, t: d, m: t('sy_rice', { n: dd.rc.size }) });
       for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000) continue; if (hs[i] === '*') out.push({ id: 'h' + a, t: a + 1, m: t('sy_hall', { b: fsH(i + 1) }) }); }   // 陣営ごとの番（2分）は、その陣営の軍議だけに出す
     } else {
+      if (N.me && N.me.f === room) for (const v of N.kiList()) out.push({ id: 'k' + v.a, t: v.a, m: t(v.f === room ? 'sy_ki_atk' : 'sy_ki_def', { army: TK.army(TK.FI[v.f === room ? v.g : v.f]), b: fsHM(v.a + 1800000) }) });   // 奇襲のお知らせ（始まった時刻に、その2軍の軍議だけ）
       const ix = []; for (let i = 0; i < 24; i++) if (hs[i] === room) ix.push(i); if (!ix.length) return out;   // 三つ巴のあとは1日2回
       out.push({ id: 'd' + d, t: d, m: ix.length === 1 ? t('sy_fday', { a: fsH(ix[0]), b: fsH(ix[0] + 1) }) : t('sy_fday2', { list: ix.map(i => fsH(i) + '〜' + fsH(i + 1)).join('、') }) });
       for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) }); }
@@ -203,12 +205,12 @@
     if (N.ended()) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('t_ended'); $('hudT').style.fontSize = '14px'; if (!endShown) checkEnd(); return; }
     if (!N.me) { tm.className = ''; $('hudTL').textContent = t('t_until', { t: '' }).replace(/\s+$/, ''); $('hudT').textContent = TK.dur(TK.END - N.now()); $('hudT').style.fontSize = '15px'; return; }
     if (N.s.stop) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('prep'); $('hudT').style.fontSize = '14px'; return; }
-    $('hudT').style.fontSize = ''; const w = N.wait(), ready = w <= 0 || N.nrReady();
+    $('hudT').style.fontSize = ''; const w = N.wait(), ready = w <= 0 || N.nrReady() || N.kiReady();
     tm.className = ready ? 'ready' : ''; $('hudTL').textContent = t('hud_wait'); $('hudT').textContent = ready ? t('hud_ready') : TK.clock(w);
     if (ready !== wasReady) { wasReady = ready; refreshGlow(); if (selCell >= 0) showCell(selCell); }
     else if (!ready && selCell >= 0 && !$('cell').hidden) { const ck = N.canTake(selCell); if (ck.why === 'wait') $('cellWhy').textContent = t('why_wait', { t: TK.clock(w) }); }
   }
-  function refreshGlow() { const nrOnly = N.me && N.wait() > 0 && N.nrReady(); MP.setGlow(N.me && !N.ended() ? N.takeable().filter(i => !nrOnly || N.inNr(i)) : [], N.me && (N.wait() <= 0 || nrOnly) && !N.s.stop); }
+  function refreshGlow() { const nrOnly = N.me && N.wait() > 0 && N.nrReady(), kiOnly = N.me && N.wait() > 0 && N.kiReady(); MP.setGlow(N.me && !N.ended() ? N.takeable().filter(i => !(nrOnly || kiOnly) || (nrOnly && N.inNr(i)) || (kiOnly && N.kiAtk(i))) : [], N.me && (N.wait() <= 0 || nrOnly || kiOnly) && !N.s.stop); }
   function showCell(i) {
     selCell = i; MP.select(i); const box = $('cell'); if (i < 0) { box.hidden = true; return; }
     const L = N.cells[i], f = TK.FI[L] || null, cas = N.CASTLE.get(i);

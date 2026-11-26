@@ -136,6 +136,8 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
               auto.push({ t: d, top: 1, m: `お知らせ：本日の早取りの時間割です（日本時間）。${li.join('、')}。それぞれの番の1時間は、その陣営だけ2分で1マス取れます。0時・6時・12時・18時からの1時間は、全陣営が5分で1マスです。` });
               for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000 || hs[i] !== '*') continue; auto.push({ t: a + 1, m: `お知らせ：ただいま全陣営の早取りの時間です（${H(i + 1)}まで）。どの陣営も5分で1マス取れます。` }); }
             } else {
+              { const kd = (await get('kid/' + d).catch(() => null)) || {}; const fm = (await get('s/mg').catch(() => null)) || {}, an = L => fn(L) + '軍', hm = ts => { const x = new Date(ts + JST); return x.getUTCHours() + ':' + String(x.getUTCMinutes()).padStart(2, '0'); };   // 奇襲（11/26から）：その2軍の軍議に、始まった時刻に出る
+                for (const v of Object.values(kd)) if (v && v.a <= now && (v.f === room || v.g === room)) auto.push({ t: v.a, m: v.f === room ? `【奇襲】好機到来！ ${hm(v.a + 1800000)}まで、${an(v.g)}のマスは1分で取れる。討て！` : `【奇襲】${an(v.f)}が奇襲をしかけてきた！ ${hm(v.a + 1800000)}まで、敵は当軍のマスを1分で奪える。守れ！` }); }
               const ix = []; for (let i = 0; i < 24; i++) if (hs[i] === room) ix.push(i);   // 三つ巴のあとは1日2回
               if (ix.length) { auto.push({ t: d, top: 1, m: ix.length === 1 ? `お知らせ：本日の当家の番は${H(ix[0])}〜${H(ix[0] + 1)}。この1時間は2分で1マス取れる。皆の者、備えよ！` : `お知らせ：本日の当軍の早取りの番は${ix.map(i => H(i) + '〜' + H(i + 1)).join('、')}。この間は2分で1マス取れる。皆の者、備えよ！` });
                 for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) auto.push({ t: a + 1, m: `お知らせ：ただいま当家の番！ ${H(i + 1)}まで2分で1マス取れる。いざ出陣！` }); } }
@@ -161,10 +163,10 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         const v = list(await get('log', { orderBy: 't', limitToLast: 150 })); const cnt = {}; for (const e of v) if (e.u) cnt[e.u] = (cnt[e.u] || 0) + 1;
         // 早取り（11/17）に合わせた「早すぎ」の見分け：取った時刻の番が自分の陣営なら2分、全陣営の時間なら5分、ほかは1時間あいていればよい
         const DAYM = 86400000, JST = 9 * 3600000, day = t => Math.floor((t + JST) / DAYM) * DAYM - JST, sch = {};
-        const xs = {}, rice = {}, gks = {};   // gks：その日の下剋上の軍（早取りが半分）
-        await Promise.all([...new Set(v.map(e => day(e.t)))].map(d => Promise.all([get('schd/' + d).then(x => { if (x && x.h) { sch[d] = x.h; xs[d] = x.x || {}; } }).catch(() => { }), get('rice/' + d).then(x => { rice[d] = x || {}; }).catch(() => { }), get('gk/' + d).then(x => { gks[d] = x || ''; }).catch(() => { })])));
+        const xs = {}, rice = {}, gks = {}, kis = {};   // kis：その日の奇襲（30分、仕掛けた軍は相手のマスを1分）   // gks：その日の下剋上の軍（早取りが半分）
+        await Promise.all([...new Set(v.map(e => day(e.t)))].map(d => Promise.all([get('schd/' + d).then(x => { if (x && x.h) { sch[d] = x.h; xs[d] = x.x || {}; } }).catch(() => { }), get('rice/' + d).then(x => { rice[d] = x || {}; }).catch(() => { }), get('gk/' + d).then(x => { gks[d] = x || ''; }).catch(() => { }), get('kid/' + d).then(x => { kis[d] = Object.values(x || {}); }).catch(() => { })])));
         // 兵糧の士気（その日の最後の数で見るので、甘めの判定）：3・7・12俵で50・40・30分
-        const need = e => { const d = day(e.t), h = sch[d], i = Math.floor((e.t - d) / 3600000); const L = h ? h[i] : ''; const k = gks[d] && gks[d] === e.f ? 0.5 : 1; if (L === e.f || (xs[d] && xs[d][i] === e.f)) return 120000 * k; if (L === '*') return 300000 * k; const n = +((rice[d] || {})[e.f]) || 0; return 3600000 - (n >= 12 ? 3 : n >= 7 ? 2 : n >= 3 ? 1 : 0) * 600000; };
+        const need = e => { const d = day(e.t), h = sch[d], i = Math.floor((e.t - d) / 3600000); const L = h ? h[i] : ''; if ((kis[d] || []).some(v => v && e.t >= v.a && e.t < v.a + 1800000 && v.f === e.f && v.g === e.p)) return 60000; const k = gks[d] && gks[d] === e.f ? 0.5 : 1; if (L === e.f || (xs[d] && xs[d][i] === e.f)) return 120000 * k; if (L === '*') return 300000 * k; const n = +((rice[d] || {})[e.f]) || 0; return 3600000 - (n >= 12 ? 3 : n >= 7 ? 2 : n >= 3 ? 1 : 0) * 600000; };
         const prevT = {}, fast = {};
         for (const e of v.slice().sort((a, b) => a.t - b.t)) { if (e.y !== 't' || !e.u) continue; if (prevT[e.u] && e.t - prevT[e.u] < need(e) - 5000) fast[e.id] = Math.round((e.t - prevT[e.u]) / 1000); prevT[e.u] = e.t; }
         const nFast = Object.keys(fast).length;

@@ -96,7 +96,7 @@
     if (via === undefined) return { ok: false, why: 'boxed' };
     if (N.ended()) return { ok: false, why: 'end', via };
     if (N.s.stop) return { ok: false, why: 'stop', via };
-    if (N.wait() > 0 && !(N.inNr(i) && N.nrReady())) return { ok: false, why: 'wait', via };   // 狼煙の国のマスは1分で取れる
+    if (N.wait() > 0 && !(N.inNr(i) && N.nrReady()) && !(N.kiAtk(i) && N.kiReady())) return { ok: false, why: 'wait', via };   // 奇襲：仕掛けた軍は、相手の軍のマスを1分で取れる   // 狼煙の国のマスは1分で取れる
     return { ok: true, via, w };
   };
   const alive = (j, f) => CASTLE.has(j) || ADJ[j].some(x => N.cells[x] === f || N.cells[x] === 'w');
@@ -160,6 +160,18 @@
   N.isGk = (f, t) => { const d = N.dayStart(t); return !!(f && N.gk[d] && N.gk[d] === f); };
   N.fastFor = (sl, f) => { if (!sl || !f) return 0; const k = N.isGk(f, sl.a) ? 0.5 : 1; return (sl.f === f || sl.f2 === f || sl.f === '!') ? TK.FASTT * k : sl.f === '*' ? TK.ALLT * k : 0; };   // '!'：最終決戦（全軍2分）
   // ---------- 狼煙（11/26から、毎日3回×3か国）：nrd/{その日の0時}/{0〜2} は上がってから読める。上がって30分、その国のマスは全軍1分 ----------
+  // ---------- 奇襲（11/26から、毎日9回）：kid/{その日の0時}/{0〜8} は、始まってから、仕掛けた軍と仕掛けられた軍の人だけ読める ----------
+  N.ki = {};
+  N.loadKi = async function (d) {
+    d = d || N.dayStart(); const o = N.ki[d] = N.ki[d] || {}; if (!N.me || N.loadKi.at > Date.now() - 60000) return; N.loadKi.at = Date.now();
+    for (let b = 0; b < 9; b++) { if (o[b] !== undefined || d + b * 9600000 > N.now()) continue;
+      if (N.fake) { if (/[?&]ki=/.test(location.search) && b === Math.floor((N.now() - d) / 9600000)) { const oth = N.armies().filter(L => L !== N.me.f); o[b] = { a: N.now() - 60000, f: /ki=def/.test(location.search) ? oth[0] : N.me.f, g: /ki=def/.test(location.search) ? N.me.f : oth[0], k: String(N.now() - 60000) }; } continue; }
+      try { const v = await rest('kid/' + d + '/' + b, null, true); if (v && typeof v.a === 'number') o[b] = v; else if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } catch (e) { if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } }
+  };
+  N.kiList = () => Object.values(N.ki[N.dayStart()] || {}).filter(v => v && v.a <= N.now()).sort((x, y) => x.a - y.a);
+  N.kiNow = () => N.kiList().find(v => N.now() < v.a + 1800000) || null;
+  N.kiAtk = i => { const v = N.kiNow(), me = N.me; return !!(v && me && v.f === me.f && N.cells && N.cells[i] === v.g); };
+  N.kiReady = () => { const v = N.kiNow(), me = N.me; if (!v || !me || v.f !== me.f) return false; const now = N.now(); return (!me.t || now - me.t >= 60000) && (!me.j || now >= me.j + (TK.JOINT || 0)); };
   N.nr = {};   // N.nr[その日の0時] = { 0: {a,p:[国],k}, ... }
   N.loadNr = async function (d) {
     d = d || N.dayStart(); const o = N.nr[d] = N.nr[d] || {}; if (N.loadNr.at > Date.now() - 60000) return; N.loadNr.at = Date.now();
@@ -241,7 +253,7 @@
   // 読みなおし（30秒ごと）：増えた記録だけ。戻り値：新しい記録
   N.poll = async function () {
     if (!N.sched[N.dayStart()]) N.loadSched().catch(() => { }); else N.loadRice().catch(() => { });
-    N.loadNr().catch(() => { });
+    N.loadNr().catch(() => { }); N.loadKi().catch(() => { });
     if (N.fake) return FK.poll();
     const ver = N.s.ver || 0;
     const list = sorted(await rest('log', { orderBy: 't', startAt: N.lastT + 1, limitToLast: 400 }));
@@ -272,7 +284,8 @@
     const w = { ['c/' + i]: me.f, ['ct/' + i]: SV, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(i), ['u/' + u + '/v']: String(ck.via), ['u/' + u + '/l']: id, ['u/' + u + '/w']: String(ck.w == null ? ck.via : ck.w), ['s/n/' + me.f]: INC(1), ['s/n/' + prev]: INC(-1),
       ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(i), f: me.f, p: prev, n: me.n, h: me.h, u }, me.r ? { r: true } : {}) };
     { const sl = N.fastNow(); if (sl) w['u/' + u + '/q'] = String(sl.a); }
-    if (N.inNr(i)) w['u/' + u + '/qn'] = N.nrNow().k;   // 狼煙の国のマスなら、狼煙のかぎもいっしょに書く   // 早取りの時間なら、その時間の始まりの時刻もいっしょに書く
+    if (N.inNr(i)) w['u/' + u + '/qn'] = N.nrNow().k;
+    if (N.kiAtk(i)) w['u/' + u + '/qk'] = N.kiNow().k;   // 奇襲の相手のマスなら、奇襲のかぎもいっしょに書く   // 狼煙の国のマスなら、狼煙のかぎもいっしょに書く   // 早取りの時間なら、その時間の始まりの時刻もいっしょに書く
     // 兵糧集め：今日の日付（士気の短縮に使う）と、米俵のマスなら兵糧+1
     const td = N.dayStart(), rice = N.isRice(i) && typeof N.rice[me.f] === 'number';
     if (N.day[td]) w['u/' + u + '/qd'] = String(td);
