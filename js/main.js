@@ -204,10 +204,10 @@
     if (N.ended()) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('t_ended'); $('hudT').style.fontSize = '14px'; if (!endShown) checkEnd(); return; }
     if (!N.me) { tm.className = ''; $('hudTL').textContent = t('t_until', { t: '' }).replace(/\s+$/, ''); $('hudT').textContent = TK.dur(TK.END - N.now()); $('hudT').style.fontSize = '15px'; return; }
     if (N.s.stop) { tm.className = ''; $('hudTL').textContent = ''; $('hudT').textContent = t('prep'); $('hudT').style.fontSize = '14px'; return; }
-    $('hudT').style.fontSize = ''; const w = N.wait(), ready = w <= 0 || N.nrReady() || N.kiReady();
-    tm.className = ready ? 'ready' : ''; $('hudTL').textContent = t('hud_wait'); $('hudT').textContent = ready ? t('hud_ready') : TK.clock(w);
+    $('hudT').style.fontSize = ''; const kw = N.kiWait(), w = Math.min(N.wait(), kw), ready = w <= 0 || N.nrReady() || N.kiReady();   // 奇襲中は、奇襲の1分待ちの残りも見る
+    tm.className = ready ? 'ready' : ''; $('hudTL').textContent = !ready && kw < Infinity && kw < N.wait() ? t('hud_ki') : t('hud_wait'); $('hudT').textContent = ready ? t('hud_ready') : TK.clock(w);
     if (ready !== wasReady) { wasReady = ready; refreshGlow(); if (selCell >= 0) showCell(selCell); }
-    else if (!ready && selCell >= 0 && !$('cell').hidden) { const ck = N.canTake(selCell); if (ck.why === 'wait') $('cellWhy').textContent = t('why_wait', { t: TK.clock(w) }); }
+    else if (!ready && selCell >= 0 && !$('cell').hidden) { const ck = N.canTake(selCell); if (ck.why === 'wait') $('cellWhy').textContent = t('why_wait', { t: TK.clock(N.kiAtk(selCell) ? Math.min(N.wait(), kw) : N.wait()) }); }
   }
   function refreshGlow() { const nrOnly = N.me && N.wait() > 0 && N.nrReady(), kiOnly = N.me && N.wait() > 0 && N.kiReady(); MP.setGlow(N.me && !N.ended() ? N.takeable().filter(i => !(nrOnly || kiOnly) || (nrOnly && N.inNr(i)) || (kiOnly && N.kiAtk(i))) : [], N.me && (N.wait() <= 0 || nrOnly || kiOnly) && !N.s.stop); }
   function showCell(i) {
@@ -219,7 +219,7 @@
     const lm = lmOf(i); $('cellLm').hidden = !lm; if (lm) $('cellLm').textContent = t('cs_lm', { name: TK.L(lm.n), st: lmStatus(lm) });
     const rc = $('cellRice'); if (rc) { rc.hidden = !N.isRice(i); rc.textContent = t('cs_rice'); }
     const ck = N.canTake(i); $('cellGo').hidden = !ck.ok; $('cellGo').textContent = L === 'w' ? t('cs_takew') : t('cs_take');
-    $('cellWhy').hidden = ck.ok; if (!ck.ok) $('cellWhy').textContent = ck.why === 'wait' ? t('why_wait', { t: TK.clock(N.wait()) }) : t('why_' + ck.why);
+    $('cellWhy').hidden = ck.ok; if (!ck.ok) $('cellWhy').textContent = ck.why === 'wait' ? t('why_wait', { t: TK.clock(N.kiAtk(i) ? Math.min(N.wait(), N.kiWait()) : N.wait()) }) : t('why_' + ck.why);
     const was = box.hidden; box.hidden = false; if (was && G.gsap) gsap.fromTo(box, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.25, ease: 'power2.out' });
   }
   async function refreshAll() { try { await Promise.all([N.loadMe(), N.poll()]); } catch (e) { } MP.repaint(); refreshGlow(); updateHud(); checkLM(false); }

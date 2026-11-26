@@ -172,6 +172,8 @@
   N.kiNow = () => N.kiList().find(v => N.now() < v.a + 1800000) || null;
   N.kiAtk = i => { const v = N.kiNow(), me = N.me; return !!(v && me && v.f === me.f && N.cells && N.cells[i] === v.g); };
   N.kiReady = () => { const v = N.kiNow(), me = N.me; if (!v || !me || v.f !== me.f) return false; const now = N.now(); return (!me.t || now - me.t >= 60000) && (!me.j || now >= me.j + (TK.JOINT || 0)); };
+  // 奇襲で相手のマスを取れるまでの残り（奇襲を仕掛けた軍の人だけ。ほかは Infinity）
+  N.kiWait = () => { const v = N.kiNow(), me = N.me; if (!v || !me || v.f !== me.f) return Infinity; const now = N.now(); return Math.max(0, me.t ? me.t + 60000 - now : 0, me.j ? me.j + (TK.JOINT || 0) - now : 0); };
   N.nr = {};   // N.nr[その日の0時] = { 0: {a,p:[国],k}, ... }
   N.loadNr = async function (d) {
     d = d || N.dayStart(); const o = N.nr[d] = N.nr[d] || {}; if (N.loadNr.at > Date.now() - 60000) return; N.loadNr.at = Date.now();
