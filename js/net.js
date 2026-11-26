@@ -164,9 +164,9 @@
   N.ki = {};
   N.loadKi = async function (d) {
     d = d || N.dayStart(); const o = N.ki[d] = N.ki[d] || {}; if (!N.me || N.loadKi.at > Date.now() - 25000) return; N.loadKi.at = Date.now();
-    for (let b = 0; b < 9; b++) { if (o[b] !== undefined || d + b * 9600000 > N.now()) continue;
+    for (let b = 0; b < 10; b++) { const st = b < 9 ? d + b * 9600000 : d, en = b < 9 ? d + (b + 1) * 9600000 : d + 86400000; if (o[b] !== undefined || st > N.now()) continue;   // 9番は、管理人が足した追加の奇襲
       if (N.fake) { if (/[?&]ki=/.test(location.search) && b === Math.floor((N.now() - d) / 9600000)) { const oth = N.armies().filter(L => L !== N.me.f); o[b] = { a: N.now() - 60000, f: /ki=def/.test(location.search) ? oth[0] : N.me.f, g: /ki=def/.test(location.search) ? N.me.f : oth[0], k: String(N.now() - 60000) }; } continue; }
-      try { const v = await rest('kid/' + d + '/' + b, null, true); if (v && typeof v.a === 'number') o[b] = v; else if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } catch (e) { if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } }
+      try { const v = await rest('kid/' + d + '/' + b, null, true); if (v && typeof v.a === 'number') o[b] = v; else if (en < N.now()) o[b] = null; } catch (e) { if (en < N.now()) o[b] = null; } }
   };
   N.kiList = () => Object.values(N.ki[N.dayStart()] || {}).filter(v => v && v.a <= N.now()).sort((x, y) => x.a - y.a);
   N.kiNow = () => N.kiList().find(v => N.now() < v.a + 1800000) || null;

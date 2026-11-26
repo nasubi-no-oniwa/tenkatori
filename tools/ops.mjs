@@ -271,6 +271,13 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'kiadd') {
+  // 奇襲を1回足す（11/26）。q：日本時間の時刻（1300）、h：仕掛ける軍と仕掛けられる軍（n>g）。今日の追加の枠（9番）に入れる
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, q = (process.argv[3] || '').trim(), [f, g] = (process.argv[4] || '').trim().split('>');
+  const a = d + (+q.slice(0, 2)) * HR + (+q.slice(2)) * 60000, FN = globalThis.TK_FNAME;
+  if (!/^\d{4}$/.test(q) || !/^[a-t]$/.test(f) || !/^[a-t]$/.test(g) || f === g) { console.log('q（1300）と h（n>g）を確かめてください'); process.exit(1); }
+  await api('PATCH', '/tk.json', { ['ki/' + a]: { a, f, g }, ['kid/' + d + '/9']: { a, f, g, k: String(a) } }, tok);
+  console.log('奇襲を足しました：' + q.slice(0, 2) + ':' + q.slice(2) + ' ' + FN(f) + '→' + FN(g));
 } else if (op === 'kiunpost') {
   // 前もって軍議に書いた奇襲のお知らせ（番号が ki で始まるもの）を消す（11/26）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = {};
