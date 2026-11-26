@@ -136,6 +136,8 @@
   async function join() {
     if (busy) return; const name = N.cleanName($('rvName').value); if (!name) { $('rvErr').textContent = t('rv_noname'); return; }
     busy = true; $('rvJoin').disabled = true; $('rvErr').textContent = '';
+    // 端末の指紋（11/26）：この端末で10分以内に別の人が仕官していたら、止めて前のアカウントで続けるよう知らせる
+    { const rc = await N.fpRecent(); if (rc) { $('rvErr').textContent = t('fp_block', { m: Math.max(1, Math.ceil((rc.t + 600000 - N.now()) / 60000)) }); ev('fp_block'); busy = false; $('rvJoin').disabled = false; return; } }
     try { await N.join(rvF.L, name); ev('join', { warlord: rvF.L }); if (TK.fx) TK.fx('confetti', innerWidth / 2, innerHeight * 0.6); await sleep(500); await enterGame(true); }
     catch (e) { $('rvErr').textContent = t('net_err'); try { await N.loadMe(); if (N.me) await enterGame(true); } catch (e2) { } }
     busy = false; $('rvJoin').disabled = false;

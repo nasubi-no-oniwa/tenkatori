@@ -192,6 +192,7 @@
     sy_ki_atk: ['【奇襲】好機到来！ {b}まで、{army}のマスは1分で取れる。討て！', '[Surprise attack] Our chance! Until {b}, {army} tiles can be taken every minute. Strike!', '【奇襲】良機到來！到{b}為止，{army}的格子每1分鐘可取。出擊！', '[기습] 호기 도래! {b}까지 {army}의 칸은 1분에 빼앗을 수 있다. 쳐라!'],
     sy_ki_def: ['【奇襲】{army}が奇襲をしかけてきた！ {b}まで、敵は当軍のマスを1分で奪える。守れ！', '[Surprise attack] {army} has launched a surprise attack! Until {b} they can take our tiles every minute. Defend!', '【奇襲】{army}發動奇襲！到{b}為止，敵軍每1分鐘可奪本軍的格子。守住！', '[기습] {army}이(가) 기습해 왔다! {b}까지 적은 우리 칸을 1분에 빼앗을 수 있다. 지켜라!'],
     hud_ki: ['奇襲で次の一手まで', 'Next raid move in', '奇襲下一步還有', '기습 다음 수까지'],
+    fp_block: ['この端末では、少し前に別の名前で仕官した記録があります。前のアカウントで続けてください。（{m}分たつと、この端末でも新しく仕官できます）', 'This device enlisted under another name a moment ago. Please continue with that account. (You can enlist anew on this device in {m} min.)', '這台裝置不久前已用其他名字仕官。請用之前的帳號繼續。（{m}分鐘後才能在這台裝置重新仕官）', '이 기기에서는 조금 전에 다른 이름으로 사관한 기록이 있습니다. 이전 계정으로 계속해 주세요. ({m}분 후 이 기기에서도 새로 사관할 수 있습니다)'],
     gm: ['なすP', 'NasuP', 'NasuP', 'NasuP'], notice: ['なすPより', 'From NasuP', 'NasuP的公告', 'NasuP의 알림'],
     follow: ['新作を毎日出してます　𝕏 なすPをフォロー', 'New games every day — follow NasuP on 𝕏', '每天推出新作　在𝕏追蹤NasuP', '매일 신작을 냅니다　𝕏 NasuP 팔로우'],
   };

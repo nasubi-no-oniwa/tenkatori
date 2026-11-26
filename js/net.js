@@ -230,7 +230,9 @@
   N.armyOf = L => { const g = N.mg(); return g && g[L] ? g[L] : L; };
   N.armies = () => { const g = N.mg(); return g ? TK.F.map(f => f.L).filter(L => g[L] === L) : TK.F.map(f => f.L); };
   N.meOK = false;   // 「仕えているか」を、データベースで確かめられたか（読めなかっただけのときに、診断へ戻さないため。11/24）
-  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); N.meOK = true; return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; N.meOK = true; return N.me; };
+  N.loadMe = async function () { if (N.fake) { N.me = FK.me(); N.meOK = true; return N.me; } await N.token(false); const v = await rest('u/' + N.uid(), null, true); N.me = v && v.f ? v : null; N.meOK = true;
+    if (N.me && !N.me.fp) { N.me.fp = N.fp(); update({ ['u/' + N.uid() + '/fp']: N.me.fp }).catch(() => { }); }   // すでに仕官している人も、端末の指紋を1回だけ記録する（11/26、遊び方は変わらない）
+    return N.me; };
   function applyLog(list) { for (const e of list) { if (e.y === 't' && e.c != null && N.cells) N.cells[+e.c] = e.f; if (e.t > N.lastT) N.lastT = e.t; } }
   // full：地図をまるごと読んだ時刻。覚えた地図は、6時間に1回はまるごと読みなおす（ずれたままにしない。11/24）
   let fullAt = 0; const FULLMS = 6 * 3600 * 1000;
@@ -273,11 +275,25 @@
     try { const t0 = Date.now(); await update({ ['on/' + uid]: Object.assign({ t: SV }, N.me ? { f: N.me.f } : {}) }); const t = await rest('on/' + uid + '/t', null, true); const t1 = Date.now(); if (typeof t === 'number') N.offset = Math.round(t - (t0 + t1) / 2); } catch (e) { }
   };
   // ---------- 書く ----------
+  // ---------- 端末の指紋（11/26）：画面・機種・言語・時間帯・文字の描き方などから作る短い記号。同じ端末の同じブラウザなら同じになる ----------
+  const h53 = (str, seed = 0) => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
+  N.fp = function () {
+    if (N.fp.v) return N.fp.v; const p = [];
+    try { const sc = G.screen || {}, nv = G.navigator || {}; p.push(sc.width, sc.height, sc.colorDepth, G.devicePixelRatio, nv.userAgent, (nv.languages || []).join(','), nv.language, nv.platform, nv.hardwareConcurrency, nv.deviceMemory, nv.maxTouchPoints); } catch (e) { }
+    try { p.push(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (e) { }
+    try { const c = G.document.createElement('canvas'); c.width = 240; c.height = 60; const x = c.getContext('2d'); x.textBaseline = 'top'; x.font = '16px "Hiragino Mincho ProN", serif'; x.fillStyle = '#c8321f'; x.fillRect(4, 4, 90, 24); x.fillStyle = 'rgba(30,90,200,.7)'; x.fillText('天下取りマース 🍆 Tk,é', 6, 8); x.strokeStyle = '#1f9d55'; x.arc(180, 30, 18, 0, 5); x.stroke(); p.push(c.toDataURL()); } catch (e) { }
+    try { const g = G.document.createElement('canvas').getContext('webgl'); const d = g && g.getExtension('WEBGL_debug_renderer_info'); if (d) p.push(g.getParameter(d.UNMASKED_VENDOR_WEBGL), g.getParameter(d.UNMASKED_RENDERER_WEBGL)); } catch (e) { }
+    p.push(G.TK_FPSALT || '');   // 試験のときだけ、人ごとにちがう指紋にする
+    return (N.fp.v = h53(p.join('|')).toString(36).padStart(6, '0').slice(0, 16));
+  };
+  // この端末で、10分以内に別の人が仕官しているか（仕官の前に知らせる）
+  N.fpRecent = async function () { if (N.fake) return null; try { await N.token(false); const v = await rest('fpj/' + N.fp(), null, true); return v && typeof v.t === 'number' && v.u !== N.uid() && N.now() - v.t < 600000 ? v : null; } catch (e) { return null; } };
   N.join = async function (L, name) {
     name = N.cleanName(name); if (!name) throw new Error('name');
     if (!N.fake) await N.token(false);
     const u = N.uid(), A = N.armyOf(L);   // 三つ巴のあとは、家（L）が入った軍（A）に仕える
-    await update({ ['u/' + u + '/f']: A, ['u/' + u + '/h']: L, ['u/' + u + '/n']: name, ['u/' + u + '/j']: SV, ['s/m/' + A]: INC(1) });
+    const fp = N.fp();
+    await update(Object.assign({ ['u/' + u + '/f']: A, ['u/' + u + '/h']: L, ['u/' + u + '/n']: name, ['u/' + u + '/j']: SV, ['s/m/' + A]: INC(1) }, N.fake ? {} : { ['u/' + u + '/fp']: fp, ['fpj/' + fp]: { t: SV, u } }));
     await N.loadMe(); return N.me;
   };
   N.take = async function (i) {
