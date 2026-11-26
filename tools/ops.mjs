@@ -281,7 +281,7 @@ else if (op === 'launch' || op === 'reset') {
 } else if (op === 'kiunpost') {
   // 前もって軍議に書いた奇襲のお知らせ（番号が ki で始まるもの）を消す（11/26）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = {};
-  for (const room of 'abcdefghijklmnopqrst') { const v = (await get('/tk/b/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) if (/^ki\d{13}[a-t]$/.test(i)) w['b/' + room + '/' + i] = null; }
+  for (const room of 'abcdefghijklmnopqrst') { const v = (await get('/tk/b/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) if (/^ki[0-9]{13}[a-t]$/.test(i)) w['b/' + room + '/' + i] = null; else if (/^ki/.test(i)) console.log('ki で始まるが形のちがう番号：' + room + ' ' + i); }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('奇襲のお知らせを消しました：' + Object.keys(w).length + '件');
 } else if (op === 'kipost') {
   // 今日の奇襲のお知らせを、その2軍の軍議に書く（まだ書いていない回だけ。11/26 の作りなおし）
