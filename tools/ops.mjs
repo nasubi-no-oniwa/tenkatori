@@ -187,6 +187,7 @@ else if (op === 'launch' || op === 'reset') {
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
   await sweepRice(d);
   await ensureKishu(false);   // 奇襲（11/26から、毎日9回）
+  await pickKessen(d + 86400000, false);   // 明日の決戦地を、いまの地図の国境の近くから選びなおす（11/26から）
   // await ensureNoroshi(false);   // 狼煙は11/26にいったん止めた（中身を考えなおす）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
@@ -271,6 +272,10 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'kessen') {
+  // 明日の決戦地を、いまの地図で選びなおす（q に today と入れると今日の分。11/26）
+  const DAY = 86400000, JST = 9 * 3600000, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST;
+  await pickKessen((process.argv[3] || '').trim() === 'today' ? d : d + DAY, true);
 } else if (op === 'kiadd') {
   // 奇襲を1回足す（11/26）。q：日本時間の時刻（1300）、h：仕掛ける軍と仕掛けられる軍（n>g）。今日の追加の枠（9番）に入れる
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, q = (process.argv[3] || '').trim(), [f, g] = (process.argv[4] || '').trim().split('>');
@@ -570,4 +575,25 @@ function kishuPosts(a, f, g) {
   const FN = globalThis.TK_FNAME, x = new Date(a + 1800000 + 9 * 3600000), hm = x.getUTCHours() + ':' + String(x.getUTCMinutes()).padStart(2, '0');
   return { ['b/' + f + '/ki' + a + f]: { t: a, u: 'gm', n: 'なすP', m: `【奇襲】好機到来！ ${hm}まで、${FN(g)}軍のマスは1分で取れる。討て！`, g: true },
     ['b/' + g + '/ki' + a + g]: { t: a, u: 'gm', n: 'なすP', m: `【奇襲】${FN(f)}軍が奇襲をしかけてきた！ ${hm}まで、敵は当軍のマスを1分で奪える。守れ！`, g: true } };
+}
+
+// 決戦地を国境の近くから選ぶ（11/26）：名所ごとに、まわり（名所のマスから5マス以内）にある軍のマスを数え、
+//  2番目に多い軍のマスの数（＝2つの軍がどれだけせめぎ合っているか）が大きい名所ほどよい。上位3つからくじ。前の日・同じ日と同じ名所は選ばない。11/30（最終日）は安土城のまま
+async function pickKessen(d, force) {
+  const DAY = 86400000, JST = 9 * 3600000, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999), get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  if (d > END || d >= Date.UTC(2026, 10, 29, 15)) { console.log('決戦地：最終日は安土城のまま'); return; }
+  const [x, prev, s, c0] = await Promise.all([get('/tk/schd/' + d + '.json'), get('/tk/schd/' + (d - DAY) + '/k.json'), get('/tk/s.json'), get('/tk/c.json')]);
+  if (!x) { console.log('決戦地：その日の時間割がありません'); return; }
+  if (x.kp && !force) { console.log('決戦地：もう国境から選んであります（' + x.k + '）'); return; }
+  const c = Array.isArray(c0) ? c0 : Object.assign([], c0), mg = (s && s.mg) || {}, arm = L => mg[L] || L;
+  const R = 5, sc = [];
+  for (const lm of MAP.lm) {
+    if (lm.id === 'azuchi' || lm.id === prev) continue;
+    const xs = lm.c.map(i => MAP.cells[2 * i]), ys = lm.c.map(i => MAP.cells[2 * i + 1]), x0 = Math.min(...xs) - R, x1 = Math.max(...xs) + R, y0 = Math.min(...ys) - R, y1 = Math.max(...ys) + R, cnt = {};
+    for (let i = 0; i < MAP.n; i++) { const cx = MAP.cells[2 * i], cy = MAP.cells[2 * i + 1]; if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue; const L = c[i] || MAP.own[i]; if (!L || L === 'w') continue; const A = arm(L); cnt[A] = (cnt[A] || 0) + 1; }
+    const v = Object.entries(cnt).sort((a, b) => b[1] - a[1]); sc.push({ id: lm.id, n: lm.n[0], s: v[1] ? v[1][1] : 0, who: v.slice(0, 2).map(e => globalThis.TK_FNAME(e[0]) + e[1]).join('・') });
+  }
+  sc.sort((a, b) => b.s - a.s); const top = sc.slice(0, 3).filter(e => e.s > 0), pick = top.length ? top[Math.floor(Math.random() * top.length)] : sc[0];
+  await api('PATCH', '/tk/schd/' + d + '.json', { k: pick.id, kp: 1 }, tok);
+  console.log('決戦地（' + new Date(d + JST).toISOString().slice(5, 10) + '）：' + pick.n + '（' + pick.who + '）／ 候補：' + sc.slice(0, 5).map(e => e.n + e.s).join('、'));
 }
