@@ -179,6 +179,32 @@ export async function run(drv, log = console.log) {
     await no(drv.update({ ['schd/D3']: { r: 1000, h: 'c'.repeat(24) } }, X), '時間割は書きかえられない');
     await drv.admin({ ['sch/' + K1]: null, ['sch/' + K2]: null, ['sch/' + K3]: null, ['schd/D1']: null, ['schd/D2']: null });
   }
+  log('6g) 下剋上（その日の下剋上の軍は、早取りが1分・全軍の時間が2分半。どの軍かは、その軍の人にしか読めない）');
+  {
+    const X = await drv.user('X6g'), Y = await drv.user('Y6g');
+    await yes(join(X, 'a', '下剋上'), 'Xが織田に仕える'); await yes(join(Y, 'b', 'ふつう'), 'Yが武田に仕える'); await age(X, Y);
+    const K4 = '27' + String(Date.now()).slice(-11), K5 = '28' + String(Date.now()).slice(-11), DG = '29' + String(Date.now()).slice(-11);
+    await drv.admin({ ['sch/' + K4]: { a: SV, f: 'a' }, ['sch/' + K5]: { a: SV, f: '*' }, ['schd/' + DG]: { r: SV, h: 'a'.repeat(24) }, ['gk/' + DG]: 'a' });
+    const tg = (u, q, qd) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, q ? { ['u/' + u + '/q']: q } : {}, qd ? { ['u/' + u + '/qd']: qd } : {}), u);
+    ok((await drv.read('gk/' + DG, X)).ok, '下剋上の軍の人は、下剋上に選ばれたと読める');
+    ok(!(await drv.read('gk/' + DG, Y)).ok, 'ほかの軍の人は、どの軍が下剋上か読めない');
+    await no(drv.update({ ['gk/' + DG]: 'b' }, Y), '下剋上の軍は書きかえられない');
+    await yes(tg(X), 'Xが1マス取る'); await yes(tg(Y), 'Yも1マス取る');
+    if (drv.advance) {
+      await drv.advance(60 * 1000 + 500);
+      await no(tg(X, K4), '下剋上でも、今日の日付（qd）なしでは1分では取れない');
+      await yes(tg(X, K4, DG), '下剋上の軍は、自軍の番に1分で次が取れる');
+      await drv.advance(60 * 1000 + 500);
+      await no(tg(Y, K5, DG), 'ほかの軍は、今日の日付を書いても2分半では取れない');
+      await drv.advance(29 * 1000);
+      await no(tg(X, K5, DG), '下剋上の軍でも、全軍の時間は2分半たつまでは取れない');
+      await drv.advance(61 * 1000);
+      await yes(tg(X, K5, DG), '下剋上の軍は、全軍の時間に2分半で次が取れる');
+      await drv.advance(90 * 1000);
+      await yes(tg(Y, K5, DG), 'ほかの軍は、全軍の時間はいつもどおり5分');
+    }
+    await drv.admin({ ['sch/' + K4]: null, ['sch/' + K5]: null, ['schd/' + DG]: null, ['gk/' + DG]: null });
+  }
   log('6e) ピン止め（管理人だけが書ける。読めるのは掲示板と同じ人）');
   {
     const P1 = await drv.user('P6e'); await yes(join(P1, 'b', '読む人'), '武田に仕える');

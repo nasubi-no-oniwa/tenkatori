@@ -109,8 +109,12 @@ tk.k = { '.read': false, '.write': false };
   const T = up(3), SELF = "auth != null && auth.uid === $uid";
   // 早取り（11/17）：sch/{1時間の始まり} = { a：始まりの時刻, f：番の武将（* は全陣営） }。番の陣営は2分、全陣営の時間は5分で1マス
   const Q = "newData.parent().child('q').val()", S = `root.child('tk/sch/' + ${Q})`;
+  // 下剋上（11/27から）：gk/{その日の0時}＝その日の下剋上の軍。その軍は早取りが半分（2分→1分・5分→2分半）。その日かは qd（今日の0時）で確かめる
+  const GK = `(newData.parent().child('qd').isString() && root.child('tk/gk/' + newData.parent().child('qd').val()).val() === newData.parent().child('f').val()`
+    + ` && root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() <= now && now < root.child('tk/schd/' + newData.parent().child('qd').val() + '/r').val() + 86400000)`;
   const FAST = `(newData.parent().child('q').isString() && ${S}.child('a').isNumber() && now >= ${S}.child('a').val() && now < ${S}.child('a').val() + 3600000`
-    + ` && (((${S}.child('f').val() === newData.parent().child('f').val() || ${S}.child('f2').val() === newData.parent().child('f').val()) && now - data.val() >= ${FASTT}) || (${S}.child('f').val() === '*' && now - data.val() >= ${ALLT})))`;
+    + ` && (((${S}.child('f').val() === newData.parent().child('f').val() || ${S}.child('f2').val() === newData.parent().child('f').val()) && (now - data.val() >= ${FASTT} || (${GK} && now - data.val() >= ${FASTT / 2})))`
+    + ` || (${S}.child('f').val() === '*' && (now - data.val() >= ${ALLT} || (${GK} && now - data.val() >= ${ALLT / 2})))))`;
   // 兵糧（11/18）：qd＝今日の0時（schd のかぎ）。その日にその陣営が集めた米俵が3・7・12俵で、待ちが50・40・30分になる
   const QD = "newData.parent().child('qd').val()", SD = `root.child('tk/schd/' + ${QD} + '/r')`, RC = `root.child('tk/rice/' + ${QD} + '/' + newData.parent().child('f').val()).val()`;
   const MORALE = `(newData.parent().child('qd').isString() && ${SD}.isNumber() && ${SD}.val() <= now && now < ${SD}.val() + 86400000`
@@ -174,7 +178,9 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
       + ` && ${U}.child('rk').val() === $c && ${ME}.child('f').exists() && newData.child('f').val() === ${ME}.child('f').val() && root.child('tk/c/' + $c).val() === ${ME}.child('f').val() && ${T}.child('c/' + $c).val() === ${ME}.child('f').val()`
       + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
-  tk.rp = { '.read': true, '.write': ADMIN };   // エンドロール（地図の移り変わりと名前。終わったときに毎日の処理が作る）
+  tk.rp = { '.read': true, '.write': ADMIN };
+  // 下剋上（11/27から）：その日の下剋上の軍。読めるのはその軍の人と管理人だけ（ほかの軍には知らせない）
+  tk.gk = { '.write': ADMIN, $d: { '.read': `${ADMIN} || (auth != null && root.child('tk/u/' + auth.uid + '/f').val() === data.val())` } };   // エンドロール（地図の移り変わりと名前。終わったときに毎日の処理が作る）
   tk.rice = { '.read': true, '.write': ADMIN, $d: { $L: {
     '.write': `${ADMIN} || (auth != null && data.isNumber() && newData.val() === data.val() + 1 && ${U}.child('t').val() === now`
       + ` && ${T}.child('rg/' + $d + '/' + ${U}.child('c').val() + '/f').val() === $L && !root.child('tk/rg/' + $d + '/' + ${U}.child('c').val()).exists())`

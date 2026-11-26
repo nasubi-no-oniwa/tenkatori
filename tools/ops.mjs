@@ -237,6 +237,13 @@ else if (op === 'launch' || op === 'reset') {
     for (const e of Object.values(lg)) if (e && e.y === 't' && e.t >= d) { n0[e.f] = (n0[e.f] || 0) - 1; n0[e.p] = (n0[e.p] || 0) + 1; }
     const win = Object.keys(n0).filter(L => L !== 'w' && n0[L] >= 4000)[0];
     console.log('24時のマス：' + JSON.stringify(n0) + (win ? '　→ 天下統一：' + FN(win) : '　→ 4000マスの軍なし'));
+    // 下剋上（11/27から）：24時にいちばんマスの少ない軍は、今日いっぱい早取りが半分。お知らせはその軍の軍議にだけ
+    if (!win && d >= Date.UTC(2026, 10, 26, 15) && s.mg && !(await get('/tk/gk/' + d + '.json'))) {
+      const arm = Object.keys(s.mg).filter(L => s.mg[L] === L).sort((a, b) => (n0[a] || 0) - (n0[b] || 0) || ((s.m || {})[a] || 0) - ((s.m || {})[b] || 0));
+      const G = arm[0]; w['gk/' + d] = G;
+      w['b/' + G + '/' + pid() + 'g'] = { t: now + 3, u: 'gm', n: 'なすP', m: '【下剋上】0時の時点で、当軍は天下で最もマスの少ない軍となった。本日いっぱい、当軍の早取りは1分で1マス、全軍の時間は2分半で1マス。いざ、下剋上！', g: true };
+      console.log('下剋上：' + FN(G) + '軍（24時のマス ' + (n0[G] || 0) + '）');
+    }
     if (win) { w['s/end'] = { f: win, t: d, k: 'day' }; w['b/all/' + pid() + 'w'] = { t: now + 2, u: 'gm', n: 'なすP', m: `お知らせ：24時、${FN(win)}軍が${n0[win]}マスを治め、天下統一を果たした！ 天下取りマース、これにて終戦。`, g: true }; }
   }
   if (s && s.end && s.end.k === 'half' && !w['s/end']) w['s/end'] = null;   // 前の版の画面が書いた2500マスの印は消す
