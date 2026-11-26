@@ -188,9 +188,7 @@ else if (op === 'launch' || op === 'reset') {
   await sweepRice(d);
   await ensureKishu(false);   // 奇襲（11/26から、毎日9回）
   await pickKessen(d + 86400000, false);
-  // 複数持ちの見回り（11/26）：4時間に1回。「確実」な組の2つめ以降を止める
-  try { const last = JSON.parse(await api('GET', '/tk/opsm/multi.json', undefined, tok)) || 0;
-    if (Date.now() - last >= 4 * 3600000 - 15 * 60000) { await multiCheck(true); await api('PUT', '/tk/opsm/multi.json', Date.now(), tok); } else console.log('複数持ちの見回り：前の見回りから4時間たっていないので、なし'); } catch (e) { console.log('複数持ちの見回りに失敗：' + e.message); }   // 明日の決戦地を、いまの地図の国境の近くから選びなおす（11/26から）
+  // 複数持ちの見回りは、別の自動の処理（.github/workflows/multi.yml）が15分ごとに行う（11/26）
   // await ensureNoroshi(false);   // 狼煙は11/26にいったん止めた（中身を考えなおす）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
@@ -609,7 +607,7 @@ async function multiCheck(go) {
   //  確実：同じ指紋で、ふだんの時間（早取りでない時間）に、2人が5分以内に続けてマスを取ったことが、別々の時間に5回以上ある（11/26 なすPの基準。軍は問わない）
   //  要確認：同じ指紋で、仕官の間が1時間以内／別々の軍にいる（間者かもしれない）など。同じ機種の別人のこともあるので、止めない
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, FN = globalThis.TK_FNAME, JST = 9 * 3600000;
-  const [u, ban, logo, schd] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 10 * 86400000)), get('/tk/schd.json')]);
+  const [u, ban, logo, schd] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 3 * 86400000)), get('/tk/schd.json')]);   // 15分ごとに動くので、軽くするため3日分だけ見る
   const lg = Object.values(logo).filter(e => e && e.y === 't' && e.u).sort((a, b) => a.t - b.t), takes = {}, tl = {}, nt = {};
   // ふだんの時間（早取りでない時間）のマスだけを見る：時間割の文字が '*'（全軍5分）・'!'（最終決戦）・自分の軍か家の番 でない時間
   const DAYM = 86400000, slotOf = t => { const d = Math.floor((t + JST) / DAYM) * DAYM - JST, h = schd[d] && schd[d].h; return h ? h[Math.floor((t - d) / 3600000)] : '*'; };
