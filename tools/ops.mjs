@@ -271,6 +271,11 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'kiunpost') {
+  // 前もって軍議に書いた奇襲のお知らせ（番号が ki で始まるもの）を消す（11/26）
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = {};
+  for (const room of 'abcdefghijklmnopqrst') { const v = (await get('/tk/b/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) if (/^ki\d{13}[a-t]$/.test(i)) w['b/' + room + '/' + i] = null; }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('奇襲のお知らせを消しました：' + Object.keys(w).length + '件');
 } else if (op === 'kipost') {
   // 今日の奇襲のお知らせを、その2軍の軍議に書く（まだ書いていない回だけ。11/26 の作りなおし）
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, get = async p => JSON.parse(await api('GET', p, undefined, tok));
@@ -546,7 +551,7 @@ async function ensureKishu(force) {
     const lo = Math.max(d + b * BAND, Math.ceil((now + 20 * MIN) / (5 * MIN)) * 5 * MIN), hi = Math.min(d + (b + 1) * BAND - 30 * MIN, END - 30 * MIN); if (lo > hi) continue;
     const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
     const cand = pairs.filter(p => p.join('') !== last), [f, g] = cand[Math.floor(Math.random() * cand.length)]; last = f + g;
-    w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) }; Object.assign(w, kishuPosts(a, f, g));
+    w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) };   // お知らせは、奇襲の30分だけ遊ぶ画面が軍議の一番上に出す（11/26）
     out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + FN(f) + '→' + FN(g));
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
