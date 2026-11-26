@@ -1,0 +1,55 @@
+# 見張り番（11/26）：GitHub の時刻指定の起動はおくれたり飛んだりするので、1回の起動で約5時間40分動き続け、
+#  その中で「複数持ちの見回り」を15分ごと、「毎日の処理」を1時間ごと（0時台は10分ごと）に自分で動かす。
+#  終わる前に次の見張り番を自分で起動するので、とぎれずに続く。とぎれたときは毎時7分の起動で拾いなおす
+name: 見張り番
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: tk-loop
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 道具を入れる
+        run: mkdir -p "$RUNNER_TEMP/x" && cd "$RUNNER_TEMP/x" && npm init -y >/dev/null && npm i google-auth-library@9 --silent
+      - name: 鍵を一時ファイルに書く
+        env:
+          SA: ${{ secrets.FT_BLUE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then echo "FT_BLUE_SERVICE_ACCOUNT が登録されていません"; exit 1; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+      - name: 見張る（約5時間40分）
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: |
+          start=$(date +%s); lastm=0; lastd=""
+          while [ $(( $(date +%s) - start )) -lt 20400 ]; do
+            now=$(date +%s); h=$(TZ=Asia/Tokyo date +%-H); m=$(TZ=Asia/Tokyo date +%-M)
+            if [ $(( now - lastm )) -ge 900 ]; then
+              echo "== $(TZ=Asia/Tokyo date '+%m/%d %H:%M') 複数持ちの見回り"; timeout 240 node tools/ops.mjs multi go || echo "（見回りでエラー。次の回でやりなおす）"; lastm=$now
+            fi
+            if [ "$h" = "0" ]; then key="0-$(( m / 10 ))"; else key="$h"; fi
+            if [ "$key" != "$lastd" ] && [ "$m" -ge 1 ]; then
+              echo "== $(TZ=Asia/Tokyo date '+%m/%d %H:%M') 毎日の処理"; timeout 240 node tools/ops.mjs daily || echo "（毎日の処理でエラー。次の回でやりなおす）"; lastd=$key
+            fi
+            sleep 60
+          done
+      - name: 次の見張り番を起動
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run loop.yml --repo "${{ github.repository }}" || echo "次の起動に失敗（毎時7分の起動で拾いなおす）"
+      - name: 鍵を消す
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
