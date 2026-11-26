@@ -139,6 +139,8 @@ tk.k = { '.read': false, '.write': false };
           // はじめて仕える
           // 三つ巴（11/24）：s/mg（家→軍）ができたら、仕えられるのは軍だけ。家（h）は、その軍に入った家ならよい
           + `(!data.exists() && (!root.child('tk/s/mg').exists() || root.child('tk/s/mg/' + newData.val()).val() === newData.val())`
+          // 端末の指紋（11/26）：新しく仕官するときは指紋（fp）を書く。同じ指紋で10分以内に別の人が仕官していたら、はじく
+          + ` && newData.parent().child('fp').isString() && (!root.child('tk/fpj/' + newData.parent().child('fp').val()).exists() || now - root.child('tk/fpj/' + newData.parent().child('fp').val() + '/t').val() >= 600000 || root.child('tk/fpj/' + newData.parent().child('fp').val() + '/u').val() === auth.uid)`
           + ` && (newData.parent().child('h').val() === newData.val() || root.child('tk/s/mg/' + newData.parent().child('h').val()).val() === newData.val()) && newData.parent().child('j').val() === now && newData.parent().child('n').exists()`
           + ` && ${T}.child('s/m/' + newData.val()).val() === root.child('tk/s/m/' + newData.val()).val() + 1)`
           // 寝返る（3日に1回。マスがいちばん少ない武将のところへだけ。同じ数ならどれでもよい）
@@ -154,6 +156,7 @@ tk.k = { '.read': false, '.write': false };
       t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE} || ${NOROSHI} || ${KISHU}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
+      fp: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.isString() && newData.val().matches(/^[0-9a-z]{6,16}$/)" },   // 端末の指紋（仕官のときに1回だけ）
       rk: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/)" },   // 領内の米俵を蔵に入れるとき、そのマス
       qk: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },   // 奇襲のかぎ
       qn: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{13}$/) && newData.parent().child('t').val() === now" },   // 狼煙のかぎ
@@ -191,6 +194,9 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
       + ` && ${T}.child('rice/' + $d + '/' + ${ME}.child('f').val()).val() === root.child('tk/rice/' + $d + '/' + ${ME}.child('f').val()).val() + 1)`,
     '.validate': "newData.hasChildren(['f', 't']) && newData.child('t').val() === now && newData.child('f').isString()" } } };
   tk.rp = { '.read': true, '.write': ADMIN };
+  // 端末の指紋ごとの、さいごに仕官した時刻と人（11/26）。仕官と同じ書きこみでだけ書ける。読めるのは、ログインした人（仕官の前に「少し前に仕官した記録」を出すため）
+  tk.fpj = { $fp: { '.read': 'auth != null', '.write': `${ADMIN} || (auth != null && newData.child('u').val() === auth.uid && newData.child('t').val() === now && ${up(2)}.child('u/' + auth.uid + '/fp').val() === $fp && ${up(2)}.child('u/' + auth.uid + '/j').val() === now)`,
+    '.validate': "$fp.matches(/^[0-9a-z]{6,16}$/) && newData.hasChildren(['t', 'u'])", t: { '.validate': true }, u: { '.validate': true }, $other: { '.validate': false } } };
   // 狼煙（毎日3回×3か国）：nr（決まり用。国のマスの一覧。読めない）と nrd/{その日の0時}/{0〜7}（上がった時刻と国。上がってから読める）
   tk.nr = { '.read': false, '.write': ADMIN };
   // 奇襲（毎日9回）：ki（決まり用。読めない）と kid/{その日の0時}/{0〜8}（始まった時刻と2軍。始まってから、その2軍の人だけ読める）

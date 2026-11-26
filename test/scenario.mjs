@@ -15,7 +15,10 @@ export async function run(drv, log = console.log) {
   const ok = (c, m) => { if (c) { pass++; log('  ○ ' + m); } else { fail++; log('  × ' + m); } };
   const yes = async (p, m) => ok(await p === true, m), no = async (p, m) => ok(await p === false, m + '（はじかれる）');
   const A = await drv.user('A'), B = await drv.user('B'), C = await drv.user('C'), D = await drv.user('D'), E = await drv.user('E');
-  const join = (u, f, nm, x = {}) => drv.update(Object.assign({ ['u/' + u + '/f']: f, ['u/' + u + '/h']: f, ['u/' + u + '/n']: nm, ['u/' + u + '/j']: SV, ['s/m/' + f]: INC(1) }, x), u);
+  // 端末の指紋（11/26）：ふだんは人ごとにちがう指紋で仕官する（x.fp で指紋を決められる。x.fp === false なら指紋なし）
+  const fpOf = u => ('f' + String(u).toLowerCase().replace(/[^0-9a-z]/g, '')).slice(0, 16).padEnd(6, '0');
+  const join = (u, f, nm, x = {}) => { const fp = x.fp === undefined ? fpOf(u) : x.fp; const y = Object.assign({}, x); delete y.fp;
+    return drv.update(Object.assign({ ['u/' + u + '/f']: f, ['u/' + u + '/h']: f, ['u/' + u + '/n']: nm, ['u/' + u + '/j']: SV, ['s/m/' + f]: INC(1) }, fp ? { ['u/' + u + '/fp']: fp, ['fpj/' + fp]: { t: SV, u } } : {}, y), u); };
   const take = (u, c, v, f, p, nm, x = {}) => { const id = pid(), w = x.w !== undefined ? x.w : (c > v ? v - 1 : v + 1); return drv.update(Object.assign({ ['c/' + c]: f, ['u/' + u + '/t']: SV, ['u/' + u + '/c']: String(c), ['u/' + u + '/v']: String(v), ['u/' + u + '/l']: id, ['s/n/' + f]: INC(1), ['s/n/' + p]: INC(-1), ['log/' + id]: Object.assign({ t: SV, y: 't', c: String(c), f, p, n: nm, h: x.h || f, u: x.u || u }, x.r ? { r: true } : {}, x.k ? { k: x.k } : {}, x.xx ? { x: x.xx } : {}) }, w === null ? {} : { ['u/' + u + '/w']: String(w) }, x.noct ? {} : { ['ct/' + c]: SV }, x.more || {}), u); };
 
   log('1) 仕える');
@@ -252,6 +255,16 @@ export async function run(drv, log = console.log) {
       await no(tg(X, { c: '7', qk: KK }), '奇襲は30分で終わる');
     }
     await drv.admin({ ['ki/' + KK]: null, ['kid/' + DK]: null });
+  }
+  log('6j) 端末の指紋（同じ指紋で10分以内の2つめの仕官ははじく。指紋なしの仕官もはじく）');
+  {
+    const P1 = await drv.user('P1fp'), P2 = await drv.user('P2fp'), P3 = await drv.user('P3fp'), FP = 'samefp' + String(Date.now()).slice(-6);
+    await no(join(P1, 'a', '指紋なし', { fp: false }), '指紋なしでは仕官できない');
+    await yes(join(P1, 'a', '一人目', { fp: FP }), '指紋つきで仕官できる');
+    ok((await drv.read('fpj/' + FP, P2)).ok, '指紋のさいごの仕官は読める（仕官の前に知らせるため）');
+    await no(join(P2, 'a', '二人目', { fp: FP }), '同じ指紋で10分以内の2つめの仕官は、はじかれる');
+    await no(drv.update({ ['fpj/' + FP]: { t: SV, u: P2 } }, P2), '指紋の記録だけを書きかえることはできない');
+    if (drv.advance) { await drv.advance(10 * 60 * 1000 + 1000); await yes(join(P3, 'b', '三人目', { fp: FP }), '10分たてば、同じ指紋でも仕官できる（同じ機種の別の人のため）'); }
   }
   log('6e) ピン止め（管理人だけが書ける。読めるのは掲示板と同じ人）');
   {

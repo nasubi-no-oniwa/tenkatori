@@ -9,6 +9,7 @@ function client() {
   const mem = {};
   const ctx = { console, Math, Map, Set, Array, Object, JSON, Number, String, Promise, Error, Date, URL, URLSearchParams, encodeURIComponent, fetch, setTimeout, clearTimeout,
     localStorage: { getItem: k => mem[k] === undefined ? null : mem[k], setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; } }, location: { search: '' } };
+  ctx.TK_FPSALT = Math.random().toString(36);   // 端末の指紋：試験の人ごとにちがう端末として扱う
   ctx.window = ctx; ctx.globalThis = ctx; ctx.TK_MAP = map; ctx.TK_CONFIG = { apiKey: 'AIzaSyB2iLUuAyxSJ45RewGrbyLg0sYLsC7njIo', databaseURL: 'https://ft-blue-default-rtdb.asia-southeast1.firebasedatabase.app', prefix: 'tkt' };
   vm.createContext(ctx);
   for (const f of ['data.js', 'net.js']) vm.runInContext(fs.readFileSync('js/' + f, 'utf8'), ctx, { filename: f });
