@@ -9,7 +9,7 @@ import { build } from './mapseed.mjs';
 const op = process.argv[2], tok = await token();
 // 地図（名所・天守閣）と武将の名前
 globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
-const RULE4000 = '【天下統一】毎日24時に4000マスの軍が天下統一。届かねば11/30の23:59に安土城を押さえた軍が天下人。最終日21時〜は全軍2分！ 狼煙・天下人予想も開催中';
+const RULE4000 = '【天下統一】毎日24時に4000マスの軍が天下統一。届かねば11/30の23:59に安土城を押さえた軍が天下人。最終日21時〜は全軍2分！ 天下人予想も開催中';
 const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
 else if (op === 'notice') {
@@ -186,7 +186,7 @@ else if (op === 'launch' || op === 'reset') {
   await ensureSched(false);
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
   await sweepRice(d);
-  await ensureNoroshi(false);
+  // await ensureNoroshi(false);   // 狼煙は11/26にいったん止めた（中身を考えなおす）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
   const FN = globalThis.TK_FNAME, w = {};
@@ -268,6 +268,11 @@ else if (op === 'launch' || op === 'reset') {
   const w = { ['schd/' + d + '/h']: h.join(''), ['schd/' + d + '/k']: 'azuchi' };
   for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = Object.assign({ a: d + i * HR, f: h[i] }, (await get('/tk/sch/' + (d + i * HR) + '/f2.json')) ? { f2: await get('/tk/sch/' + (d + i * HR) + '/f2.json') } : {});
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
+} else if (op === 'nrclear') {
+  // 狼煙をいったん止める（11/26）：予定（nr・nrd）と、全体の掲示板の狼煙のお知らせを消す
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = { nr: null, nrd: null };
+  const b = (await get('/tk/b/all.json?orderBy="t"&limitToLast=200')) || {}; for (const [i, e] of Object.entries(b)) if (e && e.g && String(e.m).includes('【狼煙】')) w['b/all/' + i] = null;
+  await api('PATCH', '/tk.json', w, tok); console.log('狼煙を止めました（消した書きこみ：' + (Object.keys(w).length - 2) + '件）');
 } else if (op === 'noroshi') {
   await ensureNoroshi(true);
 } else if (op === 'replay') {
