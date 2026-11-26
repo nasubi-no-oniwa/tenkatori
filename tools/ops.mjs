@@ -578,17 +578,17 @@ function kishuPosts(a, f, g) {
 }
 
 // 決戦地を国境の近くから選ぶ（11/26）：名所ごとに、まわり（名所のマスから5マス以内）にある軍のマスを数え、
-//  2番目に多い軍のマスの数（＝2つの軍がどれだけせめぎ合っているか）が大きい名所ほどよい。上位3つからくじ。前の日・同じ日と同じ名所は選ばない。11/30（最終日）は安土城のまま
+//  2番目に多い軍のマスの数（＝2つの軍がどれだけせめぎ合っているか）が大きい名所ほどよい。上位3つからくじ。3日以内に使った名所は選ばない。11/30（最終日）は安土城のまま
 async function pickKessen(d, force) {
   const DAY = 86400000, JST = 9 * 3600000, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999), get = async p => JSON.parse(await api('GET', p, undefined, tok));
   if (d > END || d >= Date.UTC(2026, 10, 29, 15)) { console.log('決戦地：最終日は安土城のまま'); return; }
-  const [x, prev, s, c0] = await Promise.all([get('/tk/schd/' + d + '.json'), get('/tk/schd/' + (d - DAY) + '/k.json'), get('/tk/s.json'), get('/tk/c.json')]);
+  const [x, p1, p2, p3, s, c0] = await Promise.all([get('/tk/schd/' + d + '.json'), get('/tk/schd/' + (d - DAY) + '/k.json'), get('/tk/schd/' + (d - 2 * DAY) + '/k.json'), get('/tk/schd/' + (d - 3 * DAY) + '/k.json'), get('/tk/s.json'), get('/tk/c.json')]), recent = [p1, p2, p3];   // 3日以内に使った名所は選ばない
   if (!x) { console.log('決戦地：その日の時間割がありません'); return; }
   if (x.kp && !force) { console.log('決戦地：もう国境から選んであります（' + x.k + '）'); return; }
   const c = Array.isArray(c0) ? c0 : Object.assign([], c0), mg = (s && s.mg) || {}, arm = L => mg[L] || L;
   const R = 5, sc = [];
   for (const lm of MAP.lm) {
-    if (lm.id === 'azuchi' || lm.id === prev) continue;
+    if (lm.id === 'azuchi' || recent.includes(lm.id)) continue;
     const xs = lm.c.map(i => MAP.cells[2 * i]), ys = lm.c.map(i => MAP.cells[2 * i + 1]), x0 = Math.min(...xs) - R, x1 = Math.max(...xs) + R, y0 = Math.min(...ys) - R, y1 = Math.max(...ys) + R, cnt = {};
     for (let i = 0; i < MAP.n; i++) { const cx = MAP.cells[2 * i], cy = MAP.cells[2 * i + 1]; if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue; const L = c[i] || MAP.own[i]; if (!L || L === 'w') continue; const A = arm(L); cnt[A] = (cnt[A] || 0) + 1; }
     const v = Object.entries(cnt).sort((a, b) => b[1] - a[1]); sc.push({ id: lm.id, n: lm.n[0], s: v[1] ? v[1][1] : 0, who: v.slice(0, 2).map(e => globalThis.TK_FNAME(e[0]) + e[1]).join('・') });
