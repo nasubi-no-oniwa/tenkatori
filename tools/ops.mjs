@@ -402,7 +402,7 @@ else if (op === 'launch' || op === 'reset') {
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const [s, c, td, yd, kz, rice, rg, ban] = await Promise.all([get('/tk/s.json'), get('/tk/c.json'), get('/tk/schd/' + d + '.json'), get('/tk/schd/' + (d - DAY) + '.json'), get('/tk/kz/' + (d - DAY) + '.json'), get('/tk/rice/' + d + '.json'), get('/tk/rg/' + d + '.json?shallow=true'), get('/tk/ban.json?shallow=true')]);
   const cells = Array.isArray(c) ? c : Object.assign([], c);
-  const out = { now, d, n: s.n, m: s.m, ich: s.ich || null, end: s.end || null, today: td ? { h: td.h, k: td.k, x: td.x || null } : null, yk: yd ? yd.k : null, kz, rice, rgTaken: Object.keys(rg || {}).length, ban: Object.keys(ban || {}).length };
+  const out = { now, d, n: s.n, m: s.m, ich: s.ich || null, end: s.end || null, today: td ? { h: td.h, k: td.k, x: td.x || null } : null, yk: yd ? yd.k : null, kz, rice, rgTaken: Object.keys(rg || {}).length, ban: Object.keys(ban || {}).length, gk: await get('/tk/gk/' + d + '.json') };   // gk：今日の下剋上の軍
   console.log('STATUS ' + JSON.stringify(out));
   console.log('CELLS ' + cells.map(x => x || 'w').join(''));
 } else { console.log('op は stop / open / reset / launch / find / ban / revert / quick / sched / bots / fac / daily のどれかにしてください'); process.exit(1); }
