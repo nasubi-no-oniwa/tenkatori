@@ -635,8 +635,8 @@ async function multiCheck(go) {
   const w = {};
   for (const o of out.slice(0, 60)) {
     console.log('■ ' + (o.sure ? '【確実】' : '【要確認】') + o.fp + '　' + o.v.length + '人　' + o.why.join('・'));
-    o.v.forEach(([id, x], i) => { console.log('   ' + (i === 0 ? '最初　' : '2つめ以降') + '　' + jst(x.j) + '　' + x.n + '（' + FN(x.f) + '軍・家 ' + FN(x.h) + '）　取った' + (takes[id] || 0) + '回（ふだんの時間 ' + (nt[id] || 0) + '回）　' + id); if (o.sure && i > 0) w['ban/' + id] = true; });
+    o.v.forEach(([id, x], i) => { console.log('   ' + (i === 0 ? '最初　' : '2つめ以降') + '　' + jst(x.j) + '　' + x.n + '（' + FN(x.f) + '軍・家 ' + FN(x.h) + '）　取った' + (takes[id] || 0) + '回（ふだんの時間 ' + (nt[id] || 0) + '回）　' + id); if (i > 0) w['ban/' + id] = true; });   // 11/26 なすP：疑わしい組（要確認）も、最初の1つを残して止めてよい
   }
-  if (go && Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); console.log('「確実」の組の2つめ以降を止めました：' + Object.keys(w).length + '人（最初のアカウントは残しています）'); }
-  else console.log(go ? '止める人はいませんでした' : '一覧だけです（q に go と入れると「確実」の組の2つめ以降を止めます）。止める候補：' + Object.keys(w).length + '人');
+  if (go && Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); console.log('疑わしい組（確実・要確認）の2つめ以降を止めました：' + Object.keys(w).length + '人（最初のアカウントは残しています）'); }
+  else console.log(go ? '止める人はいませんでした' : '一覧だけです（q に go と入れると、疑わしい組の2つめ以降を止めます）。止める候補：' + Object.keys(w).length + '人');
 }
