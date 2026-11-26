@@ -281,6 +281,7 @@
     $('loading').classList.add('off');
     if (fresh && N.me && G.gsap) { const z = MP.view.z; MP.view.z = z * 0.45; MP.go(MP.view.x, MP.view.y, z, 1.6); }
     if (N.me) N.ping().then(() => tick());
+    if (N.me) { N.loadKi.at = 0; N.loadKi().then(() => { fastBar(); refreshGlow(); tick(); }).catch(() => { }); }   // 奇襲は、開いたらすぐ読む（読みなおしの直後に出ないことがあったため）
     clearInterval(pollT); pollAt = Date.now(); pollT = setInterval(() => { if (Date.now() - pollAt >= N.pollSec() * 1000 - 500) { pollAt = Date.now(); poll(); } }, 5000);
     // 留守の間の戦況
     const seen = N.store('tk_seen'); lastSeenLog = N.lastT;

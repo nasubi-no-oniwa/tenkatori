@@ -163,7 +163,7 @@
   // ---------- 奇襲（11/26から、毎日9回）：kid/{その日の0時}/{0〜8} は、始まってから、仕掛けた軍と仕掛けられた軍の人だけ読める ----------
   N.ki = {};
   N.loadKi = async function (d) {
-    d = d || N.dayStart(); const o = N.ki[d] = N.ki[d] || {}; if (!N.me || N.loadKi.at > Date.now() - 60000) return; N.loadKi.at = Date.now();
+    d = d || N.dayStart(); const o = N.ki[d] = N.ki[d] || {}; if (!N.me || N.loadKi.at > Date.now() - 25000) return; N.loadKi.at = Date.now();
     for (let b = 0; b < 9; b++) { if (o[b] !== undefined || d + b * 9600000 > N.now()) continue;
       if (N.fake) { if (/[?&]ki=/.test(location.search) && b === Math.floor((N.now() - d) / 9600000)) { const oth = N.armies().filter(L => L !== N.me.f); o[b] = { a: N.now() - 60000, f: /ki=def/.test(location.search) ? oth[0] : N.me.f, g: /ki=def/.test(location.search) ? N.me.f : oth[0], k: String(N.now() - 60000) }; } continue; }
       try { const v = await rest('kid/' + d + '/' + b, null, true); if (v && typeof v.a === 'number') o[b] = v; else if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } catch (e) { if (d + (b + 1) * 9600000 < N.now()) o[b] = null; } }
