@@ -35,6 +35,7 @@ jobs:
         run: |
           start=$(date +%s); lastm=0; lastd=""
           while [ $(( $(date +%s) - start )) -lt 20400 ]; do
+            git pull -q --ff-only origin main 2>/dev/null || true   # 動いている間に直した道具も使えるように
             now=$(date +%s); h=$(TZ=Asia/Tokyo date +%-H); m=$(TZ=Asia/Tokyo date +%-M)
             if [ $(( now - lastm )) -ge 900 ]; then
               echo "== $(TZ=Asia/Tokyo date '+%m/%d %H:%M') 複数持ちの見回り"; timeout 240 node tools/ops.mjs multi go || echo "（見回りでエラー。次の回でやりなおす）"; lastm=$now

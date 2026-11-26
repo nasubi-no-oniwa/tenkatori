@@ -81,6 +81,7 @@
     tk_count: ['{name}軍　{n}マス（{r}位）', '{name}\'s army: {n} tiles (#{r})', '{name}軍　{n}格（第{r}名）', '{name}군　{n}칸 ({r}위)'],
     tk_next: ['次の一手は {t}', 'Next move at {t}', '下一手在 {t}', '다음 수는 {t}'],
     tk_back: ['地図にもどる', 'Back to the map', '回到地圖', '지도로 돌아가기'],
+    banned: ['このアカウントは、複数アカウントの疑いで止められています。まちがいの場合は、タイトルの「なすPへの質問・要望」から知らせてください。', 'This account has been suspended (suspected multiple accounts). If this is a mistake, please tell us via “Questions & requests to NasuP” on the title screen.', '此帳號因疑似多重帳號已被停用。如有誤，請從標題畫面的「給NasuP的提問・建議」告訴我們。', '이 계정은 다중 계정 의심으로 정지되었습니다. 잘못된 경우 타이틀 화면의 「NasuP에게 질문·요청」으로 알려 주세요.'],
     tk_fail: ['先をこされました。地図を読みなおしました。', 'Someone moved first. The map has been refreshed.', '被搶先了。已重新讀取地圖。', '선수를 빼앗겼습니다. 지도를 다시 불러왔습니다.'],
     net_err: ['通信に失敗しました。少し待ってから、もう一度ためしてください。', 'Connection failed. Please wait a moment and try again.', '連線失敗。請稍候再試一次。', '통신에 실패했습니다. 잠시 후 다시 시도해 주세요.'],
     pw_half: ['天下統一まで（毎日24時に4000マス）', 'To unify the realm (4,000 tiles at midnight)', '距離統一天下（每天24點時4000格）', '천하통일까지 (매일 24시에 4000칸)'],

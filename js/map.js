@@ -155,17 +155,24 @@
   MP.kick = () => { need = true; kick(); };
   function resize() {
     if (!cv) return; const r = cv.getBoundingClientRect(); if (r.width < 2) return;
-    dpr = Math.min(2.5, G.devicePixelRatio || 1); vw = r.width; vh = r.height; cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+    const nd = Math.min(2.5, G.devicePixelRatio || 1); if (r.width === vw && r.height === vh && nd === dpr && cv.width === Math.round(vw * dpr)) return;   // 大きさが同じなら描きなおさない（ちらつかないように）
+    dpr = nd; vw = r.width; vh = r.height; cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
     minZ = Math.min(vw / (W - 20), vh / (H - 20)) * 0.9; clampView(); MP.kick();
   }
   MP.resize = resize;
   MP.init = function (canvas, tapFn) {
     cv = canvas; ctx = cv.getContext('2d'); onTap = tapFn; buildLand();
     new ResizeObserver(resize).observe(cv); resize();
+    // 画面の向きを変えたとき（11/26）：iPhone は回したあと少しおくれて大きさが決まるので、何回かはかりなおす。
+    //  はかった大きさが古いままだと、さわった所と取るマスがずれる
+    const later = () => { resize(); for (const ms of [120, 400, 900, 1800]) setTimeout(resize, ms); };
+    G.addEventListener('orientationchange', () => { later(); setTimeout(() => { if (G.scrollY || G.scrollX) G.scrollTo(0, 0); }, 400); });
+    G.addEventListener('resize', later); if (G.visualViewport) G.visualViewport.addEventListener('resize', later);
+    const sync = () => { const r = cv.getBoundingClientRect(); if (r.width >= 2 && (Math.abs(r.width - vw) > 0.5 || Math.abs(r.height - vh) > 0.5)) resize(); };
     // 指の操作
     const pts = new Map(); let moved = 0, pinch = 0, downAt = 0, startV = null;
     const loc = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, loc(e)); if (pts.size === 1) { moved = 0; downAt = performance.now(); } if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); startV = { z: view.z }; moved = 99; } if (G.gsap) gsap.killTweensOf(view); });
+    cv.addEventListener('pointerdown', e => { sync(); cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, loc(e)); if (pts.size === 1) { moved = 0; downAt = performance.now(); } if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); startV = { z: view.z }; moved = 99; } if (G.gsap) gsap.killTweensOf(view); });
     cv.addEventListener('pointermove', e => {
       if (!pts.has(e.pointerId)) return; const p = loc(e), o = pts.get(e.pointerId);
       if (pts.size === 1) { view.x -= (p.x - o.x) / view.z; view.y -= (p.y - o.y) / view.z; moved += Math.abs(p.x - o.x) + Math.abs(p.y - o.y); }
@@ -173,7 +180,7 @@
       if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2; const wx = view.x + (mx - vw / 2) / view.z, wy = view.y + (my - vh / 2) / view.z; view.z = Math.max(minZ, Math.min(maxZ, startV.z * d / Math.max(1, pinch))); view.x = wx - (mx - vw / 2) / view.z; view.y = wy - (my - vh / 2) / view.z; }
       clampView(); MP.kick();
     });
-    const up = e => { if (!pts.has(e.pointerId)) return; const p = pts.get(e.pointerId); pts.delete(e.pointerId); if (pts.size === 0 && moved < 9 && performance.now() - downAt < 600 && onTap) { const gx = Math.floor(view.x + (p.x - vw / 2) / view.z), gy = Math.floor(view.y + (p.y - vh / 2) / view.z); onTap(N.cellAt(gx, gy), p); } };
+    const up = e => { if (!pts.has(e.pointerId)) return; sync(); const p = pts.get(e.pointerId); pts.delete(e.pointerId); if (pts.size === 0 && moved < 9 && performance.now() - downAt < 600 && onTap) { const gx = Math.floor(view.x + (p.x - vw / 2) / view.z), gy = Math.floor(view.y + (p.y - vh / 2) / view.z); onTap(N.cellAt(gx, gy), p); } };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', e => pts.delete(e.pointerId));
     cv.addEventListener('wheel', e => { e.preventDefault(); const p = loc(e), wx = view.x + (p.x - vw / 2) / view.z, wy = view.y + (p.y - vh / 2) / view.z; view.z = Math.max(minZ, Math.min(maxZ, view.z * Math.exp(-e.deltaY * 0.0016))); view.x = wx - (p.x - vw / 2) / view.z; view.y = wy - (p.y - vh / 2) / view.z; clampView(); MP.kick(); }, { passive: false });
     cv.addEventListener('dblclick', e => e.preventDefault());

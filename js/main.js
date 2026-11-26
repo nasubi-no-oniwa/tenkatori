@@ -247,6 +247,7 @@
             if (!done) { await N.lose(i).catch(() => { }); done = true; MP.flash(i, '#8a8d93', 1300); updateHud(); refreshGlow(); toast(t('clash_lose', { army: foe ? TK.army(foe) : '' }), 5000); if (TK.fx) { const p = MP.screenOf(i); TK.fx('dark', p.x, p.y + 30); } }
           }
         } catch (e3) { }
+        if (!done && await N.amBanned()) { done = true; toast(t('banned'), 9000); }
         if (!done) {
           toast(t('tk_fail'));
           // 覚えていた地図がずれていて取れないこともあるので、地図をまるごと読みなおす（1分に1回まで。11/24）
@@ -339,7 +340,7 @@
       rooms.forEach(([r, nm]) => { const b = document.createElement('button'); b.textContent = nm; b.className = r === bdRoom ? 'on' : ''; b.onclick = () => { bdRoom = r; openPanel('board'); }; TB.appendChild(b); });
       B.innerHTML = `<p class="note">${esc(bdRoom === 'all' ? '' : t('bd_only'))}</p><div id="bdPin"></div><div id="bdList"><p class="note">${esc(t('loading'))}</p></div>`;
       if (N.boardClosed()) F.innerHTML = `<p class="note" style="margin:0">${esc(t('bd_closed'))}</p>`;
-      else if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { toast(e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST') ? t('bd_wait') : t('net_err')); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
+      else if (me) { F.innerHTML = `<div class="bdIn"><input id="bdM" maxlength="100" placeholder="${esc(t('bd_ph'))}" enterkeyhint="send"><button id="bdS" class="btn main">${esc(t('bd_send'))}</button></div>`; const send = async () => { const v = $('bdM').value; if (!v.trim()) return; $('bdS').disabled = true; try { await N.post(bdRoom, v); $('bdM').value = ''; await loadBoard(true); } catch (e) { const no = e && (e.code === 'PERMISSION_DENIED' || e.code === 'BAD_REQUEST'); toast(no && await N.amBanned() ? t('banned') : no ? t('bd_wait') : t('net_err'), no ? 9000 : undefined); } $('bdS').disabled = false; }; $('bdS').onclick = send; $('bdM').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) send(); }; }
       else F.innerHTML = `<p class="note" style="text-align:center">${esc(t('bd_need'))}</p>`;
       bdLast = 0; loadBoard(true); bdT = setInterval(() => loadBoard(false), 30000);
     } else if (kind === 'log') {

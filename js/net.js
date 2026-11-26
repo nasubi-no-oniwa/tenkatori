@@ -84,6 +84,8 @@
   const CASTLE = new Map(); for (const L in M.castle) CASTLE.set(M.castle[L], L);
   N.CASTLE = CASTLE;
   // そのマスを取れるか：{ ok, via：足場のマス, why }
+  // 止められている（BAN）か（11/26）：取る・書くが断られたとき、「先をこされた」と出さずに、止められていると知らせる
+  N.amBanned = async function () { if (N.fake) return false; try { return (await rest('ban/' + N.uid())) === true; } catch (e) { return false; } };
   N.canTake = function (i) {
     const me = N.me; if (!me || !N.cells) return { ok: false, why: 'nome' };
     if (N.cells[i] === me.f) return { ok: false, why: 'mine' };

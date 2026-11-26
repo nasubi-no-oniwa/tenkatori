@@ -273,6 +273,13 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'unban') {
+  // 止めを外す（11/26）：名前 q（ぴったり同じ名前）・本拠 h で探して、止め済みの人だけ外す。外した人は「止めない人」（banok）に入れ、見回りがまた止めないようにする
+  const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim(); if (!q) { console.log('q に名前を入れてください'); process.exit(1); }
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {};
+  const [u, ban] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json')]), w = {};
+  for (const [id, x] of Object.entries(u)) if (x && x.n === q && (!h || x.h === h) && ban[id]) { w['ban/' + id] = null; w['banok/' + id] = true; console.log('止めを外す：' + x.n + '（本拠 ' + x.h + '・陣営 ' + x.f + '）' + id); }
+  if (Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); console.log('外しました：' + Object.keys(w).length / 2 + '人（見回りの「止めない人」にも入れました）'); } else console.log('その名前で止められている人はいませんでした');
 } else if (op === 'multi') {
   await multiCheck((process.argv[3] || '').trim() === 'go');
 } else if (op === 'kessen') {
@@ -607,7 +614,7 @@ async function multiCheck(go) {
   //  確実：同じ指紋で、ふだんの時間（早取りでない時間）に、2人が5分以内に続けてマスを取ったことが、別々の時間に5回以上ある（11/26 なすPの基準。軍は問わない）
   //  要確認：同じ指紋で、仕官の間が1時間以内／別々の軍にいる（間者かもしれない）など。同じ機種の別人のこともあるので、止めない
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, FN = globalThis.TK_FNAME, JST = 9 * 3600000;
-  const [u, ban, logo, schd] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 3 * 86400000)), get('/tk/schd.json')]);   // 15分ごとに動くので、軽くするため3日分だけ見る
+  const [u, ban, logo, schd, ok] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 3 * 86400000)), get('/tk/schd.json'), get('/tk/banok.json')]);   // ok：止めを外した人（見回りでは見ない）。15分ごとに動くので、軽くするため3日分だけ見る
   const lg = Object.values(logo).filter(e => e && e.y === 't' && e.u).sort((a, b) => a.t - b.t), takes = {}, tl = {}, nt = {};
   // ふだんの時間（早取りでない時間）のマスだけを見る：時間割の文字が '*'（全軍5分）・'!'（最終決戦）・自分の軍か家の番 でない時間
   const DAYM = 86400000, slotOf = t => { const d = Math.floor((t + JST) / DAYM) * DAYM - JST, h = schd[d] && schd[d].h; return h ? h[Math.floor((t - d) / 3600000)] : '*'; };
@@ -618,7 +625,7 @@ async function multiCheck(go) {
   const sim = (a, b) => { a = String(a || ''); b = String(b || ''); if (!a || !b) return false; if (a === b || a.includes(b) || b.includes(a)) return true; return a.slice(0, 2) === b.slice(0, 2) && Math.abs(a.length - b.length) <= 2; };
   const out = [];
   for (const [fp, v0] of Object.entries(g)) {
-    const v = v0.filter(([id]) => !ban[id] && (takes[id] || 0) > 0).sort((a, b) => (a[1].j || 0) - (b[1].j || 0)); if (v.length < 2) continue;
+    const v = v0.filter(([id]) => !ban[id] && !ok[id] && (takes[id] || 0) > 0).sort((a, b) => (a[1].j || 0) - (b[1].j || 0)); if (v.length < 2) continue;
     let sure = false, why = []; const pairs = [];
     for (let i = 0; i < v.length; i++) for (let k = i + 1; k < v.length; k++) { const r = near(v[i][0], v[k][0]); pairs.push(r); if (r.n >= 5) sure = true; }
     const best = pairs.sort((a, b) => b.n - a.n)[0]; let gap = 1e15; for (let i = 1; i < v.length; i++) gap = Math.min(gap, (v[i][1].j || 0) - (v[i - 1][1].j || 0));
