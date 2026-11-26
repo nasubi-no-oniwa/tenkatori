@@ -35,6 +35,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:5px 6px;b
 td.n{text-align:right;font-variant-numeric:tabular-nums}
 .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;border:1px solid #0008;vertical-align:-1px}
 .msg{border-bottom:1px solid var(--ln);padding:8px 0}.msg small{color:var(--sub)}.msg p{margin:2px 0 4px;white-space:pre-wrap;word-break:break-word}
+.msg p.tr{margin:0 0 4px;font-size:13px;color:var(--sub);border-left:2px solid var(--ln);padding-left:7px}
 .gm{border-left:3px solid var(--shu);padding-left:8px}
 .rooms{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}.rooms button{padding:5px 9px;font-size:13px;background:#0d0a08;color:var(--sub);border:1px solid var(--ln);border-radius:14px}.rooms button.on{background:var(--tx);color:#14100d}
 #msg{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#000d;border:1px solid var(--gold);padding:8px 16px;border-radius:6px;z-index:9;max-width:90vw}
@@ -66,6 +67,22 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
     const j = await r.json(); T.tok = j.idToken; T.exp = Date.now() + 50 * 60000; T.uid = j.localId; store('tk_auth', { rt: j.refreshToken, uid: j.localId }); return T.tok;
   }
   const qs = q => q ? Object.entries(q).map(([k, v]) => k + '=' + encodeURIComponent(/^(limitTo|shallow)/.test(k) ? String(v) : JSON.stringify(v))).join('&') + '&' : '';
+  // ---------- 掲示板の自動翻訳（11/26）：日本語以外の書きこみは、下に日本語の訳を出す（遊ぶ画面と同じ無料の窓口。訳は覚えておく） ----------
+  const trLang = s => /[\u3040-\u30ff]/.test(s) ? 'ja' : /[\uac00-\ud7af\u1100-\u11ff]/.test(s) ? 'ko' : /[\u4e00-\u9fff]/.test(s) ? 'zh-TW' : /[A-Za-z]{2,}/.test(s) ? 'en' : '';
+  const trMem = new Map(); let trQ = Promise.resolve();
+  async function translateJa(s) {
+    const k = 'tk_tr_ja_' + s.slice(0, 120); if (trMem.has(k)) return trMem.get(k); try { const v = localStorage.getItem(k); if (v) { trMem.set(k, v); return v; } } catch (e) { }
+    let out = '';
+    try { const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ja&dt=t&q=' + encodeURIComponent(s)); if (r.ok) { const j = await r.json(); out = (j[0] || []).map(x => x[0]).join(''); } } catch (e) { }
+    if (!out) try { const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(s) + '&langpair=' + (trLang(s) || 'en') + '|ja'); if (r.ok) { const j = await r.json(); out = (j.responseData && j.responseData.translatedText) || ''; if (/MYMEMORY WARNING|QUERY LENGTH/i.test(out)) out = ''; } } catch (e) { }
+    if (out) { trMem.set(k, out); try { localStorage.setItem(k, out); } catch (e) { } }
+    return out;
+  }
+  function trAdmin(p) {
+    const s = p.textContent || '', fr = trLang(s); if (!fr || fr === 'ja' || p.nextElementSibling && p.nextElementSibling.classList.contains('tr')) return;
+    const q = document.createElement('p'); q.className = 'tr'; q.textContent = '…'; p.after(q);
+    trQ = trQ.then(() => translateJa(s)).then(v => { if (v && v.trim() !== s.trim()) q.textContent = '🌐 ' + v; else q.remove(); }).catch(() => q.remove());
+  }
   async function get(path, q) { const r = await fetch(DB + P + path + '.json?' + qs(q) + 'auth=' + encodeURIComponent(await token())); if (!r.ok) throw new Error('読めません（' + r.status + '）'); return r.json(); }
   async function send(method, path, val, root) { const r = await fetch(DB + (root ? '/' : P) + path + '.json?print=silent&auth=' + encodeURIComponent(await token()), { method, body: JSON.stringify(val) }); if (!r.ok) throw new Error('書けません（' + r.status + '）'); }
   const patch = o => send('PATCH', '', o);
@@ -151,6 +168,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         <div class="box"><h2>📌 ピン止め中（遊んでいる人の掲示板の一番上に出ます・${pins.length}件）</h2>${autoTop.map(e => `<div class="msg gm"><small>${when(e.t)}　なすP（${e.ki ? '自動・奇襲中だけ出ます' : '自動・今日の時間割。0時に入れかわります。外せません'}）</small><p>${esc(e.m)}</p></div>`).join('')}${pins.map(e => `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e))}</small><p>${esc(e.m)}</p><button class="b" data-unpin="${e.id}">ピン止めを外す</button></div>`).join('') || '自分でピン止めした書きこみはありません（下の書きこみの「📌 ピン止め」で固定できます）'}</div>
         <div class="box"><h2>書きこみ（新しい順・${v.length}件）</h2>${vv.map(e => e.auto ? `<div class="msg gm"><small>${when(e.t)}　なすP（自動・番の時間の間だけ出ます）</small><p>${esc(e.m)}</p></div>` : `<div class="msg${e.g ? ' gm' : ''}"><small>${when(e.t)}　${e.g ? 'なすP' : dot(e.f) + esc(who(e)) + '（' + esc(fn(e.f)) + '軍）'}</small><p>${esc(e.m)}</p>${pv[e.id] ? '<b style="color:#b8902f">📌 ピン止め中</b> ' : `<button class="b" data-pin="${e.id}">📌 ピン止め</button> `}<button class="b red" data-del="${e.id}">消す</button> ${e.g ? '' : `<button class="b red" data-ban="${esc(e.u)}">この人を書きこめなくする</button> <small class="u">${esc(e.u)}</small>`}</div>`).join('') || 'まだありません'}</div>`;
         V.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { room = b.dataset.r; render(); });
+        V.querySelectorAll('.msg > p:first-of-type').forEach(trAdmin);   // 自動翻訳（11/26）：日本語以外の書きこみの下に日本語の訳
         const post = async rooms => { const m = $('gmM').value.trim(); if (!m) return; const o = {}; for (const r of rooms) o['b/' + r + '/' + pid()] = { t: SV, u: T.uid, n: 'なすP', m: m.slice(0, 100), g: true }; await patch(o); say('書きました'); render(); };
         $('gmS').onclick = () => post([room]).catch(e => say(e.message)); $('gmAll').onclick = () => { if (confirm('全部の板（' + (RM.length + 1) + 'か所）に書きます。よいですか？')) post(['all'].concat(RM.map(f => f.L))).catch(e => say(e.message)); };
         V.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('この書きこみを消しますか？')) return; await patch({ ['b/' + room + '/' + b.dataset.del]: null, ['bp/' + room + '/' + b.dataset.del]: null }); render(); });
@@ -161,6 +179,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         const v = list(await get('ask', { orderBy: 't', limitToLast: 100 }));
         V.innerHTML = `<div class="box"><h2>なすPへの質問・要望（新しい順・${v.length}件）</h2>${v.map(e => `<div class="msg"><small>${when(e.t)}　${esc(e.n || '（仕える前）')}　ことば：${esc(e.l)}${e.x ? `　X：<a href="https://x.com/${esc(e.x)}" target="_blank" style="color:var(--gold)">@${esc(e.x)}</a>` : ''}</small><p>${esc(e.m)}</p><button class="b red" data-del="${e.id}">消す</button></div>`).join('') || 'まだありません'}</div>`;
         V.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await patch({ ['ask/' + b.dataset.del]: null }); render(); });
+        V.querySelectorAll('.msg > p:first-of-type').forEach(trAdmin);   // 質問・要望も日本語以外は訳す
       } else if (tabNow === 'log') {
         const v = list(await get('log', { orderBy: 't', limitToLast: 150 })); const cnt = {}; for (const e of v) if (e.u) cnt[e.u] = (cnt[e.u] || 0) + 1;
         // 早取り（11/17）に合わせた「早すぎ」の見分け：取った時刻の番が自分の陣営なら2分、全陣営の時間なら5分、ほかは1時間あいていればよい
