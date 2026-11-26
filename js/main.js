@@ -144,15 +144,19 @@
   const ichi = u => { const c = N.s && N.s.ich; return c && c.u && u && c.u === u && c.d === N.dayStart() ? '🏅' + t('ichi') + ' ' : ''; };
   // ---------- 早取りの時間割 ----------
   const fsH = i => { const lg = TK.lang(); return lg === 'ja' || lg === 'zh' ? i + '時' : (i < 10 ? '0' : '') + i + ':00'; };
+  // 下剋上の軍の人の画面だけ、早取りの「2分」「5分」を「1分」「2分半」に書きかえる（11/27から）
+  const gkTxt = s => { if (!N.me || !N.isGk(N.me.f)) return s; const L = TK.lang();
+    return L === 'ja' ? s.replace(/2分/g, '1分').replace(/5分/g, '2分半') : L === 'en' ? s.replace(/2 minutes/g, '1 minute').replace(/5 minutes/g, '2.5 minutes').replace(/2 min/g, '1 min').replace(/5 min/g, '2.5 min')
+      : L === 'zh' ? s.replace(/2分鐘/g, '1分鐘').replace(/5分鐘/g, '2.5分鐘') : s.replace(/2분/g, '1분').replace(/5분/g, '2분 30초'); };
   function fastBar() {
     const el = $('fastBar'); if (!el) return; const me = N.me, now = N.now();
     let txt = '', hot = false;
     if (me && !N.ended() && !N.s.stop && N.sched[N.dayStart()]) {
       const sl = N.fastNow();
-      if (sl) { hot = true; txt = t(sl.f === '*' && sl.f2 !== me.f ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) }); }
+      if (sl) { hot = true; txt = gkTxt(t(sl.f === '*' && sl.f2 !== me.f ? 'fs_hall' : 'fs_hmine', { t: TK.clock(sl.e - now) })); }
       else {   // 今日これから来る早取り（自分の番か全陣営）を1つ
         const d = N.dayStart(), hs = N.sched[d], xs = (N.day[d] && N.day[d].x) || {};   // 決戦地のほうびの1時間（xs）も自分の番として数える
-        for (let i = Math.floor((now - d) / 3600000) + 1; i < 24; i++) { const mine = hs[i] === me.f || xs[i] === me.f; if (mine || hs[i] === '*') { txt = t(mine ? 'fs_nmine' : 'fs_nall', { a: fsH(i), b: fsH(i + 1) }); break; } }
+        for (let i = Math.floor((now - d) / 3600000) + 1; i < 24; i++) { const mine = hs[i] === me.f || xs[i] === me.f; if (mine || hs[i] === '*') { txt = gkTxt(t(mine ? 'fs_nmine' : 'fs_nall', { a: fsH(i), b: fsH(i + 1) })); break; } }
       }
     }
     el.hidden = !txt; el.className = hot ? 'hot' : ''; if (txt && el.textContent !== txt) el.textContent = txt;
@@ -174,7 +178,7 @@
       out.push({ id: 'd' + d, t: d, m: ix.length === 1 ? t('sy_fday', { a: fsH(ix[0]), b: fsH(ix[0] + 1) }) : t('sy_fday2', { list: ix.map(i => fsH(i) + '〜' + fsH(i + 1)).join('、') }) });
       for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) }); }
     }
-    return out.filter(e => e.t <= now).map(e => Object.assign(e, { g: true, sys: true }));
+    return out.filter(e => e.t <= now).map(e => Object.assign(e, { m: gkTxt(e.m), g: true, sys: true }));
   }
   // ---------- 地図の画面 ----------
   function updateHud() {
@@ -292,14 +296,14 @@
     }
     if (kind === 'sched') {
       const d = N.dayStart(), hs = N.sched[d], now = N.now();
-      let h = `<p class="note">${esc(t('fs_note'))}</p>`;
+      let h = `<p class="note">${esc(t('fs_note'))}</p>` + (me && N.isGk(me.f) ? `<p class="note" style="color:var(--shu2);font-weight:800">${esc(t('gk_note'))}</p>` : '');
       if (!hs) { h += `<p class="note">${esc(t('fs_none'))}</p>`; N.loadSched().then(x => { if (x && pKind === 'sched') openPanel('sched'); }); }
       else for (let i = 0; i < 24; i++) {
         const L = hs[i], a = d + i * 3600000, f = TK.FI[L], cur = now >= a && now < a + 3600000, past = now >= a + 3600000;
         const x2 = ((N.day[d] || {}).x || {})[i], f2 = x2 && TK.FI[x2];
-        if (L === '-' && f2) { h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && me.f === x2 ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b><canvas width="60" height="60" data-c="${x2}"></canvas><span>${esc(TK.army(f2))}<br><small>${esc(t('fs_x', { name: TK.fname(f2) }))}</small></span><em>${esc(t('fs_2'))}</em></div>`; continue; }
+        if (L === '-' && f2) { h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && me.f === x2 ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b><canvas width="60" height="60" data-c="${x2}"></canvas><span>${esc(TK.army(f2))}<br><small>${esc(t('fs_x', { name: TK.fname(f2) }))}</small></span><em>${esc(me && me.f === x2 ? gkTxt(t('fs_2')) : t('fs_2'))}</em></div>`; continue; }
         if (L === '-') { h += `<div class="fsRow nr${cur ? ' cur' : ''}${past ? ' past' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b><i>・</i><span>${esc(t('fs_norm'))}</span><em>${esc(t('fs_60'))}</em></div>`; continue; }
-        h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && (me.f === L || me.f === x2) ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b>${f ? `<canvas width="60" height="60" data-c="${L}"></canvas><span>${esc(TK.fname(f))}${f2 ? '<br><small>' + esc(t('fs_x', { name: TK.fname(f2) })) + '</small>' : ''}</span><em>${esc(t('fs_2'))}</em>` : `<i>⚡</i><span>${esc(t('fs_all'))}</span><em>${esc(t('fs_5'))}</em>`}</div>`;
+        h += `<div class="fsRow${cur ? ' cur' : ''}${past ? ' past' : ''}${me && (me.f === L || me.f === x2) ? ' me' : ''}"><b>${esc(fsH(i))}〜${esc(fsH(i + 1))}</b>${f ? `<canvas width="60" height="60" data-c="${L}"></canvas><span>${esc(TK.fname(f))}${f2 ? '<br><small>' + esc(t('fs_x', { name: TK.fname(f2) })) + '</small>' : ''}</span><em>${esc(me && (me.f === L || me.f === x2) ? gkTxt(t('fs_2')) : t('fs_2'))}</em>` : `<i>⚡</i><span>${esc(t('fs_all'))}</span><em>${esc(gkTxt(t('fs_5')))}</em>`}</div>`;
       }
       B.innerHTML = h; B.querySelectorAll('canvas[data-c]').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
       const c = B.querySelector('.fsRow.cur'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center' }), 30);

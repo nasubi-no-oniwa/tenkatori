@@ -113,6 +113,7 @@
     else try { v = await rest('schd/' + d); } catch (e) { }
     if (v && typeof v.h === 'string' && v.h.length === 24) {
       N.sched[d] = v.h; N.day[d] = { h: v.h, k: v.k || '', x: v.x || {}, rc: new Set(String(v.rc || '').split(',').filter(Boolean).map(Number)) };
+      N.loadGk(d).catch(() => { });
       N.loadRice().catch(() => { });
     }
     return N.sched[d] || null;
@@ -149,7 +150,15 @@
   N.morale = L => { const n = +(N.rice[L]) || 0; return n >= 12 ? 3 : n >= 7 ? 2 : n >= 3 ? 1 : 0; };
   N.baseWait = L => TK.WAIT - N.morale(L) * 600000;
   N.slotAt = t => { const d = N.dayStart(t), h = N.sched[d]; if (!h) return null; const i = Math.floor((t - d) / HR), x = (N.day[d] && N.day[d].x) || {}; return { a: d + i * HR, e: d + (i + 1) * HR, f: h[i], f2: x[i] || '', i }; };
-  N.fastFor = (sl, f) => !sl || !f ? 0 : (sl.f === f || sl.f2 === f) ? TK.FASTT : sl.f === '*' ? TK.ALLT : 0;
+  // 下剋上（11/27から）：gk/{その日の0時} はその軍の人にだけ読める。読めて自分の軍なら、その日の早取りは半分
+  N.gk = {};
+  N.loadGk = async function (d) {
+    if (N.fake) { N.gk[d] = /[?&]gk=1/.test(location.search) && N.me ? N.me.f : ''; return; }
+    if (!N.me || !N.uid()) return; let v = null; try { v = await rest('gk/' + d, null, true); } catch (e) { }
+    N.gk[d] = v === N.me.f ? v : '';
+  };
+  N.isGk = (f, t) => { const d = N.dayStart(t); return !!(f && N.gk[d] && N.gk[d] === f); };
+  N.fastFor = (sl, f) => { if (!sl || !f) return 0; const k = N.isGk(f, sl.a) ? 0.5 : 1; return (sl.f === f || sl.f2 === f) ? TK.FASTT * k : sl.f === '*' ? TK.ALLT * k : 0; };
   N.fastNow = () => { const me = N.me, sl = N.slotAt(N.now()); return me && N.fastFor(sl, me.f) ? sl : null; };
   // 今日の自分の陣営の番（なければ null）
   N.mySlot = f => { const d = N.dayStart(), h = N.sched[d]; if (!h || !f) return null; const i = h.indexOf(f); return i < 0 ? null : { a: d + i * HR, e: d + (i + 1) * HR, f, i }; };

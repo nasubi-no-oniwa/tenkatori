@@ -165,6 +165,7 @@
     roll_best: ['天下一の与力', 'Greatest ally of the realm', '天下第一與力', '천하제일 요리키'], roll_top: ['マスを多く取った者たち', 'Those who took the most tiles', '取得最多格的人們', '가장 많은 칸을 차지한 이들'],
     roll_made: ['制作', 'Made by', '製作', '제작'], roll_thx: ['遊んでくれて、ありがとう', 'Thank you for playing', '謝謝你的參與', '플레이해 주셔서 감사합니다'],
     bd_closed: ['戦は終わった。掲示板は閉じられ、いまは読むことだけができる。', 'The war is over. The boards are closed and can only be read.', '戰爭結束了。告示板已關閉，只能閱讀。', '전쟁은 끝났다. 게시판은 닫혀 이제 읽기만 할 수 있다.'],
+    gk_note: ['下剋上：本日、当軍は天下で最もマスの少ない軍。当軍の早取りは1分、全軍の時間は2分半で1マス取れる。', 'Gekokujo: today your army holds the fewest tiles. Your rush turns are 1 tile / 1 min, and all-army hours 1 tile / 2.5 min.', '下剋上：今天本軍是格數最少的軍。本軍搶攻每1分鐘1格，全軍時段每2.5分鐘1格。', '하극상: 오늘 우리 군은 칸이 가장 적은 군. 우리 군 속공은 1분에 1칸, 전군 시간은 2분 30초에 1칸.'],
     gm: ['なすP', 'NasuP', 'NasuP', 'NasuP'], notice: ['なすPより', 'From NasuP', 'NasuP的公告', 'NasuP의 알림'],
     follow: ['新作を毎日出してます　𝕏 なすPをフォロー', 'New games every day — follow NasuP on 𝕏', '每天推出新作　在𝕏追蹤NasuP', '매일 신작을 냅니다　𝕏 NasuP 팔로우'],
   };
