@@ -271,6 +271,15 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'kicheck') {
+  // 奇襲の確かめ（11/26）：今日の予定と、奇襲中に1分台で相手のマスを取った回数
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, get = async p => JSON.parse(await api('GET', p, undefined, tok)), FN = globalThis.TK_FNAME;
+  const kd = (await get('/tk/kid/' + d + '.json')) || {}; console.log('今日の奇襲：' + Object.entries(kd).map(([b, v]) => b + ' ' + new Date(v.a + JST).toISOString().slice(11, 16) + ' ' + FN(v.f) + '→' + FN(v.g) + '（ki ' + (v.k) + '）').join('、'));
+  const lg = Object.values((await get('/tk/log.json?orderBy="t"&startAt=' + (now - 3 * HR))) || {}).filter(e => e && e.y === 't').sort((a, b) => a.t - b.t);
+  for (const v of Object.values(kd)) { if (v.a > now) continue; const inK = lg.filter(e => e.t >= v.a && e.t < v.a + 1800000), hit = inK.filter(e => e.f === v.f && e.p === v.g);
+    const last = {}; let fast = 0; for (const e of inK) { if (last[e.u] && e.t - last[e.u] < 110000 && e.f === v.f && e.p === v.g) fast++; last[e.u] = e.t; }
+    console.log(new Date(v.a + JST).toISOString().slice(11, 16) + '：奇襲中に' + FN(v.f) + '軍が' + FN(v.g) + '軍のマスを取った ' + hit.length + '回（うち2分未満の間隔 ' + fast + '回）／ 奇襲中の全部の取りあい ' + inK.length + '回'); }
+  const ki = await get('/tk/ki.json?shallow=true'); console.log('決まり用の奇襲データ：' + Object.keys(ki || {}).length + '件');
 } else if (op === 'nrclear') {
   // 狼煙をいったん止める（11/26）：予定（nr・nrd）と、全体の掲示板の狼煙のお知らせを消す
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = { nr: null, nrd: null };

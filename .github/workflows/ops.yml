@@ -7,7 +7,7 @@ on:
         description: 'stop＝開戦準備中にする／open＝外す（開戦）／reset＝記録を全部消して最初の地図に戻す（準備中のまま）／launch＝消して開戦'
         required: true
         type: choice
-        options: [stop, open, reset, launch, find, ban, revert, quick, sched, bots, fac, daily, status, rice, ver, notice, nodf, merge, pins, replay, final, noroshi, nrclear, kishu]
+        options: [stop, open, reset, launch, find, ban, revert, quick, sched, bots, fac, daily, status, rice, ver, notice, nodf, merge, pins, replay, final, noroshi, nrclear, kishu, kicheck]
       q:
         description: 'find・ban・revert のとき：探す名前（「尾張の」などの国名はつけない）'
         required: false
