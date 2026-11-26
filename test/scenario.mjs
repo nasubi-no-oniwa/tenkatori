@@ -232,6 +232,27 @@ export async function run(drv, log = console.log) {
     ok((await drv.read('pred/' + X, X)).ok && !(await drv.read('pred/' + X, Y)).ok, '予想は本人にしか読めない');
     await drv.admin({ 's/mg': null, ['pred/' + X]: null });
   }
+  log('6i) 奇襲（30分間、仕掛けた軍は仕掛けられた軍のマスだけ1分で取れる。知らされるのはその2軍だけ）');
+  {
+    const X = await drv.user('X6i'), Y = await drv.user('Y6i'), Z = await drv.user('Z6i');
+    await yes(join(X, 'a', '奇襲'), 'Xが織田に仕える'); await yes(join(Y, 'b', '守り'), 'Yが武田に仕える'); await yes(join(Z, 'c', 'よそ'), 'Zが上杉に仕える'); await age(X, Y, Z);
+    const KK = '47' + String(Date.now()).slice(-11), DK = '48' + String(Date.now()).slice(-11);
+    await drv.admin({ ['ki/' + KK]: { a: SV, f: 'a', g: 'b' }, ['kid/' + DK + '/0']: { a: SV, f: 'a', g: 'b', k: KK }, 'c/7': 'b', 'c/8': 'c' });
+    const tg = (u, o) => drv.update(Object.assign({ ['u/' + u + '/t']: SV }, Object.fromEntries(Object.entries(o || {}).map(([k, v]) => ['u/' + u + '/' + k, v]))), u);
+    ok((await drv.read('kid/' + DK + '/0', X)).ok && (await drv.read('kid/' + DK + '/0', Y)).ok, '仕掛けた軍と仕掛けられた軍は、奇襲を読める');
+    ok(!(await drv.read('kid/' + DK + '/0', Z)).ok, 'ほかの軍は、奇襲を読めない');
+    ok(!(await drv.read('ki/' + KK, X)).ok, '奇襲の決まり用のデータは読めない');
+    await yes(tg(X), 'Xが1マス取る'); await yes(tg(Y), 'Yも1マス取る');
+    if (drv.advance) {
+      await drv.advance(60 * 1000 + 500);
+      await no(tg(X, { c: '8', qk: KK }), '仕掛けられた軍でないマスは、1分では取れない');
+      await no(tg(Y, { c: '7', qk: KK }), '仕掛けられた軍の人は、奇襲を使えない');
+      await yes(tg(X, { c: '7', qk: KK }), '仕掛けた軍は、仕掛けられた軍のマスを1分で取れる');
+      await drv.advance(30 * 60 * 1000);
+      await no(tg(X, { c: '7', qk: KK }), '奇襲は30分で終わる');
+    }
+    await drv.admin({ ['ki/' + KK]: null, ['kid/' + DK]: null });
+  }
   log('6e) ピン止め（管理人だけが書ける。読めるのは掲示板と同じ人）');
   {
     const P1 = await drv.user('P6e'); await yes(join(P1, 'b', '読む人'), '武田に仕える');

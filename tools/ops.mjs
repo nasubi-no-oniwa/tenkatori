@@ -186,6 +186,7 @@ else if (op === 'launch' || op === 'reset') {
   await ensureSched(false);
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, y = d - DAY;
   await sweepRice(d);
+  await ensureKishu(false);   // 奇襲（11/26から、毎日9回）
   // await ensureNoroshi(false);   // 狼煙は11/26にいったん止めた（中身を考えなおす）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok));
   const pid = () => 'D' + now.toString(36) + Math.random().toString(36).slice(2, 10);
@@ -268,6 +269,8 @@ else if (op === 'launch' || op === 'reset') {
   const w = { ['schd/' + d + '/h']: h.join(''), ['schd/' + d + '/k']: 'azuchi' };
   for (let i = 0; i < 24; i++) w['sch/' + (d + i * HR)] = Object.assign({ a: d + i * HR, f: h[i] }, (await get('/tk/sch/' + (d + i * HR) + '/f2.json')) ? { f2: await get('/tk/sch/' + (d + i * HR) + '/f2.json') } : {});
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
+} else if (op === 'kishu') {
+  await ensureKishu(true);
 } else if (op === 'nrclear') {
   // 狼煙をいったん止める（11/26）：予定（nr・nrd）と、全体の掲示板の狼煙のお知らせを消す
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = { nr: null, nrd: null };
@@ -511,4 +514,26 @@ async function ensureNoroshi(force) {
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
   console.log('今日の狼煙：' + (out.length ? out.join('、') : 'なし'));
+}
+
+// 奇襲（11/26から、毎日9回）：1日を160分ずつ9つに分け、それぞれのランダムな時刻に30分。仕掛ける軍と仕掛けられる軍はランダム（前の回と同じ組み合わせは続けない）
+//  今日の分がまだなければ作る（今日の途中なら、いまから20分後より後の回だけ）。お知らせは遊ぶ画面が、始まった時刻にその2軍の軍議に出す
+async function ensureKishu(force) {
+  const HR = 3600000, MIN = 60000, DAY = 86400000, JST = 9 * HR, BAND = 160 * MIN, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, END = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
+  const get = async p => JSON.parse(await api('GET', p, undefined, tok)), FN = globalThis.TK_FNAME;
+  if (now > END) return; const [have0, s] = await Promise.all([get('/tk/kid/' + d + '.json'), get('/tk/s.json')]), have = have0 || {};
+  if (Object.keys(have).length && !force) { console.log('今日の奇襲：もう決まっています（' + Object.keys(have).length + '回）'); return; }
+  if (!s || !s.mg || (s.end && s.end.k !== 'half')) { console.log('今日の奇襲：三つ巴の前か、終わったあとなので、なし'); return; }
+  const arm = Object.keys(s.mg).filter(L => s.mg[L] === L), pairs = []; for (const f of arm) for (const g of arm) if (f !== g) pairs.push([f, g]);
+  const w = {}, out = []; let last = '';
+  for (let b = 0; b < 9; b++) {
+    if (have[b]) { last = have[b].f + have[b].g; if (have[b].a <= now) continue; }
+    const lo = Math.max(d + b * BAND, Math.ceil((now + 20 * MIN) / (5 * MIN)) * 5 * MIN), hi = Math.min(d + (b + 1) * BAND - 30 * MIN, END - 30 * MIN); if (lo > hi) continue;
+    const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
+    const cand = pairs.filter(p => p.join('') !== last), [f, g] = cand[Math.floor(Math.random() * cand.length)]; last = f + g;
+    w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) };
+    out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + FN(f) + '→' + FN(g));
+  }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+  console.log('今日の奇襲：' + (out.length ? out.join('、') : 'なし'));
 }
