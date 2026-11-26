@@ -384,7 +384,25 @@
   }
   function closePanel() { clearInterval(bdT); $('panel').hidden = true; delete $('panel').dataset.ad; pKind = ''; }
   // 掲示板：新しい書きこみが一番上。なすPのお知らせ（時間割から作るもの）も同じ流れに混ぜる。ピン止めは一番上に固定
-  const bdMsg = (e, room, now, pin) => { const f = TK.FI[e.f], d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : '') + (pin ? ' pin' : ''); d.innerHTML = `<div class="h">${pin ? '<em>📌</em>' : ''}${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(ichi(e.u) + TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; return d; };
+  const bdMsg = (e, room, now, pin) => { const f = TK.FI[e.f], d = document.createElement('div'); d.className = 'msg' + (e.g ? ' gm' : '') + (pin ? ' pin' : ''); d.innerHTML = `<div class="h">${pin ? '<em>📌</em>' : ''}${e.g ? '' : `<i style="background:${f ? f.col : '#999'}"></i>`}<b>${e.g ? esc(t('gm')) : esc(ichi(e.u) + TK.who(e.n, e.h, e.r))}</b>${!e.g && f && room === 'all' ? esc(TK.army(f)) : ''}<span>${esc(TK.ago(e.t, now))}</span></div><p>${esc(e.m)}</p>`; if (!e.sys) trMsg(d, e.m); return d; };
+  // ---------- 掲示板の自動翻訳（11/26）：遊んでいる言語とちがう言語の書きこみは、元の文の下に訳を出す ----------
+  //  無料の Google 翻訳の公開窓口 → だめなら MyMemory。訳はスマホに覚えておく（同じ文は訳しなおさない）
+  const trLang = s => /[\u3040-\u30ff]/.test(s) ? 'ja' : /[\uac00-\ud7af\u1100-\u11ff]/.test(s) ? 'ko' : /[\u4e00-\u9fff]/.test(s) ? 'zh' : /[A-Za-z]{2,}/.test(s) ? 'en' : '';
+  const TRC = { ja: 'ja', en: 'en', zh: 'zh-TW', ko: 'ko' }, trMem = new Map(); let trQ = Promise.resolve(), trBad = 0;
+  const trKey = (l, s) => 'tk_tr_' + l + '_' + s.slice(0, 120);
+  async function translate(s, to) {
+    const k = trKey(to, s); if (trMem.has(k)) return trMem.get(k); try { const v = localStorage.getItem(k); if (v) { trMem.set(k, v); return v; } } catch (e) { }
+    let out = '';
+    try { const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + TRC[to] + '&dt=t&q=' + encodeURIComponent(s)); if (r.ok) { const j = await r.json(); out = (j[0] || []).map(x => x[0]).join(''); } } catch (e) { }
+    if (!out) try { const fr = trLang(s); const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(s) + '&langpair=' + (TRC[fr] || 'ja') + '|' + TRC[to]); if (r.ok) { const j = await r.json(); out = (j.responseData && j.responseData.translatedText) || ''; if (/MYMEMORY WARNING|QUERY LENGTH/i.test(out)) out = ''; } } catch (e) { }
+    if (out) { trMem.set(k, out); try { localStorage.setItem(k, out); } catch (e) { } } else trBad++;
+    return out;
+  }
+  function trMsg(d, s) {
+    const to = TK.lang(), fr = trLang(s || ''); if (!fr || fr === to || trBad > 8) return;
+    const p = document.createElement('p'); p.className = 'tr'; p.textContent = '…'; d.appendChild(p);
+    trQ = trQ.then(() => translate(s, to)).then(v => { if (v && v.trim() !== s.trim()) p.textContent = '🌐 ' + v; else p.remove(); }).catch(() => p.remove());
+  }
   async function loadBoard(first) {
     if (pKind !== 'board') return; const room = bdRoom;
     try {
