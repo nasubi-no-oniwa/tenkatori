@@ -211,6 +211,7 @@
  "kid": {
   ".write": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
   "$d": {
+   ".read": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val())",
    "$b": {
     ".read": "(auth != null && root.child('ft_admin/key').exists() && root.child('ft_admins/' + auth.uid).val() === root.child('ft_admin/key').val()) || (data.child('a').val() <= now && auth != null && (root.child('tk/u/' + auth.uid).child('f').val() === data.child('f').val() || root.child('tk/u/' + auth.uid).child('f').val() === data.child('g').val()))"
    }

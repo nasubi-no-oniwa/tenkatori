@@ -271,6 +271,12 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'kipost') {
+  // 今日の奇襲のお知らせを、その2軍の軍議に書く（まだ書いていない回だけ。11/26 の作りなおし）
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, get = async p => JSON.parse(await api('GET', p, undefined, tok));
+  const kd = Object.values((await get('/tk/kid/' + d + '.json')) || {}).filter(Boolean), w = {};
+  for (const v of kd) { const ex = (await get('/tk/b/' + v.f + '/ki' + v.a + v.f + '.json')); if (!ex) Object.assign(w, kishuPosts(v.a, v.f, v.g)); }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); console.log('奇襲のお知らせを書きました：' + Object.keys(w).length + '件');
 } else if (op === 'kicheck') {
   // 奇襲の確かめ（11/26）：今日の予定と、奇襲中に1分台で相手のマスを取った回数
   const HR = 3600000, DAY = 86400000, JST = 9 * HR, now = Date.now(), d = Math.floor((now + JST) / DAY) * DAY - JST, get = async p => JSON.parse(await api('GET', p, undefined, tok)), FN = globalThis.TK_FNAME;
@@ -540,9 +546,16 @@ async function ensureKishu(force) {
     const lo = Math.max(d + b * BAND, Math.ceil((now + 20 * MIN) / (5 * MIN)) * 5 * MIN), hi = Math.min(d + (b + 1) * BAND - 30 * MIN, END - 30 * MIN); if (lo > hi) continue;
     const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
     const cand = pairs.filter(p => p.join('') !== last), [f, g] = cand[Math.floor(Math.random() * cand.length)]; last = f + g;
-    w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) };
+    w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) }; Object.assign(w, kishuPosts(a, f, g));
     out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + FN(f) + '→' + FN(g));
   }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
   console.log('今日の奇襲：' + (out.length ? out.join('、') : 'なし'));
+}
+
+// 奇襲のお知らせ（その2軍の軍議に、始まる時刻 t で書いておく。遊ぶ画面は t が来るまで出さない）
+function kishuPosts(a, f, g) {
+  const FN = globalThis.TK_FNAME, x = new Date(a + 1800000 + 9 * 3600000), hm = x.getUTCHours() + ':' + String(x.getUTCMinutes()).padStart(2, '0');
+  return { ['b/' + f + '/ki' + a + f]: { t: a, u: 'gm', n: 'なすP', m: `【奇襲】好機到来！ ${hm}まで、${FN(g)}軍のマスは1分で取れる。討て！`, g: true },
+    ['b/' + g + '/ki' + a + g]: { t: a, u: 'gm', n: 'なすP', m: `【奇襲】${FN(f)}軍が奇襲をしかけてきた！ ${hm}まで、敵は当軍のマスを1分で奪える。守れ！`, g: true } };
 }

@@ -182,7 +182,6 @@
       if (dd && dd.rc && dd.rc.size) out.push({ id: 'dr' + d, t: d, m: t('sy_rice', { n: dd.rc.size }) });
       for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000) continue; if (hs[i] === '*') out.push({ id: 'h' + a, t: a + 1, m: t('sy_hall', { b: fsH(i + 1) }) }); }   // 陣営ごとの番（2分）は、その陣営の軍議だけに出す
     } else {
-      if (N.me && N.me.f === room) for (const v of N.kiList()) out.push({ id: 'k' + v.a, t: v.a, m: t(v.f === room ? 'sy_ki_atk' : 'sy_ki_def', { army: TK.army(TK.FI[v.f === room ? v.g : v.f]), b: fsHM(v.a + 1800000) }) });   // 奇襲のお知らせ（始まった時刻に、その2軍の軍議だけ）
       const ix = []; for (let i = 0; i < 24; i++) if (hs[i] === room) ix.push(i); if (!ix.length) return out;   // 三つ巴のあとは1日2回
       out.push({ id: 'd' + d, t: d, m: ix.length === 1 ? t('sy_fday', { a: fsH(ix[0]), b: fsH(ix[0] + 1) }) : t('sy_fday2', { list: ix.map(i => fsH(i) + '〜' + fsH(i + 1)).join('、') }) });
       for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) out.push({ id: 'h' + a, t: a + 1, m: t('sy_fnow', { b: fsH(i + 1) }) }); }

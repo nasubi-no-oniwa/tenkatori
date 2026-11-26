@@ -323,7 +323,7 @@
     if (N.fake) return FK.board(room, since);
     const auth = room !== 'all';
     const v = since ? await rest('b/' + room, { orderBy: 't', startAt: since + 1, limitToFirst: 60 }, auth) : await rest('b/' + room, { orderBy: 't', limitToLast: 50 }, auth);
-    return sorted(v);
+    return sorted(v).filter(e => e.t <= N.now() + 5000);   // 時刻つきで先に書いてあるお知らせ（奇襲など）は、その時刻まで出さない
   };
   N.post = async function (room, m) {
     const me = N.me, u = N.uid(); m = String(m || '').replace(/[\u0000-\u001f]/g, ' ').trim(); m = Array.from(m).slice(0, 100).join(''); if (!m) throw new Error('empty');

@@ -136,13 +136,12 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
               auto.push({ t: d, top: 1, m: `お知らせ：本日の早取りの時間割です（日本時間）。${li.join('、')}。それぞれの番の1時間は、その陣営だけ2分で1マス取れます。0時・6時・12時・18時からの1時間は、全陣営が5分で1マスです。` });
               for (let i = 0; i < 24; i++) { const a = d + i * 3600000; if (a > now) break; if (now >= a + 3600000 || hs[i] !== '*') continue; auto.push({ t: a + 1, m: `お知らせ：ただいま全陣営の早取りの時間です（${H(i + 1)}まで）。どの陣営も5分で1マス取れます。` }); }
             } else {
-              { const kd = (await get('kid/' + d).catch(() => null)) || {}; const fm = (await get('s/mg').catch(() => null)) || {}, an = L => fn(L) + '軍', hm = ts => { const x = new Date(ts + JST); return x.getUTCHours() + ':' + String(x.getUTCMinutes()).padStart(2, '0'); };   // 奇襲（11/26から）：その2軍の軍議に、始まった時刻に出る
-                for (const v of Object.values(kd)) if (v && v.a <= now && (v.f === room || v.g === room)) auto.push({ t: v.a, m: v.f === room ? `【奇襲】好機到来！ ${hm(v.a + 1800000)}まで、${an(v.g)}のマスは1分で取れる。討て！` : `【奇襲】${an(v.f)}が奇襲をしかけてきた！ ${hm(v.a + 1800000)}まで、敵は当軍のマスを1分で奪える。守れ！` }); }
               const ix = []; for (let i = 0; i < 24; i++) if (hs[i] === room) ix.push(i);   // 三つ巴のあとは1日2回
               if (ix.length) { auto.push({ t: d, top: 1, m: ix.length === 1 ? `お知らせ：本日の当家の番は${H(ix[0])}〜${H(ix[0] + 1)}。この1時間は2分で1マス取れる。皆の者、備えよ！` : `お知らせ：本日の当軍の早取りの番は${ix.map(i => H(i) + '〜' + H(i + 1)).join('、')}。この間は2分で1マス取れる。皆の者、備えよ！` });
                 for (const i of ix) { const a = d + i * 3600000; if (a <= now && now < a + 3600000) auto.push({ t: a + 1, m: `お知らせ：ただいま当家の番！ ${H(i + 1)}まで2分で1マス取れる。いざ出陣！` }); } }
             } } }
         const autoTop = auto.filter(e => e.top), autoFlow = auto.filter(e => !e.top);
+        v.forEach(e => { if (e.t > Date.now()) e.m = '（' + new Date(e.t + 9 * 3600000).toISOString().slice(11, 16) + 'に出る予約）' + e.m; });   // 奇襲など、時刻つきで先に書いたお知らせ
         const vv = v.concat(autoFlow.map(e => Object.assign({ auto: 1, g: true }, e))).sort((a, b) => b.t - a.t);
         V.innerHTML = `<div class="rooms">${[['all', '全体']].concat(RM.map(f => [f.L, f.nm[0]])).map(([r, nm]) => `<button data-r="${r}" class="${r === room ? 'on' : ''}">${esc(nm)}</button>`).join('')}</div>
         <div class="box"><h2>なすPとして書く（${esc(room === 'all' ? '全体' : fn(room) + '軍の軍議')}）</h2><textarea id="gmM" maxlength="100" placeholder="100文字まで"></textarea><div class="row"><button class="b go" id="gmS">この板に書く</button><button class="b" id="gmAll">全部の板（全体＋${RM.length}陣営）に書く</button></div></div>

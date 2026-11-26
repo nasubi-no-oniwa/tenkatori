@@ -195,7 +195,7 @@ tk.bp = { $room: { '.read': `$room === 'all' || ${ADMIN} || (auth != null && ${M
   tk.nr = { '.read': false, '.write': ADMIN };
   // 奇襲（毎日9回）：ki（決まり用。読めない）と kid/{その日の0時}/{0〜8}（始まった時刻と2軍。始まってから、その2軍の人だけ読める）
   tk.ki = { '.read': false, '.write': ADMIN };
-  tk.kid = { '.write': ADMIN, $d: { $b: { '.read': `${ADMIN} || (data.child('a').val() <= now && auth != null && (${ME}.child('f').val() === data.child('f').val() || ${ME}.child('f').val() === data.child('g').val()))` } } };
+  tk.kid = { '.write': ADMIN, $d: { '.read': ADMIN, $b: { '.read': `${ADMIN} || (data.child('a').val() <= now && auth != null && (${ME}.child('f').val() === data.child('f').val() || ${ME}.child('f').val() === data.child('g').val()))` } } };
   tk.nrd = { '.write': ADMIN, $d: { $i: { '.read': "data.child('a').val() <= now" } } };   // $i：1日を8時間ずつ3つに分けた何番目か（0〜2）
   // 天下人予想（11/26〜11/29 24時）：1人1回。仕官した人だけ。予想できるのは軍（三つ巴のあと）。読めるのは本人と管理人
   tk.pred = { '.read': ADMIN, $uid: { '.read': `auth != null && auth.uid === $uid`,
