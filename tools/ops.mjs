@@ -274,7 +274,7 @@ else if (op === 'launch' || op === 'reset') {
   await ensureKishu(true);
 } else if (op === 'multi') {
   // 複数持ち（11/26）：同じ端末の指紋の組を調べる。q に go と入れたときだけ、「確実」の組の2つめ以降のアカウントを止める（最初に仕官したアカウントは残す。取ったマスは戻さない）
-  //  確実：同じ指紋で、ふだんの時間（早取りでない時間）に、2人が60秒以内に続けてマスを取ったことが5回以上・3つ以上の時間帯にあり、しかも少ないほうの取った回数の半分以上がそう（1人が2つ同時に動かしているとしか考えにくい）
+  //  確実：同じ指紋で、ふだんの時間（早取りでない時間）に、2人が5分以内に続けてマスを取ったことが、別々の時間に5回以上ある（11/26 なすPの基準。軍は問わない）
   //  要確認：同じ指紋で、仕官の間が1時間以内／別々の軍にいる（間者かもしれない）など。同じ機種の別人のこともあるので、止めない
   const go = (process.argv[3] || '').trim() === 'go', get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, FN = globalThis.TK_FNAME, JST = 9 * 3600000;
   const [u, ban, logo, schd] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 10 * 86400000)), get('/tk/schd.json')]);
@@ -284,16 +284,16 @@ else if (op === 'launch' || op === 'reset') {
   for (const e of lg) { takes[e.u] = (takes[e.u] || 0) + 1; const c = slotOf(e.t); if (c === '*' || c === '!' || c === e.f || c === e.h) continue; (tl[e.u] = tl[e.u] || []).push(e.t); nt[e.u] = (nt[e.u] || 0) + 1; }
   const g = {}; for (const [id, x] of Object.entries(u)) if (x && x.fp) (g[x.fp] = g[x.fp] || []).push([id, x]);
   const jst = t => t ? new Date(t + JST).toISOString().slice(5, 16).replace('T', ' ') : '—';
-  const near = (a, b) => { const A = tl[a] || [], B = tl[b] || []; let i = 0, n = 0; const hrs = new Set(); for (const t of A) { while (i < B.length && B[i] < t - 60000) i++; if (i < B.length && Math.abs(B[i] - t) <= 60000) { n++; hrs.add(Math.floor(t / 3600000)); } } return { n, h: hrs.size, r: n / Math.max(1, Math.min(A.length, B.length)) }; };
+  const near = (a, b) => { const A = tl[a] || [], B = tl[b] || []; let i = 0, n = 0; const hrs = new Set(); for (const t of A) { while (i < B.length && B[i] < t - 300000) i++; if (i < B.length && Math.abs(B[i] - t) <= 300000) hrs.add(Math.floor(t / 3600000)); } n = hrs.size; return { n, h: hrs.size, r: n / Math.max(1, Math.min(A.length, B.length)) }; };   // 5分以内。同じ時間の中は1回と数える
   const sim = (a, b) => { a = String(a || ''); b = String(b || ''); if (!a || !b) return false; if (a === b || a.includes(b) || b.includes(a)) return true; return a.slice(0, 2) === b.slice(0, 2) && Math.abs(a.length - b.length) <= 2; };
   const out = [];
   for (const [fp, v0] of Object.entries(g)) {
     const v = v0.filter(([id]) => !ban[id]).sort((a, b) => (a[1].j || 0) - (b[1].j || 0)); if (v.length < 2) continue;
     let sure = false, why = []; const pairs = [];
-    for (let i = 0; i < v.length; i++) for (let k = i + 1; k < v.length; k++) { const r = near(v[i][0], v[k][0]); pairs.push(r); if (r.n >= 5 && r.h >= 3 && r.r >= 0.5) sure = true; }
+    for (let i = 0; i < v.length; i++) for (let k = i + 1; k < v.length; k++) { const r = near(v[i][0], v[k][0]); pairs.push(r); if (r.n >= 5) sure = true; }
     const best = pairs.sort((a, b) => b.n - a.n)[0]; let gap = 1e15; for (let i = 1; i < v.length; i++) gap = Math.min(gap, (v[i][1].j || 0) - (v[i - 1][1].j || 0));
     const armies = new Set(v.map(([, x]) => x.f));
-    if (best && best.n >= 2) why.push('ふだんの時間に60秒以内に続けて取った ' + best.n + '回・' + best.h + 'つの時間帯・' + Math.round(best.r * 100) + '%');
+    if (best && best.n >= 2) why.push('ふだんの時間に5分以内に続けて取った ' + best.n + '回');
     if (gap < 3600000) why.push('仕官の間 ' + Math.round(gap / 60000) + '分');
     if (armies.size > 1) why.push('別々の軍（間者かも）');
     if (v.some(([, a], i) => v.some(([, b], k) => k > i && sim(a.n, b.n)))) why.push('名前が似ている');
