@@ -586,12 +586,17 @@ async function ensureKishu(force) {
   if (Object.keys(have).length && !force) { console.log('今日の奇襲：もう決まっています（' + Object.keys(have).length + '回）'); return; }
   if (!s || !s.mg || (s.end && s.end.k !== 'half')) { console.log('今日の奇襲：三つ巴の前か、終わったあとなので、なし'); return; }
   const arm = Object.keys(s.mg).filter(L => s.mg[L] === L), pairs = []; for (const f of arm) for (const g of arm) if (f !== g) pairs.push([f, g]);
+  // 巻き返しの奇襲（11/27 なすP：北条にも楽しんでほしい）：一番小さい軍のマスが一番大きい軍の半分より少ない日は、
+  //  朝（3番の枠 8:00〜10:10）と夜（7番の枠 18:40〜20:50）の2回、「一番小さい軍 → 一番大きい軍」にする。ほかの7回はくじのまま
+  const sz = arm.slice().sort((x, y) => ((s.n || {})[x] || 0) - ((s.n || {})[y] || 0)), small = sz[0], big = sz[sz.length - 1];
+  const catchup = arm.length > 1 && ((s.n || {})[small] || 0) * 2 < ((s.n || {})[big] || 0);
+  if (catchup) console.log('巻き返しの奇襲：' + FN(small) + '（' + s.n[small] + 'マス）→ ' + FN(big) + '（' + s.n[big] + 'マス）を朝と夜に');
   const w = {}, out = []; let last = '';
   for (let b = 0; b < 9; b++) {
     if (have[b]) { last = have[b].f + have[b].g; if (have[b].a <= now) continue; }
     const lo = Math.max(d + b * BAND, Math.ceil((now + 20 * MIN) / (5 * MIN)) * 5 * MIN), hi = Math.min(d + (b + 1) * BAND - 30 * MIN, END - 30 * MIN); if (lo > hi) continue;
     const a = lo + Math.floor(Math.random() * ((hi - lo) / (5 * MIN) + 1)) * 5 * MIN;
-    const cand = pairs.filter(p => p.join('') !== last), [f, g] = cand[Math.floor(Math.random() * cand.length)]; last = f + g;
+    const cand = pairs.filter(p => p.join('') !== last), [f, g] = catchup && (b === 3 || b === 7) ? [small, big] : cand[Math.floor(Math.random() * cand.length)]; last = f + g;
     w['ki/' + a] = { a, f, g }; w['kid/' + d + '/' + b] = { a, f, g, k: String(a) };   // お知らせは、奇襲の30分だけ遊ぶ画面が軍議の一番上に出す（11/26）
     out.push(new Date(a + JST).toISOString().slice(11, 16) + ' ' + FN(f) + '→' + FN(g));
   }
