@@ -215,6 +215,8 @@
   N.holders = function (cells) { const o = {}; for (const lm of N.LM) o[lm.id] = N.holder(lm, cells); return o; };
   N.KEY = N.LM.find(l => l.id === 'azuchi') || null;        // 天下分け目の城
   N.winners = function () { if (N.endOK() && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
+  // 天下太平（11/27 なすP）：4000マスも安土城もなく、いちばんマスの多い軍が同じ数で並んだとき（天下人なし）
+  N.peace = () => N.ended() && N.winners().length > 1;
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）
   N.weakest = function () { let mn = 1e9, w = []; for (const L of N.armies()) { const n = N.s.n[L] || 0; if (n < mn) { mn = n; w = [L]; } else if (n === mn) w.push(L); } return w; };
   N.defectWait = () => { const me = N.me; if (!me) return 0; const a = me.d ? me.d + TK.DEFECT : 0, b = me.j ? me.j + (TK.JOIND || 0) : 0; return Math.max(0, Math.max(a, b) - N.now()); };

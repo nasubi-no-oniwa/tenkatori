@@ -440,16 +440,16 @@
   async function checkEnd() {
     if (endShown || !N.ended() || scr !== 'game') return; endShown = true; refreshGlow();
     try { await N.loadState(); } catch (e) { }
-    const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.endOK() && (N.s.end.k === 'day' || N.s.end.k === 'gm')), names = win.map(TK.fname).join('・');
-    $('enT').textContent = half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = half ? 'en_half' : byKey ? 'en_key' : 'en_time';
+    const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.endOK() && (N.s.end.k === 'day' || N.s.end.k === 'gm')), names = win.map(TK.fname).join('・'), peace = !half && win.length > 1;   // 天下太平：いちばん多い軍が並んだとき（11/27）
+    $('enT').textContent = peace ? t('en_peace_t') : half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = peace ? 'en_peace' : half ? 'en_half' : byKey ? 'en_key' : 'en_time';
     $('enS').textContent = t(enKey, { name: names });
-    $('enWin').hidden = !(N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
-    const g = N.mg(), hk = N.s.hk || {}, best = g ? TK.F.filter(x => g[x.L] === f.L && x.L !== f.L && (hk[x.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
+    $('enWin').hidden = !(!peace && N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
+    const g = N.mg(), hk = N.s.hk || {}, best = g && !peace ? TK.F.filter(x => g[x.L] === f.L && x.L !== f.L && (hk[x.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
     $('enList').innerHTML = (best ? `<p class="enYr">${esc(t('en_yoriki', { name: TK.fname(best), n: hk[best.L] }))}</p>` : '') + sortedF().slice(0, 5).map(x => `<div class="pw"><span class="r">${rankOf(x.L)}</span><canvas width="90" height="90" data-c="${x.L}"></canvas><div class="nm">${esc(TK.fname(x))}</div><span class="n">${N.s.n[x.L] || 0}</span></div>`).join(''); $('enList').querySelectorAll('canvas').forEach(c => drawCrest(c, TK.FI[c.dataset.c]));
-    $('taken').hidden = true; closePanel(); showCell(-1); $('endscr').hidden = false; $('map').hidden = true; $('game').hidden = true; scene('banner', { f, gold: 1 });
+    $('taken').hidden = true; closePanel(); showCell(-1); $('endscr').hidden = false; $('map').hidden = true; $('game').hidden = true; if (peace) scene('off'); else scene('banner', { f, gold: 1 });
     if (G.gsap) { gsap.fromTo('#enT', { opacity: 0, scale: 2.2 }, { opacity: 1, scale: 1, duration: 0.9, ease: 'power4.out' }); gsap.fromTo('#enS', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.7 }); gsap.fromTo('.enbox', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, delay: 1.2 }); }
     if (TK.fireworks) TK.fireworks(6);
-    enCanvas = await card({ f, title: half ? t('en_title') : t('t_ended'), sub: [t(enKey, { name: names }), t('cells', { n: N.s.n[f.L] || 0 })], big: 76 });
+    enCanvas = await card({ f: peace ? null : f, title: peace ? t('en_peace_t') : half ? t('en_title') : t('t_ended'), sub: peace ? [t('en_peace')] : [t(enKey, { name: names }), t('cells', { n: N.s.n[f.L] || 0 })], big: 76 });
     ev('end_view');
     // エンドロール：元ができていればボタンを出し、はじめて終わりの画面を見たときは一度だけ自動で流す
     N.loadReplay().then(rp => { if (!rp) return; rollRp = rp; $('enRoll').hidden = false; if (!N.store('tk_roll') || /[?&]roll=1/.test(location.search)) { N.store('tk_roll', 1); setTimeout(playRoll, 2200); } }).catch(() => { });
@@ -484,8 +484,8 @@
     if (stop) return;
     await sleep(1200); credits();
     function credits() {
-      const g = N.mg(), hk = N.s.hk || {}, win = N.winners().map(L => TK.FI[L]).filter(Boolean), W0 = win[0];
-      let h = `<p class="big" style="font-size:16px;letter-spacing:.3em;color:#c9a44c">${esc(t('roll_win'))}</p><h2>${esc(win.map(f => g ? TK.army(f) : TK.fname(f)).join('・'))}</h2><small>${esc(W0 ? t('cells', { n: N.s.n[W0.L] || 0 }) : '')}</small>`;
+      const g = N.mg(), hk = N.s.hk || {}, win = N.winners().map(L => TK.FI[L]).filter(Boolean), peace = N.peace(), W0 = peace ? null : win[0];
+      let h = peace ? `<p class="big" style="font-size:16px;letter-spacing:.3em;color:#c9a44c">${esc(t('en_peace_t'))}</p><h2>${esc(t('en_peace'))}</h2>` : `<p class="big" style="font-size:16px;letter-spacing:.3em;color:#c9a44c">${esc(t('roll_win'))}</p><h2>${esc(win.map(f => g ? TK.army(f) : TK.fname(f)).join('・'))}</h2><small>${esc(W0 ? t('cells', { n: N.s.n[W0.L] || 0 }) : '')}</small>`;
       if (g) { h += `<h3>${esc(t('roll_armies'))}</h3>`; for (const L of N.armies().sort((a, b) => (N.s.n[b] || 0) - (N.s.n[a] || 0))) { const ys = TK.F.filter(f => g[f.L] === L && f.L !== L).map(TK.fname); h += `<p class="big" style="color:${TK.FI[L].col}">${esc(TK.army(TK.FI[L]))}</p><small>${esc(t('pw_with', { list: ys.join('・') }))}</small>`; }
         const best = W0 ? TK.F.filter(f => g[f.L] === W0.L && f.L !== W0.L && (hk[f.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
         if (best) h += `<h3>${esc(t('roll_best'))}</h3><p class="big">${esc(TK.fname(best))}</p><small>${esc(t('cells', { n: hk[best.L] }))}</small>`; }
@@ -499,7 +499,7 @@
     }
     function finish() { R.hidden = true; rollOn = false; N.cells = real; MP.repaint(); $('rollIn').style.transition = 'none'; }
   }
-  const endText = () => { const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
+  const endText = () => { if (N.peace()) return t('sh_peace'); const f = TK.FI[N.winners()[0]]; return t('sh_end', { name: N.winners().map(L => TK.fname(TK.FI[L])).join('・'), n: N.s.n[f.L] || 0 }); };
 
   // ---------- 巻物（武将の功績）。最初は自分の陣営、上の家紋でほかの武将に切りかえ ----------
   let scL = null;
