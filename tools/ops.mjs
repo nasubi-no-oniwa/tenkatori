@@ -304,7 +304,7 @@ else if (op === 'launch' || op === 'reset') {
   // 軍議にお知らせを書き、今日の24時までピン止めする（11/28）。q：軍議（all か軍の記号）、h：文
   const DAY = 86400000, JST = 9 * 3600000, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, room = (process.argv[3] || '').trim(), m = (process.argv[4] || '').trim(), now = Date.now();
   if (!/^(all|[a-t])$/.test(room) || !m) { console.log('q（軍議）と h（文）を確かめてください'); process.exit(1); }
-  const id = pid() + 'p';
+  const id = 'gm' + now.toString(36) + 'p' + Math.random().toString(36).slice(2, 10);
   await api('PATCH', '/tk.json', { ['b/' + room + '/' + id]: { t: now, u: 'gm', n: 'なすP', m, g: true }, ['bp/' + room + '/' + id]: { t: now, u: 'gm', n: 'なすP', m, g: true, x: d + DAY } }, tok);
   console.log('書いてピン止めしました（24時まで）：' + room + '／' + m);
 } else if (op === 'unban') {
