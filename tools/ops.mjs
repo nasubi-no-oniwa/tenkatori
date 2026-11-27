@@ -9,7 +9,7 @@ import { build } from './mapseed.mjs';
 const op = process.argv[2], tok = await token();
 // 地図（名所・天守閣）と武将の名前
 globalThis.window = globalThis; await import('../js/mapdata.js'); await import('../js/data.js');
-const RULE4000 = '【天下統一】毎日24時に4000マスの軍が天下統一。届かねば11/30の23:59に安土城を押さえた軍が天下人。安土城も空きなら、マスの最も多い軍が天下人（同数なら天下太平）。最終日21時〜は全軍2分！ 天下人予想も開催中';
+const RULE4000 = '【天下統一】毎日24時に4000マスの軍が天下統一。届かねば11/30の23:59に安土城を押さえている軍が天下人。最終日21時〜は全軍2分！ 天下人予想も開催中';
 const MAP = globalThis.TK_MAP; globalThis.TK_FNAME = L => { const f = (globalThis.TK.F || []).find(x => x.L === L); return f ? f.nm[0] : L; };
 if (op === 'stop') { await api('PATCH', '/tk/s.json', { stop: true }, tok); console.log('開戦準備中にしました'); }
 else if (op === 'notice') {
@@ -345,7 +345,7 @@ else if (op === 'launch' || op === 'reset') {
 } else if (op === 'pins') {
   // ピン止めを「一番槍」と「天下統一の決まり」だけにする（早取りの時間割は画面が自動で一番上に出す。11/25）
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)), s = await get('/tk/s.json'), FN = globalThis.TK_FNAME, w = {}, now = Date.now();
-  for (const room of ['all', ...'abcdefghijklmnopqrst']) { const v = (await get('/tk/bp/' + room + '.json?shallow=true')) || {}; for (const i of Object.keys(v)) w['bp/' + room + '/' + i] = null; }
+  for (const room of ['all', ...'abcdefghijklmnopqrst']) { const v = (await get('/tk/bp/' + room + '.json')) || {}; for (const [i, e] of Object.entries(v)) if (!(e && e.x && e.x > now)) w['bp/' + room + '/' + i] = null; }   // 期限つきのピン（下剋上など）は、期限まで残す（11/27）
   for (const room of pinRooms(s)) {
     w['bp/' + room + '/rule4000'] = { t: now, n: 'なすP', m: RULE4000, g: true };
     if (s.ich && s.ich.u) w['bp/' + room + '/ich' + s.ich.d] = { t: now + 1, n: 'なすP', m: `お知らせ：きのうの一番槍は「${s.ich.n}」（${FN(s.ich.f)}軍）！ 1日で${s.ich.c}マスを取った。本日一日、名前に「一番槍」がつく。`, g: true };
