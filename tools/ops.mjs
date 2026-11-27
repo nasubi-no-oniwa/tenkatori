@@ -273,6 +273,15 @@ else if (op === 'launch' || op === 'reset') {
   await api('PATCH', '/tk.json', w, tok); console.log('11/30 の時間割：' + x.h + ' → ' + h.join('') + '（決戦地：安土城）');
 } else if (op === 'kishu') {
   await ensureKishu(true);
+} else if (op === 'multifix') {
+  // 11/27：これまで見回りで止めた人（data/multi_banned.json）のうち、つながりのない人の止めを外す。q に go で外す（10日分の記録で調べる）
+  const ids = new Set(JSON.parse(fs.readFileSync('data/multi_banned.json', 'utf8')));
+  await multiCheck((process.argv[3] || '').trim() === 'go', 10, ids);
+} else if (op === 'reban') {
+  // 止めを外した人を、また止める（名前 q はぴったり同じ名前）。「止めない人」からも外す
+  const q = (process.argv[3] || '').trim(), get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, u = await get('/tk/u.json'), w = {};
+  for (const [id, x] of Object.entries(u)) if (x && x.n === q) { w['ban/' + id] = true; w['banok/' + id] = null; console.log('止める：' + x.n + '（本拠 ' + x.h + '・陣営 ' + x.f + '）' + id); }
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); else console.log('その名前の人はいませんでした');
 } else if (op === 'unban') {
   // 止めを外す（11/26）：名前 q（ぴったり同じ名前）・本拠 h で探して、止め済みの人だけ外す。外した人は「止めない人」（banok）に入れ、見回りがまた止めないようにする
   const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim(); if (!q) { console.log('q に名前を入れてください'); process.exit(1); }
@@ -609,41 +618,59 @@ async function pickKessen(d, force) {
 }
 
 // 複数持ちの検査（11/26）：op multi と、毎日の処理（1時間ごと）から呼ぶ。go のときだけ「確実」の組の2つめ以降を止める
-async function multiCheck(go) {
-  // 複数持ち（11/26）：同じ端末の指紋の組を調べる。q に go と入れたときだけ、「確実」の組の2つめ以降のアカウントを止める（最初に仕官したアカウントは残す。取ったマスは戻さない）
-  //  確実：同じ指紋で、ふだんの時間（早取りでない時間）に、2人が5分以内に続けてマスを取ったことが、別々の時間に5回以上ある（11/26 なすPの基準。軍は問わない）
-  //  要確認：同じ指紋で、仕官の間が1時間以内／別々の軍にいる（間者かもしれない）など。同じ機種の別人のこともあるので、止めない
+async function multiCheck(go, days, fix) {
+  // 複数持ちの見回り（11/27 なすP：「自分に証拠があるアカウントだけ止める」）
+  //  同じ端末の指紋の組の中で、次のどちらかの「つながり」があるアカウントどうしを1つのかたまりと見る。
+  //   ・ふだんの時間（早取りでない時間）に、5分以内に続けてマスを取ったことが、別々の時間に5回以上ある
+  //   ・同じ家で、仕官した時刻の差が10分以内　・同じ名前（よくある名前はのぞく）
+  //  かたまりの中で一番先に仕官した1つを残し、ほかを止める。つながりのない人（同じ機種の別人のことが多い）は止めない。
+  //  1マスも取っていない人・止めを外した人（banok）は見ない。go のときだけ止める。
+  //  fix（ids の集まり）：これまで見回りで止めた人のうち、つながりのない人の止めを外す（11/27 の直し）
+  days = days || 3; const LINK_T = 10 * 60000;   // 同じ機種のiPhoneは指紋がよく重なるので、仕官の差は「同じ家で10分以内」だけをつながりと見る
   const get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, FN = globalThis.TK_FNAME, JST = 9 * 3600000;
-  const [u, ban, logo, schd, ok] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - 3 * 86400000)), get('/tk/schd.json'), get('/tk/banok.json')]);   // ok：止めを外した人（見回りでは見ない）。15分ごとに動くので、軽くするため3日分だけ見る
+  const [u, ban, logo, schd, ok] = await Promise.all([get('/tk/u.json'), get('/tk/ban.json'), get('/tk/log.json?orderBy="t"&startAt=' + (Date.now() - days * 86400000)), get('/tk/schd.json'), get('/tk/banok.json')]);
   const lg = Object.values(logo).filter(e => e && e.y === 't' && e.u).sort((a, b) => a.t - b.t), takes = {}, tl = {}, nt = {};
-  // ふだんの時間（早取りでない時間）のマスだけを見る：時間割の文字が '*'（全軍5分）・'!'（最終決戦）・自分の軍か家の番 でない時間
   const DAYM = 86400000, slotOf = t => { const d = Math.floor((t + JST) / DAYM) * DAYM - JST, h = schd[d] && schd[d].h; return h ? h[Math.floor((t - d) / 3600000)] : '*'; };
   for (const e of lg) { takes[e.u] = (takes[e.u] || 0) + 1; const c = slotOf(e.t); if (c === '*' || c === '!' || c === e.f || c === e.h) continue; (tl[e.u] = tl[e.u] || []).push(e.t); nt[e.u] = (nt[e.u] || 0) + 1; }
-  const g = {}; for (const [id, x] of Object.entries(u)) if (x && x.fp) (g[x.fp] = g[x.fp] || []).push([id, x]);
   const jst = t => t ? new Date(t + JST).toISOString().slice(5, 16).replace('T', ' ') : '—';
-  const near = (a, b) => { const A = tl[a] || [], B = tl[b] || []; let i = 0, n = 0; const hrs = new Set(); for (const t of A) { while (i < B.length && B[i] < t - 300000) i++; if (i < B.length && Math.abs(B[i] - t) <= 300000) hrs.add(Math.floor(t / 3600000)); } n = hrs.size; return { n, h: hrs.size, r: n / Math.max(1, Math.min(A.length, B.length)) }; };   // 5分以内。同じ時間の中は1回と数える
-  const sim = (a, b) => { a = String(a || ''); b = String(b || ''); if (!a || !b) return false; if (a === b || a.includes(b) || b.includes(a)) return true; return a.slice(0, 2) === b.slice(0, 2) && Math.abs(a.length - b.length) <= 2; };
-  const out = [];
+  const near = (a, b) => { const A = tl[a] || [], B = tl[b] || []; let i = 0; const hrs = new Set(); for (const t of A) { while (i < B.length && B[i] < t - 300000) i++; if (i < B.length && Math.abs(B[i] - t) <= 300000) hrs.add(Math.floor(t / 3600000)); } return hrs.size; };
+  // 同じ名前：よくある名前（与作など、3人以上が使っている名前）は数えない
+  const nc = {}; for (const x of Object.values(u)) if (x && x.n) nc[x.n] = (nc[x.n] || 0) + 1;
+  const sameName = (a, b) => { a = String(a || ''); b = String(b || ''); return a.length >= 2 && a === b && nc[a] < 3; };
+  const g = {}; for (const [id, x] of Object.entries(u)) if (x && x.fp && !ok[id]) (g[x.fp] = g[x.fp] || []).push([id, x]);
+  const w = {}, keepBan = new Set(); let groups = 0;
   for (const [fp, v0] of Object.entries(g)) {
-    const v = v0.filter(([id]) => !ban[id] && !ok[id] && (takes[id] || 0) > 0).sort((a, b) => (a[1].j || 0) - (b[1].j || 0)); if (v.length < 2) continue;
-    let sure = false, why = []; const pairs = [];
-    for (let i = 0; i < v.length; i++) for (let k = i + 1; k < v.length; k++) { const r = near(v[i][0], v[k][0]); pairs.push(r); if (r.n >= 5) sure = true; }
-    const best = pairs.sort((a, b) => b.n - a.n)[0]; let gap = 1e15; for (let i = 1; i < v.length; i++) gap = Math.min(gap, (v[i][1].j || 0) - (v[i - 1][1].j || 0));
-    const armies = new Set(v.map(([, x]) => x.f));
-    if (best && best.n >= 2) why.push('ふだんの時間に5分以内に続けて取った ' + best.n + '回');
-    if (gap < 3600000) why.push('仕官の間 ' + Math.round(gap / 60000) + '分');
-    if (armies.size > 1) why.push('別々の軍（間者かも）');
-    if (v.some(([, a], i) => v.some(([, b], k) => k > i && sim(a.n, b.n)))) why.push('名前が似ている');
-    if (!why.length) continue;
-    out.push({ fp, v, sure, why, score: (sure ? 100 : 0) + (gap < 3600000 ? 10 : 0) + (armies.size > 1 ? 5 : 0) + v.length });
+    // 止め済みの人も、つながりを調べるのには入れる（止めた人と続けて作られた新しいアカウントを見つけるため）
+    const v = v0.filter(([id]) => ban[id] || (takes[id] || 0) > 0).sort((a, b) => (a[1].j || 0) - (b[1].j || 0)); if (v.length < 2) continue;
+    // つながりを調べて、かたまりに分ける（先に仕官した人が親）
+    const par = v.map((_, i) => i), root = i => par[i] === i ? i : (par[i] = root(par[i])), why = v.map(() => []);
+    for (let i = 0; i < v.length; i++) for (let k = i + 1; k < v.length; k++) {
+      const A = v[i][1], B = v[k][1], dj = Math.abs((B.j || 0) - (A.j || 0)), n = near(v[i][0], v[k][0]), r = [];
+      if (n >= 5) r.push('続けて取った ' + n + '回');
+      if (dj <= LINK_T && A.h === B.h) r.push('同じ家で仕官の差 ' + Math.round(dj / 60000) + '分');
+      if (sameName(A.n, B.n)) r.push('同じ名前');
+      if (r.length) { const ri = root(i), rk = root(k); if (ri !== rk) par[Math.max(ri, rk)] = Math.min(ri, rk); why[k].push(A.n + 'と' + r.join('・')); }
+    }
+    const cl = {}; v.forEach((m, i) => (cl[root(i)] = cl[root(i)] || []).push(i));
+    for (const idx of Object.values(cl)) {
+      if (idx.length < 2) continue;
+      const hit = idx.slice(1).filter(i => !ban[v[i][0]] && (takes[v[i][0]] || 0) > 0);
+      idx.slice(1).forEach(i => keepBan.add(v[i][0]));
+      if (fix) continue;
+      if (!hit.length) continue; groups++;
+      console.log('■ ' + fp + '　つながりのある' + idx.length + '人');
+      for (const i of idx) { const [id, x] = v[i]; console.log('   ' + (i === idx[0] ? '残す　　' : ban[id] ? '止め済み' : '止める　') + '　' + jst(x.j) + '　' + x.n + '（' + FN(x.f) + '軍・家 ' + FN(x.h) + '）　取った' + (takes[id] || 0) + '回　' + (why[i].join('／') || '') + '　' + id); }
+      for (const i of hit) w['ban/' + v[i][0]] = true;
+    }
   }
-  out.sort((a, b) => b.score - a.score);
-  console.log('指紋を記録した人：' + Object.values(u).filter(x => x && x.fp).length + '人 ／ 調べた組：' + out.length + '組（確実 ' + out.filter(x => x.sure).length + '組）');
-  const w = {};
-  for (const o of out.slice(0, 60)) {
-    console.log('■ ' + (o.sure ? '【確実】' : '【要確認】') + o.fp + '　' + o.v.length + '人　' + o.why.join('・'));
-    o.v.forEach(([id, x], i) => { console.log('   ' + (i === 0 ? '最初　' : '2つめ以降') + '　' + jst(x.j) + '　' + x.n + '（' + FN(x.f) + '軍・家 ' + FN(x.h) + '）　取った' + (takes[id] || 0) + '回（ふだんの時間 ' + (nt[id] || 0) + '回）　' + id); if (i > 0) w['ban/' + id] = true; });   // 11/26 なすP：疑わしい組（要確認）も、最初の1つを残して止めてよい
+  if (fix) {
+    const out = [...fix].filter(id => ban[id] && !keepBan.has(id) && !ok[id]);
+    console.log('見回りで止めた人：' + fix.size + '人 ／ つながりがあって止めたままにする：' + [...fix].filter(id => keepBan.has(id)).length + '人 ／ つながりがなく外す：' + out.length + '人');
+    for (const id of out) { const x = u[id] || {}; console.log('   外す　' + jst(x.j) + '　' + x.n + '（' + FN(x.f) + '軍）　取った' + (takes[id] || 0) + '回　' + id); w['ban/' + id] = null; }
+    if (go && out.length) { await api('PATCH', '/tk.json', w, tok); console.log('外しました：' + out.length + '人'); } else console.log(go ? '外す人はいませんでした' : '一覧だけです（q に go で外します）');
+    return;
   }
-  if (go && Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); console.log('疑わしい組（確実・要確認）の2つめ以降を止めました：' + Object.keys(w).length + '人（最初のアカウントは残しています）'); }
-  else console.log(go ? '止める人はいませんでした' : '一覧だけです（q に go と入れると、疑わしい組の2つめ以降を止めます）。止める候補：' + Object.keys(w).length + '人');
+  console.log('指紋を記録した人：' + Object.values(u).filter(x => x && x.fp).length + '人 ／ 止める組：' + groups + '組');
+  if (go && Object.keys(w).length) { await api('PATCH', '/tk.json', w, tok); console.log('つながりのあるアカウントを止めました：' + Object.keys(w).length + '人（かたまりの最初の1つは残しています）'); }
+  else console.log(go ? '止める人はいませんでした' : '一覧だけです（q に go と入れると止めます）。止める候補：' + Object.keys(w).length + '人');
 }
