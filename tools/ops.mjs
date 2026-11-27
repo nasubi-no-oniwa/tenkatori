@@ -543,7 +543,7 @@ async function buildReplay(s) {
   // 天下人予想（11/26〜）：天下人を当てた人（早く予想した順に50人）と人数。天下人は、天下統一ならその軍、終戦なら安土城を押さえた軍、いなければマスのいちばん多い軍
   let win = s.end && s.end.k !== 'half' ? s.end.f : '';
   if (!win) { const az = MAP.lm.find(l => l.id === 'azuchi'), o = az ? cur[az.c[0]] : ''; if (az && o && o !== 'w' && az.c.every(i => cur[i] === o)) win = o; }
-  if (!win) { const top = Object.keys(s.n || {}).filter(L => L !== 'w').sort((a, b) => s.n[b] - s.n[a]); win = top[0] && !(top[1] && s.n[top[1]] === s.n[top[0]]) ? top[0] : ''; }   // いちばん多い軍が並んだら天下太平（天下人なし。予想の当たりもなし）
+  if (!win) { const az = MAP.lm.find(l => l.id === 'azuchi'), c = {}; if (az) for (const i of az.c) { const L = cur[i]; if (L && L !== 'w') c[L] = (c[L] || 0) + 1; } const top = Object.keys(c).sort((a, b) => c[b] - c[a]); win = top[0] && !(top[1] && c[top[1]] === c[top[0]]) ? top[0] : ''; }   // 裏の決まり（11/27）：安土城のマスが一番多い軍。同じ数なら天下太平（天下人なし。予想の当たりもなし）
   const pr = (await get('/tk/pred.json')) || {}, hit = Object.values(pr).filter(x => x && x.f === win).sort((a, b) => a.t - b.t);
   const pred = { w: win, n: hit.length, all: Object.keys(pr).length, names: hit.slice(0, 50).map(x => [x.n, x.h]) };
   const rp = { t0, hr: HR, nf: nF, mi, f: frames.join('|'), top, pred, at: Date.now(), ver: 1 };

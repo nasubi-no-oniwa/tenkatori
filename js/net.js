@@ -214,7 +214,10 @@
   N.holder = function (lm, cells) { cells = cells || N.cells; if (!cells) return ''; const L = cells[lm.c[0]]; if (L === 'w') return ''; for (const i of lm.c) if (cells[i] !== L) return ''; return L; };
   N.holders = function (cells) { const o = {}; for (const lm of N.LM) o[lm.id] = N.holder(lm, cells); return o; };
   N.KEY = N.LM.find(l => l.id === 'azuchi') || null;        // 天下分け目の城
-  N.winners = function () { if (N.endOK() && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h]; } let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
+  N.winners = function () { if (N.endOK() && N.s.end.f) return [N.s.end.f]; if (N.KEY && N.cells) { const h = N.holder(N.KEY); if (h) return [h];
+    // 裏の決まり（11/27 なすP）：安土城を押さえた軍がなければ、安土城のマスを一番多く持っている軍。同じ数なら天下太平（何軍も返す）
+    const c = {}; for (const i of N.KEY.c) { const L = N.cells[i]; if (L && L !== 'w') c[L] = (c[L] || 0) + 1; } let mx = 0, w = []; for (const [L, n] of Object.entries(c)) { if (n > mx) { mx = n; w = [L]; } else if (n === mx) w.push(L); } if (w.length) return w; }
+    let mx = -1, w = []; for (const f of TK.F) { const n = N.s.n[f.L] || 0; if (n > mx) { mx = n; w = [f.L]; } else if (n === mx) w.push(f.L); } return w; };
   // 天下太平（11/27 なすP）：4000マスも安土城もなく、いちばんマスの多い軍が同じ数で並んだとき（天下人なし）
   N.peace = () => N.ended() && N.winners().length > 1;
   // いちばんマスの少ない武将（寝返れる先。同じ数なら全員）

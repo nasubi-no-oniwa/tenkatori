@@ -441,7 +441,7 @@
     if (endShown || !N.ended() || scr !== 'game') return; endShown = true; refreshGlow();
     try { await N.loadState(); } catch (e) { }
     const win = N.winners().map(L => TK.FI[L]), f = win[0], half = !!(N.endOK() && (N.s.end.k === 'day' || N.s.end.k === 'gm')), names = win.map(TK.fname).join('・'), peace = !half && win.length > 1;   // 天下太平：いちばん多い軍が並んだとき（11/27）
-    $('enT').textContent = peace ? t('en_peace_t') : half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = peace ? 'en_peace' : half ? 'en_half' : byKey ? 'en_key' : 'en_time';
+    $('enT').textContent = peace ? t('en_peace_t') : half ? t('en_title') : t('t_ended'); $('enT').style.fontSize = half ? '' : 'clamp(28px, 9vw, 50px)'; $('enT').style.letterSpacing = half ? '' : '.08em'; const byKey = !half && N.KEY && N.cells && N.holder(N.KEY) === f.L, enKey = peace ? 'en_peace' : half ? 'en_half' : byKey ? 'en_key' : N.KEY ? 'en_key2' : 'en_time';
     $('enS').textContent = t(enKey, { name: names });
     $('enWin').hidden = !(!peace && N.me && win.some(w => w.L === N.me.f)); $('enWin').textContent = t('en_win');
     const g = N.mg(), hk = N.s.hk || {}, best = g && !peace ? TK.F.filter(x => g[x.L] === f.L && x.L !== f.L && (hk[x.L] || 0) > 0).sort((a, b) => (hk[b.L] || 0) - (hk[a.L] || 0))[0] : null;
