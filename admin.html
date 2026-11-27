@@ -143,7 +143,7 @@ small.u{font-family:monospace;color:var(--sub);font-size:11px;word-break:break-a
         const mg = await get('s/mg').catch(() => null), RM = mg ? TK.F.filter(f => mg[f.L] === f.L) : TK.F;
         if (room !== 'all' && !RM.some(f => f.L === room)) room = 'all';
         const [v, pv] = await Promise.all([get('b/' + room, { orderBy: 't', limitToLast: 80 }).then(list), get('bp/' + room).then(x => x || {})]);
-        const pins = Object.entries(pv).map(([id, e]) => Object.assign({ id }, e)).sort((a, b) => b.t - a.t);
+        const pins = Object.entries(pv).map(([id, e]) => Object.assign({ id }, e)).filter(e => !(e.x && Date.now() >= e.x)).sort((a, b) => b.t - a.t);   // x：ピン止めの終わり（下剋上は0時まで）
         // 遊ぶ画面に自動で出るお知らせ（時間割から作る。データベースには入っていない）。今日の分を、遊ぶ画面と同じ文で出す
         const auto = [];
         { const DAYM = 86400000, JST = 9 * 3600000, now = Date.now(), d = Math.floor((now + JST) / DAYM) * DAYM - JST, x = await get('schd/' + d).catch(() => null), hs = x && x.h;

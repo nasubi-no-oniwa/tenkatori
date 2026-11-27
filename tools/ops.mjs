@@ -245,7 +245,9 @@ else if (op === 'launch' || op === 'reset') {
     if (!win && d >= Date.UTC(2026, 10, 26, 15) && s.mg && !(await get('/tk/gk/' + d + '.json'))) {
       const arm = Object.keys(s.mg).filter(L => s.mg[L] === L).sort((a, b) => (n0[a] || 0) - (n0[b] || 0) || ((s.m || {})[a] || 0) - ((s.m || {})[b] || 0));
       const G = arm[0]; w['gk/' + d] = G;
-      w['b/' + G + '/' + pid() + 'g'] = { t: now + 3, u: 'gm', n: 'なすP', m: '【下剋上】0時の時点で、当軍は天下で最もマスの少ない軍となった。本日いっぱい、当軍の早取りは1分で1マス、全軍の時間は2分半で1マス。いざ、下剋上！', g: true };
+      const gkm = '【下剋上】0時の時点で、当軍は天下で最もマスの少ない軍となった。本日いっぱい、当軍の早取りは1分で1マス、全軍の時間は2分半で1マス。いざ、下剋上！', gid = pid() + 'g';
+      w['b/' + G + '/' + gid] = { t: now + 3, u: 'gm', n: 'なすP', m: gkm, g: true };
+      w['bp/' + G + '/' + gid] = { t: now + 3, u: 'gm', n: 'なすP', m: gkm, g: true, x: d + 86400000 };   // 11/27：ピン止めも（0時まで。x を過ぎると画面に出ない）
       console.log('下剋上：' + FN(G) + '軍（24時のマス ' + (n0[G] || 0) + '）');
     }
     if (win) { w['s/end'] = { f: win, t: d, k: 'day' }; w['b/all/' + pid() + 'w'] = { t: now + 2, u: 'gm', n: 'なすP', m: `お知らせ：24時、${FN(win)}軍が${n0[win]}マスを治め、天下統一を果たした！ 天下取りマース、これにて終戦。`, g: true }; }
@@ -282,6 +284,14 @@ else if (op === 'launch' || op === 'reset') {
   const q = (process.argv[3] || '').trim(), get = async p => JSON.parse(await api('GET', p, undefined, tok)) || {}, u = await get('/tk/u.json'), w = {};
   for (const [id, x] of Object.entries(u)) if (x && x.n === q) { w['ban/' + id] = true; w['banok/' + id] = null; console.log('止める：' + x.n + '（本拠 ' + x.h + '・陣営 ' + x.f + '）' + id); }
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok); else console.log('その名前の人はいませんでした');
+} else if (op === 'gkpin') {
+  // 今日の下剋上のお知らせを、その軍の軍議にピン止めする（0時まで）。終わったピンも消す（11/27）
+  const DAY = 86400000, JST = 9 * 3600000, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, get = async p => JSON.parse(await api('GET', p, undefined, tok)), w = {};
+  const G = await get('/tk/gk/' + d + '.json'); if (!G) { console.log('今日の下剋上の軍がありません'); process.exit(0); }
+  const b = (await get('/tk/b/' + G + '.json?orderBy="t"&startAt=' + d)) || {};
+  const hit = Object.entries(b).find(([, e]) => e && e.g && String(e.m).includes('【下剋上】'));
+  if (hit) { w['bp/' + G + '/' + hit[0]] = Object.assign({}, hit[1], { x: d + DAY }); console.log('ピン止め：' + G + '／' + hit[1].m); } else console.log('今日の下剋上の書きこみが見つかりません');
+  if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
 } else if (op === 'unban') {
   // 止めを外す（11/26）：名前 q（ぴったり同じ名前）・本拠 h で探して、止め済みの人だけ外す。外した人は「止めない人」（banok）に入れ、見回りがまた止めないようにする
   const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim(); if (!q) { console.log('q に名前を入れてください'); process.exit(1); }

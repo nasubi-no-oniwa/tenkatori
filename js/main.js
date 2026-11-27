@@ -418,7 +418,7 @@
       // 一番上に固定：今日の早取りの時間割（画面が作る）→ 管理人のピン止め（一番槍・天下統一の決まり）。決戦地と米俵のお知らせは流れの中へ（11/25）
       // 奇襲のお知らせは、奇襲の30分のあいだだけ、その2軍の軍議の一番上に出す（11/26）
       const kiTop = []; { const v = N.kiNow(); if (v && N.me && N.me.f === room && (v.f === room || v.g === room)) kiTop.push({ id: 'k' + v.a, t: v.a, g: true, sys: true, m: t(v.f === room ? 'sy_ki_atk' : 'sy_ki_def', { army: TK.army(TK.FI[v.f === room ? v.g : v.f]), b: fsHM(v.a + 1800000) }) }); }
-      const top = kiTop.concat(sysPosts(room).filter(e => e.id === 'd' + N.dayStart())).concat((loadBoard.pins || []).slice().sort((x, y) => y.t - x.t));
+      const top = kiTop.concat(sysPosts(room).filter(e => e.id === 'd' + N.dayStart())).concat((loadBoard.pins || []).filter(e => !(e.x && now >= e.x)).sort((x, y) => y.t - x.t));   // x：ピン止めの終わり（下剋上は0時まで。11/27）
       const tk = top.map(e => e.id).join();
       if (pb && (first || tk !== pb.dataset.k)) { loadBoard.pt = pins !== undefined ? Date.now() : loadBoard.pt; pb.dataset.k = tk; pb.innerHTML = ''; top.forEach(e => pb.appendChild(bdMsg(e, room, now, true))); }
       const sys = sysPosts(room).filter(e => e.id !== 'd' + N.dayStart() && !bdSeen.has(e.id));
