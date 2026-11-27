@@ -300,6 +300,13 @@ else if (op === 'launch' || op === 'reset') {
   if (!/^[a-t]$/.test(q) || !/^\d{4}$/.test(x || '') || !/^\d{4}$/.test(y || '')) { console.log('q（i）と h（1600-2400）を確かめてください'); process.exit(1); }
   await api('PATCH', '/tk.json', { 's/hv': { f: q, a: at(x), b: at(y) }, 's/av': Date.now() }, tok);
   console.log('半分の時間：' + globalThis.TK_FNAME(q) + '軍　' + x + '〜' + y + '（今日）');
+} else if (op === 'pinpost') {
+  // 軍議にお知らせを書き、今日の24時までピン止めする（11/28）。q：軍議（all か軍の記号）、h：文
+  const DAY = 86400000, JST = 9 * 3600000, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, room = (process.argv[3] || '').trim(), m = (process.argv[4] || '').trim(), now = Date.now();
+  if (!/^(all|[a-t])$/.test(room) || !m) { console.log('q（軍議）と h（文）を確かめてください'); process.exit(1); }
+  const id = pid() + 'p';
+  await api('PATCH', '/tk.json', { ['b/' + room + '/' + id]: { t: now, u: 'gm', n: 'なすP', m, g: true }, ['bp/' + room + '/' + id]: { t: now, u: 'gm', n: 'なすP', m, g: true, x: d + DAY } }, tok);
+  console.log('書いてピン止めしました（24時まで）：' + room + '／' + m);
 } else if (op === 'unban') {
   // 止めを外す（11/26）：名前 q（ぴったり同じ名前）・本拠 h で探して、止め済みの人だけ外す。外した人は「止めない人」（banok）に入れ、見回りがまた止めないようにする
   const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim(); if (!q) { console.log('q に名前を入れてください'); process.exit(1); }
