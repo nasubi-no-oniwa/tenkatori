@@ -292,6 +292,14 @@ else if (op === 'launch' || op === 'reset') {
   const hit = Object.entries(b).find(([, e]) => e && e.g && String(e.m).includes('【下剋上】'));
   if (hit) { w['bp/' + G + '/' + hit[0]] = Object.assign({}, hit[1], { x: d + DAY }); console.log('ピン止め：' + G + '／' + hit[1].m); } else console.log('今日の下剋上の書きこみが見つかりません');
   if (Object.keys(w).length) await api('PATCH', '/tk.json', w, tok);
+} else if (op === 'hv') {
+  // 待ち時間が半分の時間（11/28）。q：軍（i）、h：今日の時刻 1600-2400。q に off で消す
+  const HR = 3600000, DAY = 86400000, JST = 9 * HR, d = Math.floor((Date.now() + JST) / DAY) * DAY - JST, q = (process.argv[3] || '').trim(), [x, y] = (process.argv[4] || '').trim().split('-');
+  if (q === 'off') { await api('PATCH', '/tk.json', { 's/hv': null }, tok); console.log('半分の時間を消しました'); process.exit(0); }
+  const at = v => d + (+v.slice(0, 2)) * HR + (+v.slice(2)) * 60000;
+  if (!/^[a-t]$/.test(q) || !/^\d{4}$/.test(x || '') || !/^\d{4}$/.test(y || '')) { console.log('q（i）と h（1600-2400）を確かめてください'); process.exit(1); }
+  await api('PATCH', '/tk.json', { 's/hv': { f: q, a: at(x), b: at(y) }, 's/av': Date.now() }, tok);
+  console.log('半分の時間：' + globalThis.TK_FNAME(q) + '軍　' + x + '〜' + y + '（今日）');
 } else if (op === 'unban') {
   // 止めを外す（11/26）：名前 q（ぴったり同じ名前）・本拠 h で探して、止め済みの人だけ外す。外した人は「止めない人」（banok）に入れ、見回りがまた止めないようにする
   const q = (process.argv[3] || '').trim(), h = (process.argv[4] || '').trim(); if (!q) { console.log('q に名前を入れてください'); process.exit(1); }

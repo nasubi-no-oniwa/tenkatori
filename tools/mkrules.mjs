@@ -99,6 +99,7 @@ tk.k = { '.read': false, '.write': false };
     mt: { '.write': ADMIN, '.validate': 'newData.isNumber()' },   // 三つ巴になった時刻
     hk: { '.write': ADMIN, $L: { '.validate': "$L.matches(/^[a-t]$/) && newData.isNumber()" } },   // 与力の手柄（家ごとの、三つ巴のあとに取ったマスの数）
     av: { '.write': ADMIN, '.validate': 'newData.isNumber()' },   // 画面の版（変わったら、開いたままの画面が読みなおす）
+    hv: { '.write': ADMIN, '.validate': "newData.child('f').isString() && newData.child('a').isNumber() && newData.child('b').isNumber()" },   // 待ち時間が半分の時間（11/28 お詫び：北条の16〜24時）
     nodf: { '.write': ADMIN, '.validate': 'newData.val() === true' },   // 寝返りの受付をやめる（三つ巴、11/24）
     pi: { '.write': ADMIN, '.validate': 'newData.isNumber() && newData.val() >= 20 && newData.val() <= 600' },   // 読みなおしの間隔（秒）
     $other: { '.validate': false },
@@ -127,6 +128,10 @@ tk.k = { '.read': false, '.write': false };
     + ` && root.child('tk/nr/' + ${QN} + '/c/' + newData.parent().child('c').val()).exists() && now - data.val() >= 60000)`;
   // 兵糧（11/18）：qd＝今日の0時（schd のかぎ）。その日にその陣営が集めた米俵が3・7・12俵で、待ちが50・40・30分になる
   const QD = "newData.parent().child('qd').val()", SD = `root.child('tk/schd/' + ${QD} + '/r')`, RC = `root.child('tk/rice/' + ${QD} + '/' + newData.parent().child('f').val()).val()`;
+  // 待ち時間が半分の時間（11/28）：s/hv = { f：軍, a：始まり, b：終わり }。その軍は、ふだんの1時間（兵糧で短くなった分も）が半分になる
+  const HV = `(root.child('tk/s/hv/f').val() === newData.parent().child('f').val() && root.child('tk/s/hv/a').val() <= now && now < root.child('tk/s/hv/b').val()`
+    + ` && (now - data.val() >= ${WAIT / 2} || (newData.parent().child('qd').isString() && ${SD}.isNumber() && ${SD}.val() <= now && now < ${SD}.val() + 86400000`
+    + ` && ((${RC} >= 3 && now - data.val() >= 1500000) || (${RC} >= 7 && now - data.val() >= 1200000) || (${RC} >= 12 && now - data.val() >= 900000)))))`;
   const MORALE = `(newData.parent().child('qd').isString() && ${SD}.isNumber() && ${SD}.val() <= now && now < ${SD}.val() + 86400000`
     + ` && ((${RC} >= 3 && now - data.val() >= 3000000) || (${RC} >= 7 && now - data.val() >= 2400000) || (${RC} >= 12 && now - data.val() >= 1800000)))`;
   const least = LET.map(h => `root.child('tk/s/n/' + newData.val()).val() <= root.child('tk/s/n/${h}').val()`).join(' && ');
@@ -153,7 +158,7 @@ tk.k = { '.read': false, '.write': false };
       h: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().matches(/^[a-t]$/) && (newData.val() === newData.parent().child('f').val() || root.child('tk/s/mg/' + newData.val()).val() === newData.parent().child('f').val())" },
       n: { '.write': `${SELF} && !data.exists() && !data.parent().child('f').exists()`, '.validate': "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8 && newData.parent().child('f').exists()" },
       j: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.val() === now && newData.parent().child('f').exists()" },
-      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE} || ${NOROSHI} || ${KISHU}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
+      t: { '.write': `${SELF} && ${OPEN}`, '.validate': `newData.val() === now && (!data.exists() || now - data.val() >= ${WAIT} || ${FAST} || ${MORALE} || ${HV} || ${NOROSHI} || ${KISHU}) && newData.parent().child('f').exists() && newData.parent().child('j').isNumber() && now - newData.parent().child('j').val() >= ${JOINT}` },
       c: { '.write': SELF, '.validate': "newData.isString() && newData.val().matches(/^[0-9]{1,4}$/) && newData.parent().child('t').val() === now" },
       // q：早取りの時間に取ったとき、その時間の始まりの時刻（sch のかぎ）。マスを取るのと同時に書く
       fp: { '.write': `${SELF} && !data.exists()`, '.validate': "newData.isString() && newData.val().matches(/^[0-9a-z]{6,16}$/)" },   // 端末の指紋（仕官のときに1回だけ）

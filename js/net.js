@@ -150,7 +150,7 @@
   N.riceLeft = () => { const dd = N.day[N.dayStart()]; if (!dd || N.riceDay !== N.dayStart()) return []; return [...dd.rc].filter(i => !N.rg[i]); };
   N.isRice = i => { const dd = N.day[N.dayStart()]; return !!(dd && N.riceDay === N.dayStart() && dd.rc.has(i) && !N.rg[i]); };
   N.morale = L => { const n = +(N.rice[L]) || 0; return n >= 12 ? 3 : n >= 7 ? 2 : n >= 3 ? 1 : 0; };
-  N.baseWait = L => TK.WAIT - N.morale(L) * 600000;
+  N.baseWait = L => { const w = TK.WAIT - N.morale(L) * 600000, hv = N.s && N.s.hv, now = N.now(); return hv && hv.f === L && now >= hv.a && now < hv.b ? w / 2 : w; };   // s/hv：待ち時間が半分の時間（11/28 お詫び）
   N.slotAt = t => { const d = N.dayStart(t), h = N.sched[d]; if (!h) return null; const i = Math.floor((t - d) / HR), x = (N.day[d] && N.day[d].x) || {}; return { a: d + i * HR, e: d + (i + 1) * HR, f: h[i], f2: x[i] || '', i }; };
   // 下剋上（11/27から）：gk/{その日の0時} はその軍の人にだけ読める。読めて自分の軍なら、その日の早取りは半分
   N.gk = {};
@@ -159,7 +159,8 @@
     if (!N.me || !N.uid()) return; let v = null; try { v = await rest('gk/' + d, null, true); } catch (e) { }
     N.gk[d] = v === N.me.f ? v : '';
   };
-  N.isGk = (f, t) => { const d = N.dayStart(t); return !!(f && N.gk[d] && N.gk[d] === f); };
+  N.isGk = (f, t) => { const d = N.dayStart(t); if (N.gk[d] === undefined && N.me && !N.isGk.busy) { N.isGk.busy = 1; N.loadGk(d).finally(() => { N.isGk.busy = 0; }); }   // 11/28：名簿より先に時間割を読んだとき、下剋上を読みそびれていた
+    return !!(f && N.gk[d] && N.gk[d] === f); };
   N.fastFor = (sl, f) => { if (!sl || !f) return 0; const k = N.isGk(f, sl.a) ? 0.5 : 1; return (sl.f === f || sl.f2 === f || sl.f === '!') ? TK.FASTT * k : sl.f === '*' ? TK.ALLT * k : 0; };   // '!'：最終決戦（全軍2分）
   // ---------- 狼煙（11/26から、毎日3回×3か国）：nrd/{その日の0時}/{0〜2} は上がってから読める。上がって30分、その国のマスは全軍1分 ----------
   // ---------- 奇襲（11/26から、毎日9回）：kid/{その日の0時}/{0〜8} は、始まってから、仕掛けた軍と仕掛けられた軍の人だけ読める ----------

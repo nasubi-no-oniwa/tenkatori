@@ -208,6 +208,24 @@ export async function run(drv, log = console.log) {
     }
     await drv.admin({ ['sch/' + K4]: null, ['sch/' + K5]: null, ['schd/' + DG]: null, ['gk/' + DG]: null });
   }
+  log('6k) 待ち時間が半分の時間（s/hv：その軍は、その時間だけふだんの1時間が30分）');
+  {
+    const X = await drv.user('X6k'), Y = await drv.user('Y6k');
+    await yes(join(X, 'a', '半分'), 'Xが織田に仕える'); await yes(join(Y, 'b', 'ふつう'), 'Yが武田に仕える'); await age(X, Y);
+    const old = (await drv.read('s/hv', X)).val;   // 本番に入っている値は、あとで戻す
+    await drv.admin({ 's/hv': { f: 'a', a: SV, b: Date.now() + 3 * 3600000 } });
+    const tg = u => drv.update({ ['u/' + u + '/t']: SV }, u);
+    await no(drv.update({ 's/hv': { f: 'b', a: 1, b: 2 } }, Y), '半分の時間は、ふつうの人には書きかえられない');
+    await yes(tg(X), 'Xが1マス取る'); await yes(tg(Y), 'Yも1マス取る');
+    if (drv.advance) {
+      await drv.advance(29 * 60 * 1000);
+      await no(tg(X), '半分の時間でも、30分たつまでは取れない');
+      await drv.advance(61 * 1000);
+      await yes(tg(X), '半分の時間の軍は、30分で次が取れる');
+      await no(tg(Y), 'ほかの軍は、いつもどおり1時間たつまで取れない');
+    }
+    await drv.admin({ 's/hv': old === undefined ? null : old });
+  }
   log('6h) 最終決戦（"!" の時間は全軍2分）・狼煙（その国のマスは30分間1分）・天下人予想（1人1回、軍だけ）');
   {
     const X = await drv.user('X6h'), Y = await drv.user('Y6h');
